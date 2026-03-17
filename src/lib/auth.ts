@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
             data: { verifiedToken: null },
           });
 
-          return { id: user.id, name: user.name, email: user.email, role: user.role };
+          return { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone };
         }
 
         // Password-based login
@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.password);
         if (!valid) return null;
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+        return { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone };
       },
     }),
   ],
@@ -60,12 +60,14 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.phone = user.phone;
       }
       return token;
     },
     session({ session, token }) {
       session.user.id = token.id;
       session.user.role = token.role;
+      session.user.phone = token.phone;
       return session;
     },
   },

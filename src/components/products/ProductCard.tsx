@@ -82,6 +82,8 @@ export default function ProductCard({ listing }: { listing: Listing }) {
 
   const imageSrc = getImageSrc(listing.category.slug, listing.name);
 
+  const isBuyer = !session || session.user.role === "BUYER";
+
   function handleAddToCart() {
     if (!session) {
       router.push("/login?callbackUrl=/products");
@@ -201,15 +203,21 @@ export default function ProductCard({ listing }: { listing: Listing }) {
           >
             <Link href={`/products/${listing.id}`}>Details</Link>
           </Button>
-          <Button
-            size="sm"
-            className="flex-1 h-9 rounded-xl bg-green-600 hover:bg-green-700 text-xs transition-all duration-200 active:scale-95 disabled:opacity-50"
-            onClick={handleAddToCart}
-            disabled={!lowestPrice || isOutOfStock}
-          >
-            <ShoppingCart className="w-3.5 h-3.5 mr-1" />
-            {isOutOfStock ? "Sold Out" : "Add to Cart"}
-          </Button>
+          {isBuyer ? (
+            <Button
+              size="sm"
+              className="flex-1 h-9 rounded-xl bg-green-600 hover:bg-green-700 text-xs transition-all duration-200 active:scale-95 disabled:opacity-50"
+              onClick={handleAddToCart}
+              disabled={!lowestPrice || isOutOfStock}
+            >
+              <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+              {isOutOfStock ? "Sold Out" : "Add to Cart"}
+            </Button>
+          ) : (
+            <div className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-400 flex items-center justify-center">
+              Buyer account required
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -104,14 +104,14 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="Your name" {...register("name")} />
+              <Label htmlFor="name">Full Name *</Label>
+              <Input id="name" placeholder="Your name" required {...register("name")} />
               {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
+              <Label htmlFor="email">Email *</Label>
+              <Input id="email" type="email" placeholder="you@example.com" required {...register("email")} />
               {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
             </div>
 
@@ -129,8 +129,8 @@ export default function SignupPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Min. 6 characters" {...register("password")} />
+              <Label htmlFor="password">Password *</Label>
+              <Input id="password" type="password" placeholder="Min. 6 characters" required {...register("password")} />
               {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
             </div>
 

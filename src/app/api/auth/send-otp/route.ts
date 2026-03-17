@@ -17,12 +17,25 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { identifier, channel, type } = schema.parse(body);
 
+    // Validate format before user lookup
+    if (channel === OtpChannel.EMAIL) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(identifier)) {
+        return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
+      }
+    } else {
+      const phoneDigits = identifier.replace(/[\s\-\+]/g, "");
+      if (!/^\d{10,15}$/.test(phoneDigits)) {
+        return NextResponse.json({ error: "Invalid phone number format" }, { status: 400 });
+      }
+    }
+
     const user = await prisma.user.findFirst({
       where: channel === OtpChannel.EMAIL ? { email: identifier } : { phone: identifier },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "No account found" }, { status: 404 });
+      return NextResponse.json({ error: "No account found with this email/phone. Please sign up first." }, { status: 404 });
     }
 
     // Rate limit: max 3 OTPs per 10 min
@@ -41,6 +54,9 @@ export async function POST(req: Request) {
     } else {
       if (user.phone) await sendOtpSms(user.phone, code);
     }
+
+    // Always log OTP to server console (useful when email/SMS delivery is restricted)
+    console.log(`[OTP] ${channel} → ${channel === OtpChannel.EMAIL ? user.email : user.phone} — Code: ${code}`);
 
     return NextResponse.json({ sent: true });
   } catch (err) {

@@ -61,18 +61,20 @@ export default function Header() {
 
           {/* Right */}
           <div className="flex items-center gap-2">
-            {/* Cart */}
-            <Link
-              href="/checkout"
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-50 transition-colors"
-            >
-              <ShoppingCart className="w-5 h-5 text-slate-600" />
-              {cartCount > 0 && (
-                <span suppressHydrationWarning className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[11px] bg-green-600 text-white rounded-full font-bold leading-none">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
+            {/* Cart — only for buyers and guests */}
+            {(!session || session.user.role === "BUYER") && (
+              <Link
+                href="/checkout"
+                className="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                <ShoppingCart className="w-5 h-5 text-slate-600" />
+                {cartCount > 0 && (
+                  <span suppressHydrationWarning className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[11px] bg-green-600 text-white rounded-full font-bold leading-none">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* Auth */}
             {status === "loading" ? (

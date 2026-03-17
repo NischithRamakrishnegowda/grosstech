@@ -23,7 +23,12 @@ export async function POST(req: Request) {
 
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) {
-      return NextResponse.json({ error: "Email already registered" }, { status: 400 });
+      return NextResponse.json({ error: "This email is already registered. Please sign in." }, { status: 400 });
+    }
+
+    const phoneExists = await prisma.user.findFirst({ where: { phone: data.phone } });
+    if (phoneExists) {
+      return NextResponse.json({ error: "This phone number is already registered. Please sign in." }, { status: 400 });
     }
 
     const password = await bcrypt.hash(data.password, 10);
@@ -40,12 +45,14 @@ export async function POST(req: Request) {
 
     // Send verification OTPs (fire-and-forget)
     Promise.all([
-      generateAndSaveOtp(user.id, OtpType.EMAIL_VERIFY, OtpChannel.EMAIL).then((code) =>
-        sendOtpEmail(user.email, user.name, code, OtpType.EMAIL_VERIFY)
-      ),
-      generateAndSaveOtp(user.id, OtpType.PHONE_VERIFY, OtpChannel.PHONE).then((code) =>
-        sendOtpSms(user.phone!, code)
-      ),
+      generateAndSaveOtp(user.id, OtpType.EMAIL_VERIFY, OtpChannel.EMAIL).then((code) => {
+        console.log(`[OTP] EMAIL_VERIFY → ${user.email} — Code: ${code}`);
+        return sendOtpEmail(user.email, user.name, code, OtpType.EMAIL_VERIFY);
+      }),
+      generateAndSaveOtp(user.id, OtpType.PHONE_VERIFY, OtpChannel.PHONE).then((code) => {
+        console.log(`[OTP] PHONE_VERIFY → ${user.phone} — Code: ${code}`);
+        return sendOtpSms(user.phone!, code);
+      }),
     ]).catch((e) => console.error("OTP send error:", e));
 
     return NextResponse.json({ id: user.id, email: user.email, phone: user.phone, role: user.role });

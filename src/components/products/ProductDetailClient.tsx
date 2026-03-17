@@ -97,6 +97,8 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
     }
   }, [session, listing.seller.id]);
 
+  const isBuyer = !session || session.user.role === "BUYER";
+
   function handleAddToCart() {
     if (!session) {
       router.push(`/login?callbackUrl=/products/${listing.id}`);
@@ -266,15 +268,21 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
             </div>
           </div>
 
-          <Button
-            size="lg"
-            className="w-full bg-green-600 hover:bg-green-700 transition-all duration-200 active:scale-[0.98]"
-            onClick={handleAddToCart}
-            disabled={selectedOption.stock === 0}
-          >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            {selectedOption.stock === 0 ? "Out of Stock" : "Add to Cart"}
-          </Button>
+          {isBuyer ? (
+            <Button
+              size="lg"
+              className="w-full bg-green-600 hover:bg-green-700 transition-all duration-200 active:scale-[0.98]"
+              onClick={handleAddToCart}
+              disabled={selectedOption.stock === 0}
+            >
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              {selectedOption.stock === 0 ? "Out of Stock" : "Add to Cart"}
+            </Button>
+          ) : (
+            <div className="w-full rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-500 py-3 text-center">
+              You need a buyer account to purchase products
+            </div>
+          )}
 
           {/* Seller info */}
           <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm">

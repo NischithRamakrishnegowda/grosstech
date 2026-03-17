@@ -19,6 +19,7 @@ const schema = z.object({
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "BUYER") return NextResponse.json({ error: "Only buyers can place orders" }, { status: 403 });
 
   try {
     const body = await req.json();

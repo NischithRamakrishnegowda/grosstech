@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,13 +20,16 @@ export default function CheckoutClient() {
   const [paying, setPaying] = useState(false);
 
   // Shipping fields (prefilled from session)
-  const [shippingAddress, setShippingAddress] = useState("");
+  const [lane1, setLane1] = useState("");
+  const [lane2, setLane2] = useState("");
+  const [landmark, setLandmark] = useState("");
+  const [pincode, setPincode] = useState("");
   const [shippingPhone, setShippingPhone] = useState("");
   const [secondaryPhone, setSecondaryPhone] = useState("");
 
   useEffect(() => {
-    if (session?.user) {
-      setShippingPhone((session.user as { phone?: string }).phone || "");
+    if (session?.user?.phone) {
+      setShippingPhone(session.user.phone);
     }
   }, [session]);
 
@@ -42,10 +45,18 @@ export default function CheckoutClient() {
       toast.error("Your cart is empty");
       return;
     }
-    if (!shippingAddress.trim()) {
-      toast.error("Please enter a delivery address");
+    if (!lane1.trim()) {
+      toast.error("Please enter your street address (Lane 1)");
       return;
     }
+    if (!pincode.trim() || !/^\d{6}$/.test(pincode.trim())) {
+      toast.error("Please enter a valid 6-digit pincode");
+      return;
+    }
+
+    const shippingAddress = [lane1.trim(), lane2.trim(), landmark.trim(), `Pincode: ${pincode.trim()}`]
+      .filter(Boolean)
+      .join(", ");
 
     setPaying(true);
     try {
@@ -110,6 +121,22 @@ export default function CheckoutClient() {
       toast.error("Failed to initiate payment");
       setPaying(false);
     }
+  }
+
+  // Block sellers and admins
+  if (session && session.user.role !== "BUYER") {
+    return (
+      <div className="text-center py-20 animate-fade-up">
+        <ShieldAlert className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-700">Buyers only</h2>
+        <p className="text-gray-400 mt-2 max-w-sm mx-auto">
+          Purchasing is only available for buyer accounts. Sign in with a buyer account to shop.
+        </p>
+        <Button className="mt-6 bg-green-600 hover:bg-green-700" asChild>
+          <Link href="/products">Browse Products</Link>
+        </Button>
+      </div>
+    );
   }
 
   if (items.length === 0) {
@@ -188,14 +215,39 @@ export default function CheckoutClient() {
           </h3>
 
           <div className="space-y-1.5">
-            <Label>Delivery Address <span className="text-red-500">*</span></Label>
-            <textarea
-              placeholder="Full address including city, state, pincode"
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
-              rows={3}
-              className="w-full border border-input rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+            <Label>Lane 1 <span className="text-red-500">*</span></Label>
+            <Input
+              placeholder="House no., Street, Area"
+              value={lane1}
+              onChange={(e) => setLane1(e.target.value)}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Lane 2 <span className="text-gray-400 text-xs">(optional)</span></Label>
+            <Input
+              placeholder="Apartment, Building, Colony"
+              value={lane2}
+              onChange={(e) => setLane2(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Pincode <span className="text-red-500">*</span></Label>
+              <Input
+                placeholder="6-digit pincode"
+                maxLength={6}
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Landmark <span className="text-gray-400 text-xs">(optional)</span></Label>
+              <Input
+                placeholder="Near school, temple, etc."
+                value={landmark}
+                onChange={(e) => setLandmark(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -205,7 +257,7 @@ export default function CheckoutClient() {
               </Label>
               <Input
                 type="tel"
-                placeholder="Primary phone"
+                placeholder={session?.user?.phone || "Primary phone"}
                 value={shippingPhone}
                 onChange={(e) => setShippingPhone(e.target.value)}
               />

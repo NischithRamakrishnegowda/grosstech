@@ -1,7 +1,10 @@
 import { Resend } from "resend";
 import { OtpType } from "@prisma/client";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null;
+  return new Resend(process.env.RESEND_API_KEY);
+}
 const FROM = process.env.RESEND_FROM || "GrossTech <noreply@grosstech.in>";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "";
@@ -21,7 +24,8 @@ function otpPurpose(type: OtpType): string {
 }
 
 export async function sendOtpEmail(to: string, name: string, code: string, type: OtpType) {
-  if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
+  if (!resend) return;
   try {
     await resend.emails.send({
       from: FROM,
@@ -145,7 +149,8 @@ function contactSection(items: OrderItem[]): string {
 }
 
 export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, items: OrderItem[]) {
-  if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
+  if (!resend) return;
   const shortId = order.id.slice(-8).toUpperCase();
   try {
     await resend.emails.send({
@@ -191,7 +196,8 @@ export async function sendSellerOrderNotification(
   sellerItems: OrderItem[],
   buyer: Buyer & { shippingAddress?: string | null; secondaryPhone?: string | null }
 ) {
-  if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
+  if (!resend) return;
   const shortId = order.id.slice(-8).toUpperCase();
   try {
     await resend.emails.send({
@@ -227,7 +233,8 @@ export async function sendSellerOrderNotification(
 }
 
 export async function sendAdminOrderNotification(order: Order, buyer: Buyer, items: OrderItem[]) {
-  if (!process.env.RESEND_API_KEY || !ADMIN_EMAIL) return;
+  const resend = getResend();
+  if (!resend || !ADMIN_EMAIL) return;
   const shortId = order.id.slice(-8).toUpperCase();
   const hasAdminItems = items.some((i) => i.listing.source === "ADMIN");
   try {
@@ -286,7 +293,8 @@ export async function sendAdminOrderNotification(order: Order, buyer: Buyer, ite
 }
 
 export async function sendPaymentFailedEmail(buyer: Buyer, amount: number) {
-  if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
+  if (!resend) return;
   try {
     await resend.emails.send({
       from: FROM,
