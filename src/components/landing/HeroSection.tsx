@@ -1,80 +1,149 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Truck, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Check, ShieldCheck, Clock, BadgeCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const STATS = [
+  { value: "500+",   label: "Products Listed" },
+  { value: "1,000+", label: "Registered Buyers" },
+  { value: "50+",    label: "Verified Sellers" },
+];
+
+const BENTO = [
+  { src: "/hero/hero1.jpg", span: "row-span-2" },
+  { src: "/hero/hero2.jpg", span: "" },
+  { src: "/hero/hero3.jpg", span: "" },
+];
+
+const CYCLING_WORDS = ["Quality.", "Price.", "Support."];
 
 export default function HeroSection() {
-  return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-green-700 via-green-600 to-emerald-500">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl" />
-      </div>
+  const [displayed, setDisplayed] = useState("");
+  const [wordIndex, setWordIndex] = useState(0);
+  const [typing, setTyping] = useState(true);
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-white/20 text-white text-sm px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
-              <Star className="w-3.5 h-3.5 fill-yellow-300 text-yellow-300" />
-              Trusted by 1000+ buyers across India
+  useEffect(() => {
+    const word = CYCLING_WORDS[wordIndex];
+
+    if (typing) {
+      if (displayed.length < word.length) {
+        const t = setTimeout(() => setDisplayed(word.slice(0, displayed.length + 1)), 80);
+        return () => clearTimeout(t);
+      } else {
+        // finished typing — pause then start deleting
+        const t = setTimeout(() => setTyping(false), 1800);
+        return () => clearTimeout(t);
+      }
+    } else {
+      if (displayed.length > 0) {
+        const t = setTimeout(() => setDisplayed(displayed.slice(0, -1)), 45);
+        return () => clearTimeout(t);
+      } else {
+        // finished deleting — move to next word
+        setWordIndex((i) => (i + 1) % CYCLING_WORDS.length);
+        setTyping(true);
+      }
+    }
+  }, [displayed, typing, wordIndex]);
+
+  return (
+    <section className="bg-white">
+      {/* ── Main panel ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-24">
+        <div className="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
+
+          {/* ── Left copy (3/5) ── */}
+          <div className="lg:col-span-3 space-y-7">
+            {/* Eyebrow */}
+            <div className="animate-fade-up inline-flex items-center gap-2 bg-green-50 border border-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full">
+              🌿 Wholesale Marketplace
             </div>
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-tight">
-              Fresh Essentials,
-              <br />
-              <span className="text-yellow-300">Delivered Fast</span>
+
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
+              <span className="block animate-fade-up [animation-delay:100ms]">Fresh Essentials,</span>
+              <span className="block animate-fade-up [animation-delay:220ms]">
+                Best{" "}
+                <span className="text-green-600 inline-block">
+                  {displayed}
+                  <span className="inline-block w-[3px] h-[0.85em] bg-green-500 ml-0.5 align-middle animate-blink" />
+                </span>
+              </span>
             </h1>
-            <p className="mt-4 text-lg text-green-100 max-w-lg">
-              Buy rice, sugar, oil and daily staples directly from verified sellers.
-              Best prices, transparent platform fee, secure payments.
+
+            {/* Body */}
+            <p className="text-lg text-slate-500 max-w-xl leading-relaxed animate-fade-up [animation-delay:340ms]">
+              Buy rice, sugar, oil and daily staples{" "}
+              <span className="font-semibold text-slate-700">directly from verified sellers</span>.
+              Secure payments, transparent fees, doorstep delivery.
             </p>
 
-            <div className="flex flex-wrap gap-3 mt-8">
-              <Button size="lg" className="bg-white text-green-700 hover:bg-green-50 font-semibold shadow-lg" asChild>
-                <Link href="/products">
-                  Shop Now <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 backdrop-blur-sm" asChild>
-                <Link href="/signup?role=SELLER">Sell on Gross Tech</Link>
-              </Button>
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-3 pt-1 animate-fade-up [animation-delay:460ms]">
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-2 bg-green-600 text-white font-bold px-7 py-3.5 rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-100 text-base group"
+              >
+                Shop Now
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link
+                href="/signup?role=SELLER"
+                className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-700 font-semibold px-7 py-3.5 rounded-xl hover:border-slate-300 hover:bg-slate-50 transition-all text-base"
+              >
+                Sell with Us
+              </Link>
             </div>
 
-            <div className="flex flex-wrap gap-6 mt-10">
+            {/* Trust checklist */}
+            <div className="flex flex-col sm:flex-row gap-x-8 gap-y-2.5 pt-1 animate-fade-up [animation-delay:560ms]">
               {[
-                { icon: ShieldCheck, text: "Secure Payments" },
-                { icon: Truck, text: "3-Day Hold Protection" },
-                { icon: Star, text: "Verified Sellers" },
+                { icon: ShieldCheck, text: "Secure Escrow Payments" },
+                { icon: Clock,       text: "3-Day Hold Protection" },
+                { icon: BadgeCheck,  text: "Verified Sellers Only" },
               ].map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-2 text-green-100 text-sm">
-                  <Icon className="w-4 h-4 text-yellow-300" />
-                  {text}
+                <div key={text} className="flex items-center gap-2 text-sm text-slate-600">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                  <span>{text}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Hero visual */}
-          <div className="hidden lg:flex justify-center">
-            <div className="relative">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "Basmati Rice", price: "From ₹65", emoji: "🌾", bg: "bg-amber-100" },
-                  { label: "Sunflower Oil", price: "From ₹75", emoji: "🌻", bg: "bg-yellow-100" },
-                  { label: "Refined Sugar", price: "From ₹30", emoji: "🍚", bg: "bg-blue-100" },
-                  { label: "Toor Dal", price: "From ₹75", emoji: "🫘", bg: "bg-orange-100" },
-                ].map((item) => (
-                  <div key={item.label} className={`${item.bg} rounded-2xl p-5 text-center shadow-lg backdrop-blur-sm`}>
-                    <div className="text-4xl mb-2">{item.emoji}</div>
-                    <div className="font-semibold text-gray-800 text-sm">{item.label}</div>
-                    <div className="text-green-600 font-bold text-sm mt-1">{item.price}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-xl p-3 text-center">
-                <div className="text-2xl font-bold text-green-600">500+</div>
-                <div className="text-xs text-gray-500">Products Listed</div>
-              </div>
+          {/* ── Right bento grid (2/5) ── */}
+          <div className="hidden lg:block lg:col-span-2 animate-fade-in [animation-delay:300ms]">
+            <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[460px]">
+              {BENTO.map((item, i) => (
+                <div
+                  key={i}
+                  className={`relative rounded-2xl overflow-hidden shadow-sm ${item.span}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.src}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stats strip ── */}
+      <div className="border-t border-slate-100 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="grid grid-cols-3 gap-4 divide-x divide-slate-200">
+            {STATS.map((s) => (
+              <div key={s.label} className="text-center px-4 first:pl-0 last:pr-0">
+                <div className="text-2xl font-black text-slate-900">{s.value}</div>
+                <div className="text-xs text-slate-500 mt-0.5 font-medium">{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

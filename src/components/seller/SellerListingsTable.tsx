@@ -52,7 +52,7 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
             <tr>
               <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
               <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Prices</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-600">Prices & Stock</th>
               <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
               <th className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
             </tr>
@@ -68,8 +68,18 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {listing.priceOptions.slice(0, 3).map((opt) => (
-                      <span key={opt.id} className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded">
+                      <span
+                        key={opt.id}
+                        className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                          opt.stock === 0
+                            ? "bg-red-50 text-red-600"
+                            : opt.stock <= 50
+                            ? "bg-orange-50 text-orange-600"
+                            : "bg-green-50 text-green-700"
+                        }`}
+                      >
                         {opt.weight}: ₹{opt.price}
+                        <span className="font-semibold">({opt.stock})</span>
                       </span>
                     ))}
                     {listing.priceOptions.length > 3 && (

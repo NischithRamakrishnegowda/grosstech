@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useReducer, useEffect } from "react";
+import { createContext, useContext, useReducer, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 export interface CartItem {
   listingId: string;
@@ -9,11 +10,13 @@ export interface CartItem {
   brand?: string;
   weight: string;
   price: number;
+  stock: number;
   imageUrl?: string;
   quantity: number;
 }
 
 type Action =
+  | { type: "INIT"; items: CartItem[] }
   | { type: "ADD"; item: CartItem }
   | { type: "REMOVE"; priceOptionId: string }
   | { type: "UPDATE_QTY"; priceOptionId: string; quantity: number }
@@ -21,12 +24,14 @@ type Action =
 
 function reducer(state: CartItem[], action: Action): CartItem[] {
   switch (action.type) {
+    case "INIT":
+      return action.items;
     case "ADD": {
       const exists = state.find((i) => i.priceOptionId === action.item.priceOptionId);
       if (exists) {
         return state.map((i) =>
           i.priceOptionId === action.item.priceOptionId
-            ? { ...i, quantity: i.quantity + action.item.quantity }
+            ? { ...i, quantity: Math.min(i.quantity + action.item.quantity, i.stock) }
             : i
         );
       }
@@ -36,7 +41,9 @@ function reducer(state: CartItem[], action: Action): CartItem[] {
       return state.filter((i) => i.priceOptionId !== action.priceOptionId);
     case "UPDATE_QTY":
       return state.map((i) =>
-        i.priceOptionId === action.priceOptionId ? { ...i, quantity: action.quantity } : i
+        i.priceOptionId === action.priceOptionId
+          ? { ...i, quantity: Math.min(Math.max(1, action.quantity), i.stock) }
+          : i
       );
     case "CLEAR":
       return [];
@@ -60,19 +67,31 @@ const CartContext = createContext<{
 });
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, dispatch] = useReducer(reducer, [], () => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem("cart");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { data: session, status } = useSession();
+  // null while session is loading; "guest" when logged out; user.id when logged in
+  const userId = status === "loading" ? null : (session?.user?.id ?? "guest");
 
+  const [items, dispatch] = useReducer(reducer, []);
+  // tracks which userId's cart is currently loaded to prevent premature saves
+  const [cartUserId, setCartUserId] = useState<string | null>(null);
+
+  // Re-load cart whenever the logged-in user changes (login / logout)
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(items));
-  }, [items]);
+    if (userId === null) return; // still resolving session
+    try {
+      const stored = localStorage.getItem(`cart_${userId}`);
+      dispatch({ type: "INIT", items: stored ? JSON.parse(stored) : [] });
+    } catch {
+      dispatch({ type: "INIT", items: [] });
+    }
+    setCartUserId(userId);
+  }, [userId]);
+
+  // Persist to localStorage only after the correct user's cart has been loaded
+  useEffect(() => {
+    if (cartUserId === null || cartUserId !== userId) return;
+    localStorage.setItem(`cart_${userId}`, JSON.stringify(items));
+  }, [items, cartUserId, userId]);
 
   return (
     <CartContext.Provider

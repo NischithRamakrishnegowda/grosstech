@@ -33,7 +33,7 @@ export default async function AdminInventoryPage() {
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Source</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Prices</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Prices & Stock</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">Action</th>
               </tr>
@@ -53,9 +53,19 @@ export default async function AdminInventoryPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {listing.priceOptions.slice(0, 2).map((opt) => (
-                        <span key={opt.id} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                      {listing.priceOptions.slice(0, 3).map((opt) => (
+                        <span
+                          key={opt.id}
+                          className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                            opt.stock === 0
+                              ? "bg-red-50 text-red-600"
+                              : opt.stock <= 50
+                              ? "bg-orange-50 text-orange-600"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
                           {opt.weight}: ₹{opt.price}
+                          <span className="font-semibold">({opt.stock})</span>
                         </span>
                       ))}
                     </div>

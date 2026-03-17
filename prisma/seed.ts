@@ -51,9 +51,9 @@ async function main() {
     },
   });
 
-  // Create categories
+  // Create categories (rice renamed to grains)
   const categories = [
-    { name: "Rice", slug: "rice" },
+    { name: "Grains", slug: "grains" },
     { name: "Sugar", slug: "sugar" },
     { name: "Oil", slug: "oil" },
     { name: "Pulses", slug: "pulses" },
@@ -64,20 +64,20 @@ async function main() {
   for (const cat of categories) {
     const created = await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: {},
+      update: { name: cat.name },
       create: cat,
     });
     createdCategories[cat.slug] = created.id;
   }
 
-  // Create listings
+  // Listings — no imageUrl (local category images are used in the UI)
   const listings = [
     {
       name: "Basmati Rice",
       brand: "India Gate",
-      description: "Premium long-grain basmati rice with aromatic fragrance.",
+      description: "Premium long-grain basmati rice with aromatic fragrance. Aged 2 years for superior taste.",
       source: ListingSource.ADMIN,
-      categoryId: createdCategories["rice"],
+      categoryId: createdCategories["grains"],
       sellerId: admin.id,
       priceOptions: [
         { weight: "500g", price: 65, stock: 100 },
@@ -87,9 +87,48 @@ async function main() {
       ],
     },
     {
+      name: "Wheat",
+      brand: "Aashirvaad",
+      description: "Whole wheat grains, freshly milled. Rich in fiber and perfect for making rotis and bread.",
+      source: ListingSource.ADMIN,
+      categoryId: createdCategories["grains"],
+      sellerId: admin.id,
+      priceOptions: [
+        { weight: "1kg", price: 45, stock: 300 },
+        { weight: "5kg", price: 210, stock: 100 },
+        { weight: "25kg", price: 950, stock: 30 },
+      ],
+    },
+    {
+      name: "Ragi",
+      brand: "Organic India",
+      description: "Finger millet (ragi) — high in calcium and iron. Ideal for porridge, rotis, and health drinks.",
+      source: ListingSource.ADMIN,
+      categoryId: createdCategories["grains"],
+      sellerId: admin.id,
+      priceOptions: [
+        { weight: "500g", price: 55, stock: 150 },
+        { weight: "1kg", price: 100, stock: 200 },
+        { weight: "5kg", price: 480, stock: 50 },
+      ],
+    },
+    {
+      name: "Corn",
+      brand: null,
+      description: "Dried corn kernels, great for popcorn, corn flour, and animal feed. Sourced from local farms.",
+      source: ListingSource.ADMIN,
+      categoryId: createdCategories["grains"],
+      sellerId: admin.id,
+      priceOptions: [
+        { weight: "1kg", price: 40, stock: 200 },
+        { weight: "5kg", price: 185, stock: 80 },
+        { weight: "25kg", price: 850, stock: 25 },
+      ],
+    },
+    {
       name: "Refined Sugar",
       brand: "Uttam",
-      description: "Pure white refined sugar, ideal for daily use.",
+      description: "Pure white refined sugar, ideal for daily use. FSSAI certified, no additives.",
       source: ListingSource.ADMIN,
       categoryId: createdCategories["sugar"],
       sellerId: admin.id,
@@ -103,7 +142,7 @@ async function main() {
     {
       name: "Sunflower Oil",
       brand: "Fortune",
-      description: "Light and healthy sunflower oil, rich in Vitamin E.",
+      description: "Light and healthy sunflower oil, rich in Vitamin E. Double refined for purity.",
       source: ListingSource.SELLER,
       categoryId: createdCategories["oil"],
       sellerId: seller.id,
@@ -116,7 +155,7 @@ async function main() {
     {
       name: "Toor Dal",
       brand: "Organic India",
-      description: "Premium quality toor dal, protein-rich and easy to cook.",
+      description: "Premium quality toor dal, protein-rich and easy to cook. Sourced directly from farms.",
       source: ListingSource.SELLER,
       categoryId: createdCategories["pulses"],
       sellerId: seller.id,
@@ -129,7 +168,7 @@ async function main() {
     {
       name: "Turmeric Powder",
       brand: "MDH",
-      description: "Pure turmeric powder with natural curcumin, no additives.",
+      description: "Pure turmeric powder with natural curcumin, no additives. Rich golden color and aroma.",
       source: ListingSource.ADMIN,
       categoryId: createdCategories["spices"],
       sellerId: admin.id,
@@ -146,10 +185,16 @@ async function main() {
     const existing = await prisma.listing.findFirst({
       where: { name: listing.name, sellerId: listing.sellerId },
     });
-    if (!existing) {
+    if (existing) {
+      await prisma.listing.update({
+        where: { id: existing.id },
+        data: { imageUrl: null, description: listing.description, categoryId: listingData.categoryId },
+      });
+    } else {
       await prisma.listing.create({
         data: {
           ...listingData,
+          imageUrl: null,
           priceOptions: { create: priceOptions },
         },
       });

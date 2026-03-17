@@ -18,7 +18,7 @@ const schema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["BUYER", "SELLER"]),
-  phone: z.string().optional(),
+  phone: z.string().min(10, "Enter a valid phone number"),
   businessName: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
@@ -115,8 +115,9 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone (optional)</Label>
-              <Input id="phone" placeholder="+91 90000 00000" {...register("phone")} />
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input id="phone" type="tel" placeholder="+91 90000 00000" {...register("phone")} />
+              {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
             </div>
 
             {role === "SELLER" && (

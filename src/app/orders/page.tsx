@@ -35,7 +35,7 @@ export default async function OrdersPage() {
       <Header />
       <main className="flex-1 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <h1 className="text-2xl font-bold text-gray-900 mb-8">My Orders</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
 
           {orders.length === 0 ? (
             <div className="text-center py-16 text-gray-400">No orders yet.</div>
@@ -43,7 +43,7 @@ export default async function OrdersPage() {
             <div className="space-y-4">
               {orders.map((order) => (
                 <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                     <div>
                       <p className="font-semibold text-gray-900">
                         Order #{order.id.slice(-8).toUpperCase()}
@@ -72,9 +72,9 @@ export default async function OrdersPage() {
                     ))}
                   </div>
 
-                  <div className="border-t pt-3 flex justify-between text-sm">
-                    <div className="text-gray-500">
-                      Subtotal ₹{order.subtotal} + Platform fee ₹{order.platformFee}
+                  <div className="border-t pt-3 flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
+                    <div className="text-gray-500 text-xs">
+                      Subtotal ₹{order.subtotal} + Fee ₹{order.platformFee}
                     </div>
                     <div className="font-bold text-green-600">Total: ₹{order.total}</div>
                   </div>

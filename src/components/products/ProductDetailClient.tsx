@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, ArrowLeft, Lock, Phone, Mail, MapPin, Loader2 } from "lucide-react";
+import { ShoppingCart, ArrowLeft, Lock, Phone, Mail, MapPin, Loader2, Package2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -39,20 +39,49 @@ interface SellerContact {
 }
 
 const CATEGORY_EMOJIS: Record<string, string> = {
-  rice: "🌾", sugar: "🍚", oil: "🫙", pulses: "🫘", spices: "🌶️",
+  grains: "🌾", sugar: "🍚", oil: "🫙", pulses: "🫘", spices: "🌶️",
 };
+
+const CATEGORY_IMAGES: Record<string, string> = {
+  grains: "/categories/rice.jpg",
+  sugar:  "/categories/sugar.jpg",
+  oil:    "/categories/oil.jpg",
+  pulses: "/categories/pulses.jpg",
+  spices: "/categories/spices.jpg",
+};
+
+const GRAIN_IMAGES: Array<{ match: string; src: string }> = [
+  { match: "wheat",   src: "/categories/wheat.jpg" },
+  { match: "ragi",    src: "/categories/ragi.jpg" },
+  { match: "corn",    src: "/categories/corn.jpg" },
+  { match: "rice",    src: "/categories/rice.jpg" },
+  { match: "basmati", src: "/categories/rice.jpg" },
+];
+
+function getImageSrc(slug: string, name: string): string | null {
+  if (slug === "grains") {
+    const lc = name.toLowerCase();
+    const match = GRAIN_IMAGES.find((g) => lc.includes(g.match));
+    return match ? match.src : "/categories/rice.jpg";
+  }
+  return CATEGORY_IMAGES[slug] || null;
+}
 
 export default function ProductDetailClient({ listing }: { listing: Listing }) {
   const { data: session } = useSession();
   const router = useRouter();
   const { addItem } = useCart();
   const [selectedOption, setSelectedOption] = useState<PriceOption>(listing.priceOptions[0]);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [contactInfo, setContactInfo] = useState<SellerContact | null>(null);
   const [contactLocked, setContactLocked] = useState(true);
   const [contactLoading, setContactLoading] = useState(false);
   const [unlockLoading, setUnlockLoading] = useState(false);
 
   const emoji = CATEGORY_EMOJIS[listing.category.slug] || "📦";
+  const imageSrc = getImageSrc(listing.category.slug, listing.name);
+  const isLowStock = selectedOption.stock > 0 && selectedOption.stock <= 50;
 
   useEffect(() => {
     if (session) {
@@ -80,6 +109,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
       brand: listing.brand || undefined,
       weight: selectedOption.weight,
       price: selectedOption.price,
+      stock: selectedOption.stock,
       imageUrl: listing.imageUrl || undefined,
       quantity: 1,
     });
@@ -146,23 +176,37 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Link href="/products" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6">
+      <Link
+        href="/products"
+        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-green-600 transition-colors mb-6"
+      >
         <ArrowLeft className="w-4 h-4" /> Back to Products
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Image */}
-        <div className="bg-white rounded-2xl border border-gray-100 aspect-square flex items-center justify-center text-8xl shadow-sm">
-          {listing.imageUrl ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Product image with shimmer loader */}
+        <div className="rounded-2xl aspect-square overflow-hidden border border-slate-100 bg-slate-50 relative animate-fade-in">
+          {imageSrc && !imgLoaded && !imgError && (
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-shimmer" />
+          )}
+          {imageSrc && !imgError ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={listing.imageUrl} alt={listing.name} className="w-full h-full object-cover rounded-2xl" />
+            <img
+              src={imageSrc}
+              alt={listing.name}
+              className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
+            />
           ) : (
-            emoji
+            <div className="w-full h-full flex items-center justify-center text-[120px] select-none">
+              {emoji}
+            </div>
           )}
         </div>
 
         {/* Details */}
-        <div className="space-y-5">
+        <div className="space-y-5 animate-fade-up">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="secondary">{listing.category.name}</Badge>
@@ -170,7 +214,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
                 <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Gross Tech Verified</Badge>
               )}
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">{listing.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{listing.name}</h1>
             {listing.brand && <p className="text-gray-500 mt-1">by {listing.brand}</p>}
           </div>
 
@@ -180,41 +224,51 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
 
           {/* Price options */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Select Quantity</p>
+            <p className="text-sm font-medium text-gray-700 mb-3">Select Pack Size</p>
             <div className="flex flex-wrap gap-2">
               {listing.priceOptions.map((opt) => (
                 <button
                   key={opt.id}
                   onClick={() => setSelectedOption(opt)}
                   disabled={opt.stock === 0}
-                  className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                  className={`px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
                     selectedOption.id === opt.id
-                      ? "border-green-500 bg-green-50 text-green-700"
+                      ? "border-green-500 bg-green-50 text-green-700 shadow-sm scale-[1.03]"
                       : opt.stock === 0
-                      ? "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
-                      : "border-gray-200 hover:border-green-300 text-gray-700"
+                      ? "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60"
+                      : "border-gray-200 hover:border-green-300 hover:bg-green-50/50 text-gray-700 hover:scale-[1.02]"
                   }`}
                 >
-                  <div>{opt.weight}</div>
-                  <div className="font-bold">₹{opt.price}</div>
-                  {opt.stock === 0 && <div className="text-xs">Out of stock</div>}
+                  <div className="font-semibold">{opt.weight}</div>
+                  <div className="font-bold text-base">₹{opt.price}</div>
+                  <div className={`text-xs mt-0.5 ${opt.stock === 0 ? "text-red-400" : opt.stock <= 50 ? "text-orange-500 font-medium" : "text-gray-400"}`}>
+                    {opt.stock === 0 ? "Out of stock" : opt.stock <= 50 ? `Only ${opt.stock} left` : `${opt.stock} available`}
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Selected price display */}
-          <div className="bg-green-50 rounded-xl p-4">
+          <div className={`rounded-xl p-4 transition-all duration-300 ${selectedOption.stock === 0 ? "bg-gray-50" : "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100"}`}>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-green-600">₹{selectedOption.price}</span>
               <span className="text-gray-500">/ {selectedOption.weight}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">+ ₹20 platform fee at checkout</p>
+            <div className="flex items-center gap-3 mt-2">
+              <p className="text-xs text-gray-500">+ ₹20 platform fee at checkout</p>
+              {selectedOption.stock > 0 && (
+                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${isLowStock ? "bg-orange-100 text-orange-600" : "bg-green-100 text-green-600"}`}>
+                  <Package2 className="w-3 h-3" />
+                  {isLowStock ? `Only ${selectedOption.stock} units left` : `${selectedOption.stock} units in stock`}
+                </span>
+              )}
+            </div>
           </div>
 
           <Button
             size="lg"
-            className="w-full bg-green-600 hover:bg-green-700"
+            className="w-full bg-green-600 hover:bg-green-700 transition-all duration-200 active:scale-[0.98]"
             onClick={handleAddToCart}
             disabled={selectedOption.stock === 0}
           >
@@ -223,7 +277,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
           </Button>
 
           {/* Seller info */}
-          <div className="border rounded-2xl p-5">
+          <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Seller Information</h3>
             <p className="text-sm text-gray-600 mb-3">
               <span className="font-medium">
@@ -233,7 +287,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
 
             {contactLocked ? (
               <div className="relative">
-                <div className="blur-sm select-none text-sm text-gray-600 space-y-1.5 mb-3">
+                <div className="blur-sm select-none text-sm text-gray-600 space-y-1.5 mb-3 pointer-events-none">
                   <div className="flex items-center gap-2"><Phone className="w-4 h-4" />+91 ••••••••••</div>
                   <div className="flex items-center gap-2"><Mail className="w-4 h-4" />••••@••••.com</div>
                   <div className="flex items-center gap-2"><MapPin className="w-4 h-4" />•••••, Karnataka</div>
@@ -241,7 +295,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full border-green-500 text-green-600 hover:bg-green-50"
+                  className="w-full border-green-500 text-green-600 hover:bg-green-50 transition-all duration-200"
                   onClick={handleUnlockContact}
                   disabled={unlockLoading || contactLoading}
                 >
@@ -254,16 +308,20 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
                 </Button>
               </div>
             ) : contactInfo ? (
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm animate-fade-in">
                 {contactInfo.phone && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Phone className="w-4 h-4 text-green-500" />
-                    {contactInfo.phone}
+                    <a href={`tel:${contactInfo.phone}`} className="hover:text-green-600 transition-colors font-medium">
+                      {contactInfo.phone}
+                    </a>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-gray-600">
                   <Mail className="w-4 h-4 text-green-500" />
-                  {contactInfo.email}
+                  <a href={`mailto:${contactInfo.email}`} className="hover:text-green-600 transition-colors">
+                    {contactInfo.email}
+                  </a>
                 </div>
                 {contactInfo.address && (
                   <div className="flex items-center gap-2 text-gray-600">

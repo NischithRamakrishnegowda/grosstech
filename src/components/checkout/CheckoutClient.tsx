@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Minus, Plus, Trash2, ShoppingCart, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/context/CartContext";
@@ -90,11 +90,11 @@ export default function CheckoutClient() {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-20">
-        <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <div className="text-center py-20 animate-fade-up">
+        <ShoppingCart className="w-16 h-16 text-gray-200 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-700">Your cart is empty</h2>
         <p className="text-gray-400 mt-2">Add some products to continue</p>
-        <Button className="mt-6 bg-green-600 hover:bg-green-700" asChild>
+        <Button className="mt-6 bg-green-600 hover:bg-green-700 transition-all duration-200" asChild>
           <Link href="/products">Browse Products</Link>
         </Button>
       </div>
@@ -102,54 +102,75 @@ export default function CheckoutClient() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Cart items */}
-      <div className="lg:col-span-2 space-y-4">
-        {items.map((item) => (
-          <div key={item.priceOptionId} className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
-              📦
+      <div className="lg:col-span-2 space-y-3">
+        {items.map((item, idx) => (
+          <div
+            key={item.priceOptionId}
+            className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 hover:shadow-md transition-all duration-200 animate-slide-right"
+            style={{ animationDelay: `${idx * 60}ms` }}
+          >
+            <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
+              {item.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+              ) : "📦"}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-gray-900 truncate">{item.name}</p>
-              <p className="text-sm text-gray-500">{item.brand} · {item.weight}</p>
-              <p className="text-green-600 font-bold mt-1">₹{item.price}</p>
+              <p className="text-sm text-gray-500">{item.brand ? `${item.brand} · ` : ""}{item.weight}</p>
+              <p className="text-green-600 font-bold mt-1">₹{item.price} <span className="text-xs text-gray-400 font-normal">/ unit</span></p>
+              {item.quantity >= item.stock && (
+                <p className="text-xs text-orange-500 flex items-center gap-1 mt-1">
+                  <AlertCircle className="w-3 h-3" /> Max stock reached
+                </p>
+              )}
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-2 shrink-0">
               <button
                 onClick={() => removeItem(item.priceOptionId)}
-                className="text-gray-400 hover:text-red-500 transition-colors"
+                className="text-gray-300 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => updateQty(item.priceOptionId, Math.max(1, item.quantity - 1))}
-                  className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100"
+                  onClick={() => updateQty(item.priceOptionId, item.quantity - 1)}
+                  disabled={item.quantity <= 1}
+                  className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
-                <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
                 <button
                   onClick={() => updateQty(item.priceOptionId, item.quantity + 1)}
-                  className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100"
+                  disabled={item.quantity >= item.stock}
+                  className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-sm font-semibold text-gray-700">₹{item.price * item.quantity}</p>
+              <p className="text-sm font-bold text-gray-800">₹{item.price * item.quantity}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Order summary */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 h-fit sticky top-24">
-        <h2 className="font-bold text-gray-900 mb-4">Order Summary</h2>
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm animate-fade-in">
+        <h2 className="font-bold text-gray-900 mb-4 text-lg">Order Summary</h2>
 
         <div className="space-y-3 text-sm">
+          {items.map((item) => (
+            <div key={item.priceOptionId} className="flex justify-between text-gray-500">
+              <span className="truncate mr-2">{item.name} × {item.quantity}</span>
+              <span className="shrink-0 font-medium text-gray-700">₹{item.price * item.quantity}</span>
+            </div>
+          ))}
+          <Separator />
           <div className="flex justify-between text-gray-600">
-            <span>Subtotal ({items.length} items)</span>
+            <span>Subtotal</span>
             <span>₹{subtotal}</span>
           </div>
           <div className="flex justify-between text-gray-600">
@@ -165,7 +186,7 @@ export default function CheckoutClient() {
 
         <Button
           size="lg"
-          className="w-full mt-6 bg-green-600 hover:bg-green-700"
+          className="w-full mt-6 bg-green-600 hover:bg-green-700 transition-all duration-200 active:scale-[0.98]"
           onClick={handlePayment}
           disabled={paying}
         >

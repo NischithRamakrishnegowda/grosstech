@@ -21,7 +21,10 @@ async function getListings(category?: string) {
 }
 
 async function getCategories() {
-  return prisma.category.findMany({ orderBy: { name: "asc" } });
+  return prisma.category.findMany({
+    orderBy: { name: "asc" },
+    include: { _count: { select: { listings: { where: { isActive: true } } } } },
+  });
 }
 
 export default async function ProductsPage({
@@ -35,27 +38,33 @@ export default async function ProductsPage({
     getCategories(),
   ]);
 
+  const activeCategory = categories.find((c) => c.slug === category);
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-1 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+
+      {/* Page header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {category ? categories.find((c) => c.slug === category)?.name || "Products" : "All Products"}
+              <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                {activeCategory ? activeCategory.name : "All Products"}
               </h1>
-              <p className="text-gray-500 text-sm mt-1">{listings.length} products available</p>
+              <p className="text-gray-500 mt-1">
+                <span className="font-semibold text-green-600">{listings.length}</span> products available
+              </p>
             </div>
 
             {/* Category filter */}
             <div className="flex flex-wrap gap-2">
               <a
                 href="/products"
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   !category
-                    ? "bg-green-600 text-white"
-                    : "bg-white border border-gray-200 text-gray-600 hover:border-green-400"
+                    ? "bg-green-600 text-white shadow-sm shadow-green-200"
+                    : "bg-white border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600"
                 }`}
               >
                 All
@@ -64,26 +73,40 @@ export default async function ProductsPage({
                 <a
                   key={cat.id}
                   href={`/products?category=${cat.slug}`}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                     category === cat.slug
-                      ? "bg-green-600 text-white"
-                      : "bg-white border border-gray-200 text-gray-600 hover:border-green-400"
+                      ? "bg-green-600 text-white shadow-sm shadow-green-200"
+                      : "bg-white border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600"
                   }`}
                 >
                   {cat.name}
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${category === cat.slug ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                    {cat._count.listings}
+                  </span>
                 </a>
               ))}
             </div>
           </div>
+        </div>
+      </div>
 
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {listings.length === 0 ? (
-            <div className="text-center py-20 text-gray-400">
-              <p className="text-lg">No products found in this category.</p>
+            <div className="text-center py-24 animate-fade-up">
+              <div className="text-6xl mb-4">🔍</div>
+              <h2 className="text-xl font-bold text-gray-700">No products found</h2>
+              <p className="text-gray-400 mt-2">Try a different category or check back later.</p>
+              <a href="/products" className="mt-6 inline-block bg-green-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-700 transition-colors">
+                View all products
+              </a>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {listings.map((listing) => (
-                <ProductCard key={listing.id} listing={listing} />
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {listings.map((listing, i) => (
+                <div key={listing.id} className="animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
+                  <ProductCard listing={listing} />
+                </div>
               ))}
             </div>
           )}
