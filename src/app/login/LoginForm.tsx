@@ -239,12 +239,6 @@ export default function LoginForm() {
             <Link href="/signup" className="text-green-600 font-medium hover:underline">Sign up</Link>
           </div>
 
-          <div className="p-3 bg-gray-50 rounded-lg text-xs text-gray-500 space-y-1">
-            <p className="font-medium text-gray-600">Demo accounts:</p>
-            <p>Admin: admin@grosstech.com / admin123</p>
-            <p>Seller: seller@grosstech.com / seller123</p>
-            <p>Buyer: buyer@grosstech.com / buyer123</p>
-          </div>
         </div>
       </div>
     </div>
