@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gross Tech Marketplace
+
+A full-stack marketplace MVP for daily essential goods — rice, sugar, oil, pulses, and spices. Connects buyers and sellers with secure Razorpay payments, a transparent platform fee, and an admin dashboard for inventory management and analytics.
+
+## Features
+
+### Roles
+| Role | Capabilities |
+|------|-------------|
+| **Buyer** | Browse products, add to cart, checkout via Razorpay, pay ₹10 to unlock seller contact |
+| **Seller** | Add/edit product listings with weight-based pricing, manage orders |
+| **Admin** | Manage inventory, view analytics (buyer activity, repeat customers), release payouts |
+
+### Payments
+- Razorpay integration for all transactions
+- Flat ₹20 platform fee on every order
+- 3-day payment hold — funds released to seller after delivery confirmation
+- ₹10 to unlock seller contact details
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router) + TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui
+- **Database:** PostgreSQL + Prisma ORM (v7 with `@prisma/adapter-pg`)
+- **Auth:** NextAuth.js v4 (Credentials + JWT, role-based)
+- **Payments:** Razorpay
+- **State:** React Context + useReducer (cart)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- PostgreSQL (or Docker)
+
+### 1. Clone & install
+
+```bash
+git clone https://github.com/nischithramakrishnegowda/grosstech.git
+cd grosstech
+npm install
+```
+
+### 2. Set up environment variables
+
+Copy `.env.example` to `.env.local` and fill in:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/grosstech"
+NEXTAUTH_SECRET="your-32-char-secret"
+NEXTAUTH_URL="http://localhost:3000"
+RAZORPAY_KEY_ID="rzp_test_..."
+RAZORPAY_KEY_SECRET="..."
+NEXT_PUBLIC_RAZORPAY_KEY_ID="rzp_test_..."
+```
+
+### 3. Set up the database
+
+```bash
+npx prisma migrate dev
+npx tsx prisma/seed.ts
+```
+
+### 4. Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Accounts (after seeding)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@grosstech.com | admin123 |
+| Seller | seller@grosstech.com | seller123 |
+| Buyer | buyer@grosstech.com | buyer123 |
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── (auth)/              # Login, Signup pages
+│   ├── products/            # Product listing & detail
+│   ├── checkout/            # Cart & payment flow
+│   ├── orders/              # Buyer order history
+│   ├── seller/              # Seller dashboard (listings, orders)
+│   ├── admin/               # Admin dashboard (inventory, analytics, payouts)
+│   └── api/                 # API routes
+├── components/
+│   ├── landing/             # Hero, categories, features sections
+│   ├── layout/              # Header, Footer
+│   ├── products/            # ProductCard, ProductForm, PriceSelector
+│   ├── checkout/            # CheckoutClient, RazorpayButton
+│   ├── seller/              # SellerListingsTable, SellerSidebar
+│   ├── admin/               # AdminSidebar, PayoutManager
+│   └── ui/                  # shadcn/ui components
+├── lib/
+│   ├── auth.ts              # NextAuth config
+│   ├── prisma.ts            # Prisma client singleton
+│   ├── razorpay.ts          # Razorpay client
+│   └── constants.ts         # PLATFORM_FEE, CONTACT_UNLOCK_FEE
+├── context/
+│   └── CartContext.tsx      # Cart state (persisted to localStorage)
+└── types/
+    └── index.ts             # NextAuth type augmentation
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Method | Route | Access |
+|--------|-------|--------|
+| GET | `/api/products` | Public |
+| GET | `/api/products/[id]` | Public |
+| POST | `/api/auth/register` | Public |
+| POST/GET | `/api/listings` | Seller |
+| PUT/DELETE | `/api/listings/[id]` | Seller (owner only) |
+| POST | `/api/payments/create-order` | Buyer |
+| POST | `/api/payments/verify` | Buyer |
+| POST | `/api/payments/contact-unlock` | Buyer |
+| GET | `/api/seller/contact/[sellerId]` | Buyer (if unlocked) |
+| GET | `/api/admin/analytics` | Admin |
+| GET/PUT | `/api/admin/payouts/[orderId]` | Admin |
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Recommended:** Vercel (frontend + API) + Railway or Supabase (PostgreSQL)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx prisma migrate deploy
+```
+
+Set all environment variables in your hosting dashboard before deploying.

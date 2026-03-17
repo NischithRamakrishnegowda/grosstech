@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAYMENT_HELD
+  RELEASED_TO_SELLER
+  CANCELLED
+}
+
+enum ListingSource {
+  ADMIN
+  SELLER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  password     String
+  phone        String?
+  role         Role     @default(BUYER)
+  businessName String?
+  address      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  listings               Listing[]
+  ordersAsBuyer          Order[]         @relation("BuyerOrders")
+  contactUnlocksAsBuyer  ContactUnlock[] @relation("BuyerUnlocks")
+  contactUnlocksAsSeller ContactUnlock[] @relation("SellerUnlocks")
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  imageUrl  String?
+  createdAt DateTime @default(now())
+
+  listings Listing[]
+
+  @@map("categories")
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  name        String
+  brand       String?
+  description String?
+  imageUrl    String?
+  source      ListingSource @default(SELLER)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  seller   User   @relation(fields: [sellerId], references: [id])
+  sellerId String
+
+  priceOptions PriceOption[]
+  orderItems   OrderItem[]
+
+  @@map("listings")
+}
+
+model PriceOption {
+  id     String @id @default(cuid())
+  weight String
+  price  Float
+  stock  Int    @default(0)
+
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+
+  orderItems OrderItem[]
+
+  @@map("price_options")
+}
+
+model Order {
+  id                String  @id @default(cuid())
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String? @unique
+  razorpaySignature String?
+
+  buyer   User   @relation("BuyerOrders", fields: [buyerId], references: [id])
+  buyerId String
+
+  subtotal    Float
+  platformFee Float @default(20)
+  total       Float
+
+  status             OrderStatus @default(PENDING)
+  paymentCapturedAt  DateTime?
+  releaseScheduledAt DateTime?
+  releasedAt         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String @id @default(cuid())
+  quantity     Int
+  priceAtOrder Float
+
+  order   Order  @relation(fields: [orderId], references: [id])
+  orderId String
+
+  listing   Listing @relation(fields: [listingId], references: [id])
+  listingId String
+
+  priceOption   PriceOption @relation(fields: [priceOptionId], references: [id])
+  priceOptionId String
+
+  @@map("order_items")
+}
+
+model ContactUnlock {
+  id                String  @id @default(cuid())
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String?
+  fee               Float   @default(10)
+  isPaid            Boolean @default(false)
+
+  buyer   User   @relation("BuyerUnlocks", fields: [buyerId], references: [id])
+  buyerId String
+
+  seller   User   @relation("SellerUnlocks", fields: [sellerId], references: [id])
+  sellerId String
+
+  unlockedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([buyerId, sellerId])
+  @@map("contact_unlocks")
+}
