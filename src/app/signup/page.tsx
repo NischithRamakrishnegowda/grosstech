@@ -54,13 +54,14 @@ export default function SignupPage() {
         return;
       }
 
+      // Sign in immediately, then redirect to verify page
       await signIn("credentials", {
         email: data.email,
         password: data.password,
         redirect: false,
       });
 
-      router.push("/");
+      router.push(`/verify?email=${encodeURIComponent(json.email)}&phone=${encodeURIComponent(json.phone || "")}`);
       router.refresh();
     } catch {
       toast.error("Something went wrong");

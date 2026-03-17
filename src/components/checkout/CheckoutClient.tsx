@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PLATFORM_FEE } from "@/lib/constants";
 
 export default function CheckoutClient() {
@@ -16,6 +18,17 @@ export default function CheckoutClient() {
   const { data: session } = useSession();
   const router = useRouter();
   const [paying, setPaying] = useState(false);
+
+  // Shipping fields (prefilled from session)
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingPhone, setShippingPhone] = useState("");
+  const [secondaryPhone, setSecondaryPhone] = useState("");
+
+  useEffect(() => {
+    if (session?.user) {
+      setShippingPhone((session.user as { phone?: string }).phone || "");
+    }
+  }, [session]);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = subtotal + PLATFORM_FEE;
@@ -27,6 +40,10 @@ export default function CheckoutClient() {
     }
     if (items.length === 0) {
       toast.error("Your cart is empty");
+      return;
+    }
+    if (!shippingAddress.trim()) {
+      toast.error("Please enter a delivery address");
       return;
     }
 
@@ -67,6 +84,9 @@ export default function CheckoutClient() {
                 priceOptionId: i.priceOptionId,
                 quantity: i.quantity,
               })),
+              shippingAddress,
+              shippingPhone,
+              secondaryPhone,
             }),
           });
           if (verifyRes.ok) {
@@ -77,7 +97,11 @@ export default function CheckoutClient() {
             toast.error("Payment verification failed");
           }
         },
-        prefill: { name: session.user.name || "", email: session.user.email || "" },
+        prefill: {
+          name: session.user.name || "",
+          email: session.user.email || "",
+          contact: shippingPhone,
+        },
         theme: { color: "#16a34a" },
         modal: { ondismiss: () => setPaying(false) },
       });
@@ -103,8 +127,9 @@ export default function CheckoutClient() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Cart items */}
-      <div className="lg:col-span-2 space-y-3">
+      {/* Left column: cart + shipping */}
+      <div className="lg:col-span-2 space-y-4">
+        {/* Cart items */}
         {items.map((item, idx) => (
           <div
             key={item.priceOptionId}
@@ -155,6 +180,53 @@ export default function CheckoutClient() {
             </div>
           </div>
         ))}
+
+        {/* Shipping details */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4 animate-fade-in">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-green-600" /> Delivery Details
+          </h3>
+
+          <div className="space-y-1.5">
+            <Label>Delivery Address <span className="text-red-500">*</span></Label>
+            <textarea
+              placeholder="Full address including city, state, pincode"
+              value={shippingAddress}
+              onChange={(e) => setShippingAddress(e.target.value)}
+              rows={3}
+              className="w-full border border-input rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5" /> Contact Phone
+              </Label>
+              <Input
+                type="tel"
+                placeholder="Primary phone"
+                value={shippingPhone}
+                onChange={(e) => setShippingPhone(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Alternate Phone <span className="text-gray-400 text-xs">(optional)</span></Label>
+              <Input
+                type="tel"
+                placeholder="Secondary number"
+                value={secondaryPhone}
+                onChange={(e) => setSecondaryPhone(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {session?.user && (
+            <p className="text-xs text-slate-400">
+              Order confirmation will be sent to <span className="text-slate-600">{session.user.email}</span>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Order summary */}

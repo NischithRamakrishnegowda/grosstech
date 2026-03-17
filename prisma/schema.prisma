@@ -25,21 +25,24 @@ enum ListingSource {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  password     String
-  phone        String?
-  role         Role     @default(BUYER)
-  businessName String?
-  address      String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String
+  phone         String?
+  role          Role     @default(BUYER)
+  businessName  String?
+  address       String?
+  emailVerified Boolean  @default(false)
+  phoneVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   listings               Listing[]
   ordersAsBuyer          Order[]         @relation("BuyerOrders")
   contactUnlocksAsBuyer  ContactUnlock[] @relation("BuyerUnlocks")
   contactUnlocksAsSeller ContactUnlock[] @relation("SellerUnlocks")
+  otpTokens              OtpToken[]
 
   @@map("users")
 }
@@ -111,6 +114,10 @@ model Order {
   releaseScheduledAt DateTime?
   releasedAt         DateTime?
 
+  shippingAddress String?
+  shippingPhone   String?
+  secondaryPhone  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -134,6 +141,33 @@ model OrderItem {
   priceOptionId String
 
   @@map("order_items")
+}
+
+enum OtpType {
+  EMAIL_VERIFY
+  PHONE_VERIFY
+  PASSWORD_RESET
+  LOGIN_OTP
+}
+
+enum OtpChannel {
+  EMAIL
+  PHONE
+}
+
+model OtpToken {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code           String
+  verifiedToken  String?
+  type           OtpType
+  channel        OtpChannel
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime    @default(now())
+
+  @@map("otp_tokens")
 }
 
 model ContactUnlock {
