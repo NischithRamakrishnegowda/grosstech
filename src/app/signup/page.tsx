@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Package, Loader2 } from "lucide-react";
+import { Package, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,7 @@ function SignupForm() {
   const defaultRole = roleParam === "SELLER" ? "SELLER" : "BUYER";
   const [loading, setLoading] = useState(false);
   const [rawPhone, setRawPhone] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -156,7 +157,12 @@ function SignupForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="password">Password *</Label>
-              <Input id="password" type="password" placeholder="Min. 6 characters" required {...register("password")} />
+              <div className="relative">
+                <Input id="password" type={showPassword ? "text" : "password"} placeholder="Min. 6 characters" required {...register("password")} className="pr-10" />
+                <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
             </div>
 

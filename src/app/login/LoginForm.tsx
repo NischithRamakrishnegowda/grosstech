@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Leaf, Loader2, Smartphone } from "lucide-react";
+import { Leaf, Loader2, Smartphone, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ export default function LoginForm() {
   const raw = searchParams.get("callbackUrl") || "/";
   const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // OTP login state
   const [otpIdentifier, setOtpIdentifier] = useState("");
@@ -163,7 +164,12 @@ export default function LoginForm() {
                   Forgot password?
                 </Link>
               </div>
-              <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
+              <div className="relative">
+                <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" {...register("password")} className="pr-10" />
+                <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
             </div>
 
@@ -189,11 +195,12 @@ export default function LoginForm() {
               <Smartphone className="w-4 h-4 text-green-600" />
               Login with OTP
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Input
                 placeholder="Email or phone number"
                 value={otpIdentifier}
                 onChange={(e) => setOtpIdentifier(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendOtp()}
                 disabled={otpSent}
                 className="flex-1"
               />
@@ -209,12 +216,13 @@ export default function LoginForm() {
             </div>
 
             {otpSent && (
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Input
                   placeholder="000000"
                   maxLength={6}
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && verifyOtpAndLogin()}
                   className="text-center text-lg tracking-widest font-mono flex-1"
                 />
                 <Button

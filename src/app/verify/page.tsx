@@ -140,6 +140,7 @@ function VerifyContent() {
                   maxLength={6}
                   value={emailCode}
                   onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && emailCode.length === 6 && verifyChannel("EMAIL", emailCode)}
                   className="text-center text-lg tracking-widest font-mono"
                 />
                 <div className="flex items-center justify-between">
@@ -181,6 +182,7 @@ function VerifyContent() {
                   maxLength={6}
                   value={phoneCode}
                   onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && phoneCode.length === 6 && verifyChannel("PHONE", phoneCode)}
                   className="text-center text-lg tracking-widest font-mono"
                 />
                 <div className="flex items-center justify-between">
