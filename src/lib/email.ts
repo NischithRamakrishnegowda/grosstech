@@ -1,11 +1,18 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { OtpType } from "@prisma/client";
 
-function getResend() {
-  if (!process.env.RESEND_API_KEY) return null;
-  return new Resend(process.env.RESEND_API_KEY);
+function getTransporter() {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD } = process.env;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) return null;
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT ? parseInt(SMTP_PORT) : 587,
+    secure: false,
+    auth: { user: SMTP_USER, pass: SMTP_PASSWORD },
+  });
 }
-const FROM = process.env.RESEND_FROM || "GrossTech <noreply@grosstech.in>";
+
+const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || "GrossTech <noreply@grosstech.in>";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "";
 
@@ -24,10 +31,10 @@ function otpPurpose(type: OtpType): string {
 }
 
 export async function sendOtpEmail(to: string, name: string, code: string, type: OtpType) {
-  const resend = getResend();
-  if (!resend) return;
+  const transporter = getTransporter();
+  if (!transporter) return;
   try {
-    await resend.emails.send({
+    await transporter.sendMail({
       from: FROM,
       to,
       subject: otpSubject(type),
@@ -102,7 +109,6 @@ function itemsTable(items: OrderItem[]): string {
 }
 
 function contactSection(items: OrderItem[]): string {
-  // Group by seller
   const sellerMap = new Map<string, { name: string; email: string; phone: string | null; source: string }>();
   for (const item of items) {
     const key = item.listing.seller.email;
@@ -149,11 +155,11 @@ function contactSection(items: OrderItem[]): string {
 }
 
 export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, items: OrderItem[]) {
-  const resend = getResend();
-  if (!resend) return;
+  const transporter = getTransporter();
+  if (!transporter) return;
   const shortId = order.id.slice(-8).toUpperCase();
   try {
-    await resend.emails.send({
+    await transporter.sendMail({
       from: FROM,
       to: buyer.email,
       subject: `Order #GT-${shortId} Confirmed — GrossTech`,
@@ -196,11 +202,11 @@ export async function sendSellerOrderNotification(
   sellerItems: OrderItem[],
   buyer: Buyer & { shippingAddress?: string | null; secondaryPhone?: string | null }
 ) {
-  const resend = getResend();
-  if (!resend) return;
+  const transporter = getTransporter();
+  if (!transporter) return;
   const shortId = order.id.slice(-8).toUpperCase();
   try {
-    await resend.emails.send({
+    await transporter.sendMail({
       from: FROM,
       to: seller.email,
       subject: `New Order #GT-${shortId} — GrossTech`,
@@ -233,12 +239,12 @@ export async function sendSellerOrderNotification(
 }
 
 export async function sendAdminOrderNotification(order: Order, buyer: Buyer, items: OrderItem[]) {
-  const resend = getResend();
-  if (!resend || !ADMIN_EMAIL) return;
+  const transporter = getTransporter();
+  if (!transporter || !ADMIN_EMAIL) return;
   const shortId = order.id.slice(-8).toUpperCase();
   const hasAdminItems = items.some((i) => i.listing.source === "ADMIN");
   try {
-    await resend.emails.send({
+    await transporter.sendMail({
       from: FROM,
       to: ADMIN_EMAIL,
       subject: `[GrossTech] New Order #GT-${shortId}${hasAdminItems ? " — Needs Fulfillment" : ""}`,
@@ -293,10 +299,10 @@ export async function sendAdminOrderNotification(order: Order, buyer: Buyer, ite
 }
 
 export async function sendPaymentFailedEmail(buyer: Buyer, amount: number) {
-  const resend = getResend();
-  if (!resend) return;
+  const transporter = getTransporter();
+  if (!transporter) return;
   try {
-    await resend.emails.send({
+    await transporter.sendMail({
       from: FROM,
       to: buyer.email,
       subject: "Payment failed — GrossTech",
