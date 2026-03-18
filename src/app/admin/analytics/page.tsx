@@ -47,7 +47,7 @@ export default async function AdminAnalyticsPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-8">Analytics</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: "Total Revenue", value: `₹${totalRevenue.toFixed(0)}`, icon: DollarSign, color: "bg-green-100 text-green-600" },
           { label: "Total Orders", value: orders.length, icon: ShoppingBag, color: "bg-blue-100 text-blue-600" },

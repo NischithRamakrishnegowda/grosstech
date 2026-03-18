@@ -214,9 +214,11 @@ export default function ProductCard({ listing }: { listing: Listing }) {
               {isOutOfStock ? "Sold Out" : "Add to Cart"}
             </Button>
           ) : (
-            <div className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-400 flex items-center justify-center">
-              Buyer account required
-            </div>
+            <Link href="/signup?role=BUYER" className="flex-1">
+              <div className="h-9 rounded-xl bg-green-50 border border-green-200 text-xs text-green-700 font-medium flex items-center justify-center hover:bg-green-100 transition-colors cursor-pointer w-full">
+                Sign up to buy
+              </div>
+            </Link>
           )}
         </div>
       </div>
