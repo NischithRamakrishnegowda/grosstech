@@ -15,7 +15,7 @@ export default async function AdminAnalyticsPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const totalRevenue = orders.reduce((sum: number, o) => sum + o.total, 0);
+  const totalRevenue = orders.reduce((sum: number, o: { total: number }) => sum + o.total, 0);
   const uniqueBuyers = new Set(orders.map((o) => o.buyerId)).size;
 
   // Per-buyer breakdown
