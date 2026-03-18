@@ -13,12 +13,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
   const { data: session, status } = useSession();
   const { items } = useCart();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const isInventoryActive = pathname.startsWith("/admin");
 
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -48,7 +51,11 @@ export default function Header() {
             {session?.user.role === "ADMIN" && (
               <Link
                 href="/admin/inventory"
-                className="px-4 py-2 rounded-lg text-green-600 font-semibold hover:bg-green-50 transition-all flex items-center gap-1.5"
+                className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 ${
+                  isInventoryActive
+                    ? "text-green-600 font-semibold bg-green-50"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 Inventory
@@ -147,7 +154,7 @@ export default function Header() {
             <Link href="/#about"    className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>About</Link>
             <Link href="/products" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>Products</Link>
             {session?.user.role === "ADMIN" && (
-              <Link href="/admin/inventory" className="block px-3 py-2.5 text-sm rounded-lg text-green-600 font-semibold hover:bg-green-50" onClick={() => setMobileOpen(false)}>Inventory</Link>
+              <Link href="/admin/inventory" className={`block px-3 py-2.5 text-sm rounded-lg ${isInventoryActive ? "text-green-600 font-semibold bg-green-50" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`} onClick={() => setMobileOpen(false)}>Inventory</Link>
             )}
             <Link href="/#contact" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>Contact</Link>
           </div>
