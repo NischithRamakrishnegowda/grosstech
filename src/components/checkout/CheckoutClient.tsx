@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone, ShieldAlert } from "lucide-react";
@@ -106,6 +107,7 @@ export default function CheckoutClient() {
             router.push(`/checkout/success?orderId=${orderId}`);
           } else {
             toast.error("Payment verification failed");
+            setPaying(false);
           }
         },
         prefill: {
@@ -323,7 +325,7 @@ export default function CheckoutClient() {
         </p>
       </div>
 
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
   );
 }

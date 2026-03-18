@@ -25,16 +25,17 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { items } = schema.parse(body);
 
-    // Fetch prices from DB — never trust client
+    // Fetch all prices in one query — never trust client
+    const priceOptions = await prisma.priceOption.findMany({
+      where: { id: { in: items.map((i) => i.priceOptionId) } },
+    });
+    const priceMap = new Map(priceOptions.map((p) => [p.id, p]));
+
     let subtotal = 0;
     for (const item of items) {
-      const priceOption = await prisma.priceOption.findUnique({
-        where: { id: item.priceOptionId },
-      });
-      if (!priceOption) {
-        return NextResponse.json({ error: "Invalid price option" }, { status: 400 });
-      }
-      subtotal += priceOption.price * item.quantity;
+      const po = priceMap.get(item.priceOptionId);
+      if (!po) return NextResponse.json({ error: "Invalid price option" }, { status: 400 });
+      subtotal += po.price * item.quantity;
     }
 
     const total = subtotal + PLATFORM_FEE;

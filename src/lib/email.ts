@@ -220,7 +220,7 @@ export async function sendSellerOrderNotification(
             <p style="margin:0 0 6px"><strong>Name:</strong> ${buyer.name}</p>
             <p style="margin:0 0 6px"><strong>Email:</strong> ${buyer.email}</p>
             <p style="margin:0 0 6px"><strong>Phone:</strong> ${buyer.phone || "—"}</p>
-            ${(order as any).secondaryPhone ? `<p style="margin:0 0 6px"><strong>Alt Phone:</strong> ${(order as any).secondaryPhone}</p>` : ""}
+            ${order.secondaryPhone ? `<p style="margin:0 0 6px"><strong>Alt Phone:</strong> ${order.secondaryPhone}</p>` : ""}
             ${order.shippingAddress ? `<p style="margin:0"><strong>Address:</strong> ${order.shippingAddress}</p>` : ""}
           </div>
           <p style="color:#6b7280;font-size:12px;margin-top:24px">Contact us at ${ADMIN_EMAIL} for any platform queries.</p>

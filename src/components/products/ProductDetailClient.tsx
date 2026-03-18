@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Script from "next/script";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -143,35 +144,41 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
         description: "Seller Contact Unlock",
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           setContactLoading(true);
-          const verifyRes = await fetch("/api/payments/contact-unlock/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-              sellerId: listing.seller.id,
-            }),
-          });
-          if (verifyRes.ok) {
-            const contactRes = await fetch(`/api/seller/contact/${listing.seller.id}`);
-            const contactData = await contactRes.json();
-            if (!contactData.locked) {
-              setContactInfo(contactData.seller);
-              setContactLocked(false);
-              toast.success("Seller contact unlocked!");
+          try {
+            const verifyRes = await fetch("/api/payments/contact-unlock/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                sellerId: listing.seller.id,
+              }),
+            });
+            if (verifyRes.ok) {
+              const contactRes = await fetch(`/api/seller/contact/${listing.seller.id}`);
+              const contactData = await contactRes.json();
+              if (!contactData.locked) {
+                setContactInfo(contactData.seller);
+                setContactLocked(false);
+                toast.success("Seller contact unlocked!");
+              }
+            } else {
+              toast.error("Payment verification failed");
             }
+          } finally {
+            setContactLoading(false);
+            setUnlockLoading(false);
           }
-          setContactLoading(false);
         },
         prefill: { email: session.user.email || "" },
         theme: { color: "#16a34a" },
+        modal: { ondismiss: () => setUnlockLoading(false) },
       });
       rzp.open();
     } catch (err) {
       toast.error("Failed to initiate payment");
       console.error(err);
-    } finally {
       setUnlockLoading(false);
     }
   }
@@ -343,8 +350,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
         </div>
       </div>
 
-      {/* Load Razorpay script */}
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
   );
 }

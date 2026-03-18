@@ -10,6 +10,7 @@ export async function GET(
   const { sellerId } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "BUYER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const unlock = await prisma.contactUnlock.findUnique({
     where: { buyerId_sellerId: { buyerId: session.user.id, sellerId } },

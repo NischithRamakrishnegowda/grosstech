@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -11,7 +12,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default async function SellerOrdersPage() {
   const session = await getServerSession(authOptions);
-  if (!session) return null;
+  if (!session) redirect("/login");
 
   const orders = await prisma.order.findMany({
     where: {

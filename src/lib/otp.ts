@@ -1,8 +1,10 @@
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { OtpType, OtpChannel } from "@prisma/client";
 
 export function generateOtpCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Use CSPRNG: random value in [0, 900000) + 100000 = [100000, 999999]
+  return (100000 + (crypto.randomInt(900000))).toString();
 }
 
 export async function generateAndSaveOtp(
@@ -58,7 +60,7 @@ export async function verifyOtpCode(
   let verifiedToken: string | undefined;
 
   if (type === OtpType.PASSWORD_RESET || type === OtpType.LOGIN_OTP) {
-    verifiedToken = `vt_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+    verifiedToken = `vt_${crypto.randomBytes(24).toString("hex")}`;
     const tokenExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
     await prisma.otpToken.update({
       where: { id: token.id },

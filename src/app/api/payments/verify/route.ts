@@ -38,8 +38,10 @@ export async function POST(req: Request) {
       schema.parse(body);
 
     // Verify signature
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+      .createHmac("sha256", secret)
       .update(razorpayOrderId + "|" + razorpayPaymentId)
       .digest("hex");
 
@@ -52,6 +54,10 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
+
+    // Idempotency: return existing order if already processed
+    const existingOrder = await prisma.order.findFirst({ where: { razorpayOrderId } });
+    if (existingOrder) return NextResponse.json({ orderId: existingOrder.id });
 
     // Recalculate subtotal from DB
     let subtotal = 0;

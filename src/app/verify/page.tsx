@@ -27,6 +27,7 @@ function VerifyContent() {
 
   function startCooldown(type: "email" | "phone") {
     if (type === "email") {
+      if (emailTimer.current) clearInterval(emailTimer.current);
       setEmailCooldown(60);
       emailTimer.current = setInterval(() => {
         setEmailCooldown((c) => {
@@ -35,6 +36,7 @@ function VerifyContent() {
         });
       }, 1000);
     } else {
+      if (phoneTimer.current) clearInterval(phoneTimer.current);
       setPhoneCooldown(60);
       phoneTimer.current = setInterval(() => {
         setPhoneCooldown((c) => {

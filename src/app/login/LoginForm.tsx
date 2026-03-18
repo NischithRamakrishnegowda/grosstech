@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -22,7 +22,8 @@ type FormData = z.infer<typeof schema>;
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const raw = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
   const [loading, setLoading] = useState(false);
 
   // OTP login state
@@ -31,6 +32,7 @@ export default function LoginForm() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -53,10 +55,11 @@ export default function LoginForm() {
   }
 
   function startCooldown() {
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
     setCooldown(60);
-    const t = setInterval(() => {
+    cooldownTimerRef.current = setInterval(() => {
       setCooldown((c) => {
-        if (c <= 1) { clearInterval(t); return 0; }
+        if (c <= 1) { clearInterval(cooldownTimerRef.current!); return 0; }
         return c - 1;
       });
     }, 1000);

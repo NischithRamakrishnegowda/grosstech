@@ -16,14 +16,17 @@ const schema = z.object({
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "BUYER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
     const body = await req.json();
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature, sellerId } =
       schema.parse(body);
 
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+      .createHmac("sha256", secret)
       .update(razorpayOrderId + "|" + razorpayPaymentId)
       .digest("hex");
 

@@ -46,11 +46,11 @@ export async function POST(req: Request) {
     // Send verification OTPs (fire-and-forget)
     Promise.all([
       generateAndSaveOtp(user.id, OtpType.EMAIL_VERIFY, OtpChannel.EMAIL).then((code) => {
-        console.log(`[OTP] EMAIL_VERIFY → ${user.email} — Code: ${code}`);
+        if (process.env.NODE_ENV !== "production") console.log(`[OTP] EMAIL_VERIFY → ${user.email} — Code: ${code}`);
         return sendOtpEmail(user.email, user.name, code, OtpType.EMAIL_VERIFY);
       }),
       generateAndSaveOtp(user.id, OtpType.PHONE_VERIFY, OtpChannel.PHONE).then((code) => {
-        console.log(`[OTP] PHONE_VERIFY → ${user.phone} — Code: ${code}`);
+        if (process.env.NODE_ENV !== "production") console.log(`[OTP] PHONE_VERIFY → ${user.phone} — Code: ${code}`);
         return sendOtpSms(user.phone!, code);
       }),
     ]).catch((e) => console.error("OTP send error:", e));

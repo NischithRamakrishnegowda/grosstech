@@ -11,7 +11,7 @@ export default function AdminEditProductPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [listing, setListing] = useState<ProductFormData | null>(null);
 
   useEffect(() => {
@@ -19,6 +19,7 @@ export default function AdminEditProductPage() {
       fetch("/api/categories").then((r) => r.json()),
       fetch(`/api/products/${params.id}`).then((r) => r.json()),
     ]).then(([cats, data]) => {
+      if (data?.error) { toast.error("Product not found"); router.push("/admin/inventory"); return; }
       setCategories(cats);
       setListing({
         name: data.name,
@@ -32,8 +33,11 @@ export default function AdminEditProductPage() {
           stock: p.stock,
         })),
       });
+    }).catch(() => {
+      toast.error("Failed to load product");
+      router.push("/admin/inventory");
     });
-  }, [params.id]);
+  }, [params.id, router]);
 
   async function handleSubmit(data: ProductFormData) {
     setLoading(true);

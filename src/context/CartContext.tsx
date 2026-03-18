@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useReducer, useEffect, useState } from "react";
+import { createContext, useContext, useReducer, useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 
 export interface CartItem {
@@ -93,17 +93,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(`cart_${userId}`, JSON.stringify(items));
   }, [items, cartUserId, userId]);
 
+  const addItem = useCallback((item: CartItem) => dispatch({ type: "ADD", item }), []);
+  const removeItem = useCallback((priceOptionId: string) => dispatch({ type: "REMOVE", priceOptionId }), []);
+  const updateQty = useCallback((priceOptionId: string, quantity: number) => dispatch({ type: "UPDATE_QTY", priceOptionId, quantity }), []);
+  const clearCart = useCallback(() => dispatch({ type: "CLEAR" }), []);
+  const value = useMemo(() => ({ items, addItem, removeItem, updateQty, clearCart }), [items, addItem, removeItem, updateQty, clearCart]);
+
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addItem: (item) => dispatch({ type: "ADD", item }),
-        removeItem: (priceOptionId) => dispatch({ type: "REMOVE", priceOptionId }),
-        updateQty: (priceOptionId, quantity) =>
-          dispatch({ type: "UPDATE_QTY", priceOptionId, quantity }),
-        clearCart: () => dispatch({ type: "CLEAR" }),
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );

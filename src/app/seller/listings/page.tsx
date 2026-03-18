@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -8,7 +9,7 @@ import SellerListingsTable from "@/components/seller/SellerListingsTable";
 
 export default async function SellerListingsPage() {
   const session = await getServerSession(authOptions);
-  if (!session) return null;
+  if (!session) redirect("/login");
 
   const listings = await prisma.listing.findMany({
     where: { sellerId: session.user.id },

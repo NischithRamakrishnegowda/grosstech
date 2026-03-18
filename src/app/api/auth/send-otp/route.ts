@@ -55,8 +55,9 @@ export async function POST(req: Request) {
       if (user.phone) await sendOtpSms(user.phone, code);
     }
 
-    // Always log OTP to server console (useful when email/SMS delivery is restricted)
-    console.log(`[OTP] ${channel} → ${channel === OtpChannel.EMAIL ? user.email : user.phone} — Code: ${code}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[OTP] ${channel} → ${channel === OtpChannel.EMAIL ? user.email : user.phone} — Code: ${code}`);
+    }
 
     return NextResponse.json({ sent: true });
   } catch (err) {
