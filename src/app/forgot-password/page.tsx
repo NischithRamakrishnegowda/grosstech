@@ -22,17 +22,27 @@ export default function ForgotPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function normalizePhone(val: string): string {
+    if (val.includes("@")) return val;
+    const digits = val.replace(/\D/g, "");
+    if (digits.length === 10) return `+91${digits}`;
+    if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+    return val;
+  }
+
   async function handleSendOtp() {
     if (!identifier.trim()) return;
+    const normalized = normalizePhone(identifier.trim());
+    setIdentifier(normalized);
     // Auto-detect channel
-    const detectedChannel = identifier.includes("@") ? "EMAIL" : "PHONE";
+    const detectedChannel = normalized.includes("@") ? "EMAIL" : "PHONE";
     setChannel(detectedChannel);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, channel: detectedChannel, type: "PASSWORD_RESET" }),
+        body: JSON.stringify({ identifier: normalized, channel: detectedChannel, type: "PASSWORD_RESET" }),
       });
       const j = await res.json();
       if (res.ok) {

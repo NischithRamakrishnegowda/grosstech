@@ -31,11 +31,13 @@ function SignupForm() {
   const roleParam = searchParams.get("role");
   const defaultRole = roleParam === "SELLER" ? "SELLER" : "BUYER";
   const [loading, setLoading] = useState(false);
+  const [rawPhone, setRawPhone] = useState("");
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -43,6 +45,12 @@ function SignupForm() {
   });
 
   const role = watch("role");
+
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+    setRawPhone(digits);
+    setValue("phone", digits ? `+91${digits}` : "", { shouldValidate: true });
+  }
 
   async function onSubmit(data: FormData) {
     setLoading(true);
@@ -122,7 +130,20 @@ function SignupForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="phone">Phone Number *</Label>
-              <Input id="phone" type="tel" placeholder="+91 90000 00000" {...register("phone")} />
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground select-none">
+                  +91
+                </span>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="90000 00000"
+                  value={rawPhone}
+                  onChange={handlePhoneChange}
+                  className="rounded-l-none"
+                  maxLength={10}
+                />
+              </div>
               {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
             </div>
 

@@ -65,15 +65,25 @@ export default function LoginForm() {
     }, 1000);
   }
 
+  function normalizePhone(val: string): string {
+    if (val.includes("@")) return val;
+    const digits = val.replace(/\D/g, "");
+    if (digits.length === 10) return `+91${digits}`;
+    if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+    return val;
+  }
+
   async function sendOtp() {
     if (!otpIdentifier.trim()) return;
-    const channel = otpIdentifier.includes("@") ? "EMAIL" : "PHONE";
+    const normalized = normalizePhone(otpIdentifier.trim());
+    setOtpIdentifier(normalized);
+    const channel = normalized.includes("@") ? "EMAIL" : "PHONE";
     setOtpLoading(true);
     try {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: otpIdentifier, channel, type: "LOGIN_OTP" }),
+        body: JSON.stringify({ identifier: normalized, channel, type: "LOGIN_OTP" }),
       });
       const j = await res.json();
       if (res.ok) {
