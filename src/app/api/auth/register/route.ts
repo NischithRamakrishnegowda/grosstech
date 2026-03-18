@@ -12,7 +12,7 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   role: z.enum(["BUYER", "SELLER"]),
-  phone: z.string().min(10),
+  phone: z.string().regex(/^(\+91|91)?[6-9]\d{9}$/, "Invalid Indian phone number"),
   businessName: z.string().optional(),
 });
 
@@ -43,8 +43,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send verification OTPs (fire-and-forget)
-    Promise.all([
+    // Send verification OTPs
+    await Promise.all([
       generateAndSaveOtp(user.id, OtpType.EMAIL_VERIFY, OtpChannel.EMAIL).then((code) => {
         if (process.env.NODE_ENV !== "production") console.log(`[OTP] EMAIL_VERIFY → ${user.email} — Code: ${code}`);
         return sendOtpEmail(user.email, user.name, code, OtpType.EMAIL_VERIFY);

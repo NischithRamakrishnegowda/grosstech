@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,18 +13,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+const indianPhone = /^(\+91|91)?[6-9]\d{9}$/;
+
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email"),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["BUYER", "SELLER"]),
-  phone: z.string().min(10, "Enter a valid phone number"),
+  phone: z.string().regex(indianPhone, "Enter a valid Indian mobile number"),
   businessName: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role");
+  const defaultRole = roleParam === "SELLER" ? "SELLER" : "BUYER";
   const [loading, setLoading] = useState(false);
 
   const {
@@ -34,7 +39,7 @@ export default function SignupPage() {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { role: "BUYER" },
+    defaultValues: { role: defaultRole },
   });
 
   const role = watch("role");

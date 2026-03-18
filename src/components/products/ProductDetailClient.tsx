@@ -286,9 +286,11 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
               {selectedOption.stock === 0 ? "Out of Stock" : "Add to Cart"}
             </Button>
           ) : (
-            <div className="w-full rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-500 py-3 text-center">
-              You need a buyer account to purchase products
-            </div>
+            <Link href="/signup?role=BUYER" className="w-full">
+              <Button size="lg" variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50">
+                Create a Buyer Account to Purchase
+              </Button>
+            </Link>
           )}
 
           {/* Seller info */}
