@@ -100,7 +100,7 @@ function VerifyContent() {
     }
   }
 
-  const bothDone = emailVerified && phoneVerified;
+  const eitherVerified = emailVerified || phoneVerified;
 
   function proceed() {
     router.push("/");
@@ -122,7 +122,7 @@ function VerifyContent() {
 
         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
           <p className="text-slate-600 text-sm text-center">
-            We sent 6-digit OTPs to your email and phone. Enter them below to verify your account.
+            Verify your email or phone number to continue. At least one is required.
           </p>
 
           {/* Email OTP */}
@@ -207,28 +207,19 @@ function VerifyContent() {
             )}
           </div>
 
-          {bothDone ? (
+          {eitherVerified ? (
             <Button onClick={proceed} className="w-full bg-green-600 hover:bg-green-700">
               <CheckCircle2 className="w-4 h-4 mr-2" /> Continue to Dashboard
             </Button>
           ) : (
-            <div className="space-y-2">
-              <Button
-                onClick={handleVerifyAll}
-                disabled={loading || (emailCode.length !== 6 && phoneCode.length !== 6)}
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Verify All
-              </Button>
-              <button
-                type="button"
-                onClick={proceed}
-                className="w-full text-sm text-slate-400 hover:text-slate-600 py-1"
-              >
-                Skip for now
-              </button>
-            </div>
+            <Button
+              onClick={handleVerifyAll}
+              disabled={loading || (emailCode.length !== 6 && phoneCode.length !== 6)}
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Verify
+            </Button>
           )}
         </div>
       </div>
