@@ -80,8 +80,12 @@ export async function POST(req: Request) {
       ),
     ]);
 
-    // Send order emails (fire-and-forget)
-    sendOrderEmails(order.id).catch((e) => console.error("Order email error:", e));
+    // Send order emails (awaited — fire-and-forget breaks on Vercel serverless)
+    try {
+      await sendOrderEmails(order.id);
+    } catch (e) {
+      console.error("Order email error:", e);
+    }
 
     return NextResponse.json({ orderId: order.id });
   } catch (err) {
