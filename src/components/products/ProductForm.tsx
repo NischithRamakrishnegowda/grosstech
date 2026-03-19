@@ -58,7 +58,7 @@ export default function ProductForm({
       description: "",
       imageUrl: "",
       categoryId: "",
-      priceOptions: [{ weight: "", price: 0, stock: 10 }],
+      priceOptions: [{ weight: "", price: "" as unknown as number, stock: "" as unknown as number }],
       ...defaultValues,
     },
   });
@@ -123,7 +123,7 @@ export default function ProductForm({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => append({ weight: "", price: 0, stock: 10 })}
+            onClick={() => append({ weight: "", price: "" as unknown as number, stock: "" as unknown as number })}
           >
             <Plus className="w-3.5 h-3.5 mr-1" /> Add Option
           </Button>
