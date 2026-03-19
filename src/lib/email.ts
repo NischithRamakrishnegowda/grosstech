@@ -109,48 +109,49 @@ function itemsTable(items: OrderItem[]): string {
 }
 
 function contactSection(items: OrderItem[]): string {
-  const sellerMap = new Map<string, { name: string; email: string; phone: string | null; source: string }>();
+  // Collect unique SELLER-sourced sellers
+  const sellerMap = new Map<string, { name: string; email: string; phone: string | null }>();
   for (const item of items) {
-    const key = item.listing.seller.email;
-    if (!sellerMap.has(key)) {
-      sellerMap.set(key, {
-        name: item.listing.seller.name,
-        email: item.listing.seller.email,
-        phone: item.listing.seller.phone,
-        source: item.listing.source,
-      });
+    if (item.listing.source === "SELLER") {
+      const key = item.listing.seller.email;
+      if (!sellerMap.has(key)) {
+        sellerMap.set(key, {
+          name: item.listing.seller.name,
+          email: item.listing.seller.email,
+          phone: item.listing.seller.phone,
+        });
+      }
     }
   }
 
-  const rows = Array.from(sellerMap.values())
-    .map((s) => {
-      if (s.source === "SELLER") {
-        return `<tr>
-          <td style="padding:8px 12px">${s.name}</td>
-          <td style="padding:8px 12px">${s.phone || "—"}</td>
-          <td style="padding:8px 12px">${s.email}</td>
-        </tr>`;
-      } else {
-        return `<tr>
-          <td style="padding:8px 12px">GrossTech Support</td>
-          <td style="padding:8px 12px">${ADMIN_PHONE || "—"}</td>
-          <td style="padding:8px 12px">${ADMIN_EMAIL}</td>
-        </tr>`;
-      }
-    })
+  const sellerRows = Array.from(sellerMap.values())
+    .map(
+      (s) => `<tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${s.name}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${s.phone || "—"}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${s.email}</td>
+      </tr>`
+    )
     .join("");
 
   return `
-    <h3 style="color:#374151;margin:24px 0 8px">For delivery queries, contact:</h3>
-    <table style="width:100%;border-collapse:collapse">
+    <h3 style="color:#374151;margin:24px 0 8px">Contact Details</h3>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
       <thead>
         <tr style="background:#f0fdf4">
-          <th style="padding:8px 12px;text-align:left;font-size:13px;color:#6b7280">Supplier</th>
+          <th style="padding:8px 12px;text-align:left;font-size:13px;color:#6b7280">Contact</th>
           <th style="padding:8px 12px;text-align:left;font-size:13px;color:#6b7280">Phone</th>
           <th style="padding:8px 12px;text-align:left;font-size:13px;color:#6b7280">Email</th>
         </tr>
       </thead>
-      <tbody>${rows}</tbody>
+      <tbody>
+        ${sellerRows}
+        <tr>
+          <td style="padding:8px 12px">GrossTech Admin</td>
+          <td style="padding:8px 12px">${ADMIN_PHONE || "—"}</td>
+          <td style="padding:8px 12px">${ADMIN_EMAIL}</td>
+        </tr>
+      </tbody>
     </table>`;
 }
 
@@ -162,13 +163,13 @@ export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, ite
     await transporter.sendMail({
       from: FROM,
       to: buyer.email,
-      subject: `Order #GT-${shortId} Confirmed — GrossTech`,
+      subject: `Order #GT-${shortId} Placed — GrossTech`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;background:#fff">
           <h2 style="color:#16a34a;margin:0 0 4px">GrossTech</h2>
           <p style="color:#6b7280;font-size:13px;margin:0 0 24px">Wholesale Marketplace</p>
-          <h3 style="margin:0 0 4px;color:#111827">Order Confirmed!</h3>
-          <p style="color:#374151;margin:0 0 24px">Hi ${buyer.name}, your order has been placed successfully.</p>
+          <h3 style="margin:0 0 4px;color:#111827">Order Placed!</h3>
+          <p style="color:#374151;margin:0 0 24px">Hi ${buyer.name}, your order has been placed successfully. The seller/admin will contact you shortly for delivery.</p>
           <div style="background:#f9fafb;border-radius:8px;padding:16px;margin:0 0 16px">
             <p style="margin:0 0 4px;font-size:13px;color:#6b7280">Order ID</p>
             <p style="margin:0;font-weight:600;color:#111827">#GT-${shortId}</p>

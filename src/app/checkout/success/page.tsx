@@ -21,15 +21,11 @@ export default async function CheckoutSuccessPage({
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Order Placed!</h1>
           <p className="text-gray-500 mt-2">
-            Your payment was successful. Your order has been confirmed.
+            Your order has been placed successfully. You will receive a confirmation email shortly.
           </p>
           {orderId && (
             <p className="text-xs text-gray-400 mt-2 font-mono">Order ID: {orderId}</p>
           )}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-6 text-sm text-amber-800">
-            <strong>Payment Hold:</strong> Your payment is held for 3 days to ensure successful delivery,
-            then released to the seller.
-          </div>
           <div className="flex gap-3 mt-8 justify-center">
             <Button asChild className="bg-green-600 hover:bg-green-700">
               <Link href="/orders">View My Orders</Link>

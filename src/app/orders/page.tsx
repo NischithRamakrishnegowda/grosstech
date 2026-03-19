@@ -8,9 +8,18 @@ import { Badge } from "@/components/ui/badge";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
-  PAYMENT_HELD: "bg-blue-100 text-blue-700",
-  RELEASED_TO_SELLER: "bg-green-100 text-green-700",
-  CANCELLED: "bg-red-100 text-red-700",
+  PAYMENT_HELD: "bg-green-100 text-green-700",
+  FAILED: "bg-red-100 text-red-700",
+  RELEASED_TO_SELLER: "bg-blue-100 text-blue-700",
+  CANCELLED: "bg-gray-100 text-gray-600",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Processing",
+  PAYMENT_HELD: "Order Placed",
+  FAILED: "Failed",
+  RELEASED_TO_SELLER: "Delivered",
+  CANCELLED: "Cancelled",
 };
 
 export default async function OrdersPage() {
@@ -54,8 +63,8 @@ export default async function OrdersPage() {
                         })}
                       </p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[order.status] || "bg-gray-100"}`}>
-                      {order.status.replace(/_/g, " ")}
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
+                      {STATUS_LABELS[order.status] || order.status.replace(/_/g, " ")}
                     </span>
                   </div>
 
