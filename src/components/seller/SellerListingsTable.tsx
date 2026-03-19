@@ -45,74 +45,125 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Prices & Stock</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {listings.map((listing) => (
-              <tr key={listing.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{listing.name}</p>
-                  {listing.brand && <p className="text-xs text-gray-400">{listing.brand}</p>}
-                </td>
-                <td className="px-4 py-3 text-gray-500">{listing.category.name}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {listing.priceOptions.slice(0, 3).map((opt) => (
-                      <span
-                        key={opt.id}
-                        className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
-                          opt.stock === 0
-                            ? "bg-red-50 text-red-600"
-                            : opt.stock <= 50
-                            ? "bg-orange-50 text-orange-600"
-                            : "bg-green-50 text-green-700"
-                        }`}
-                      >
-                        {opt.weight}: ₹{opt.price}
-                        <span className="font-semibold">({opt.stock})</span>
-                      </span>
-                    ))}
-                    {listing.priceOptions.length > 3 && (
-                      <span className="text-xs text-gray-400">+{listing.priceOptions.length - 3} more</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <Badge className={listing.isActive ? "bg-green-100 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-500 hover:bg-gray-100"}>
-                    {listing.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <Link href={`/products/${listing.id}`} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors">
-                      <Eye className="w-4 h-4" />
-                    </Link>
-                    <Link href={`/seller/listings/${listing.id}/edit`} className="p-1.5 text-gray-400 hover:text-green-600 transition-colors">
-                      <Pencil className="w-4 h-4" />
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(listing.id, listing.name)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <>
+      {/* Mobile card view */}
+      <div className="md:hidden space-y-3">
+        {listings.map((listing) => (
+          <div key={listing.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{listing.name}</p>
+                {listing.brand && <p className="text-xs text-gray-400">{listing.brand}</p>}
+                <p className="text-xs text-gray-500 mt-0.5">{listing.category.name}</p>
+              </div>
+              <Badge className={`shrink-0 ${listing.isActive ? "bg-green-100 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-500 hover:bg-gray-100"}`}>
+                {listing.isActive ? "Active" : "Inactive"}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-1 mb-3">
+              {listing.priceOptions.slice(0, 3).map((opt) => (
+                <span
+                  key={opt.id}
+                  className={`text-xs px-1.5 py-0.5 rounded ${
+                    opt.stock === 0
+                      ? "bg-red-50 text-red-600"
+                      : opt.stock <= 50
+                      ? "bg-orange-50 text-orange-600"
+                      : "bg-green-50 text-green-700"
+                  }`}
+                >
+                  {opt.weight}: ₹{opt.price} ({opt.stock})
+                </span>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 pt-2 border-t border-gray-50">
+              <Link href={`/products/${listing.id}`} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-500 transition-colors">
+                <Eye className="w-3.5 h-3.5" /> View
+              </Link>
+              <Link href={`/seller/listings/${listing.id}/edit`} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-600 transition-colors">
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </Link>
+              <button
+                onClick={() => handleDelete(listing.id, listing.name)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 transition-colors ml-auto"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Deactivate
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
+
+      {/* Desktop table view */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Prices & Stock</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {listings.map((listing) => (
+                <tr key={listing.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-gray-900">{listing.name}</p>
+                    {listing.brand && <p className="text-xs text-gray-400">{listing.brand}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">{listing.category.name}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {listing.priceOptions.slice(0, 3).map((opt) => (
+                        <span
+                          key={opt.id}
+                          className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                            opt.stock === 0
+                              ? "bg-red-50 text-red-600"
+                              : opt.stock <= 50
+                              ? "bg-orange-50 text-orange-600"
+                              : "bg-green-50 text-green-700"
+                          }`}
+                        >
+                          {opt.weight}: ₹{opt.price}
+                          <span className="font-semibold">({opt.stock})</span>
+                        </span>
+                      ))}
+                      {listing.priceOptions.length > 3 && (
+                        <span className="text-xs text-gray-400">+{listing.priceOptions.length - 3} more</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge className={listing.isActive ? "bg-green-100 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-500 hover:bg-gray-100"}>
+                      {listing.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <Link href={`/products/${listing.id}`} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors">
+                        <Eye className="w-4 h-4" />
+                      </Link>
+                      <Link href={`/seller/listings/${listing.id}/edit`} className="p-1.5 text-gray-400 hover:text-green-600 transition-colors">
+                        <Pencil className="w-4 h-4" />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(listing.id, listing.name)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
   );
 }

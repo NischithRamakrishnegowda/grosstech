@@ -25,7 +25,53 @@ export default async function AdminInventoryPage() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      {/* Mobile card view */}
+      <div className="md:hidden space-y-3">
+        {listings.map((listing) => (
+          <div key={listing.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{listing.name}</p>
+                {listing.brand && <p className="text-xs text-gray-400">{listing.brand}</p>}
+                <p className="text-xs text-gray-500 mt-0.5">{listing.category.name}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <Badge className={listing.source === "ADMIN" ? "bg-green-100 text-green-700 hover:bg-green-100" : "bg-blue-100 text-blue-700 hover:bg-blue-100"}>
+                  {listing.source === "ADMIN" ? "Gross Tech" : listing.seller.businessName || listing.seller.name}
+                </Badge>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${listing.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {listing.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1 mb-3">
+              {listing.priceOptions.slice(0, 3).map((opt) => (
+                <span
+                  key={opt.id}
+                  className={`text-xs px-1.5 py-0.5 rounded ${
+                    opt.stock === 0 ? "bg-red-50 text-red-600" : opt.stock <= 50 ? "bg-orange-50 text-orange-600" : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {opt.weight}: ₹{opt.price} ({opt.stock})
+                </span>
+              ))}
+            </div>
+            <div className="pt-2 border-t border-gray-50">
+              <Link href={`/admin/inventory/${listing.id}/edit`} className="text-sm text-green-600 hover:underline font-medium">
+                Edit →
+              </Link>
+            </div>
+          </div>
+        ))}
+        {listings.length === 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
+            No products yet.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
@@ -57,11 +103,7 @@ export default async function AdminInventoryPage() {
                         <span
                           key={opt.id}
                           className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
-                            opt.stock === 0
-                              ? "bg-red-50 text-red-600"
-                              : opt.stock <= 50
-                              ? "bg-orange-50 text-orange-600"
-                              : "bg-gray-100 text-gray-600"
+                            opt.stock === 0 ? "bg-red-50 text-red-600" : opt.stock <= 50 ? "bg-orange-50 text-orange-600" : "bg-gray-100 text-gray-600"
                           }`}
                         >
                           {opt.weight}: ₹{opt.price}

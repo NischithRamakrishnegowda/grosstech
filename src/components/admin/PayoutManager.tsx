@@ -111,7 +111,58 @@ export default function PayoutManager({
       {/* All orders */}
       <div>
         <h2 className="font-semibold text-gray-900 mb-4">All Orders</h2>
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+
+        {/* Mobile card view */}
+        <div className="md:hidden space-y-3">
+          {allOrders.map((order) => {
+            const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
+            return (
+              <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="font-mono text-xs text-gray-500">#{order.id.slice(-8).toUpperCase()}</p>
+                    <p className="font-semibold text-gray-900 mt-0.5">{order.buyer.name}</p>
+                    <p className="text-xs text-gray-400">{order.buyer.email}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-bold text-green-600">₹{order.total}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
+                      {STATUS_LABELS[order.status] || order.status}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mb-3">
+                  {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                  {order.releaseScheduledAt && order.status === "PAYMENT_HELD" && (
+                    <span className={`ml-2 ${isPastDue ? "text-green-600 font-medium" : "text-gray-400"}`}>
+                      · Due {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
+                    </span>
+                  )}
+                </p>
+                {order.status === "PAYMENT_HELD" && (
+                  <Button
+                    size="sm"
+                    variant={isPastDue ? "default" : "outline"}
+                    className={`w-full ${isPastDue ? "bg-green-600 hover:bg-green-700" : "border-orange-300 text-orange-600 hover:bg-orange-50"}`}
+                    onClick={() => handleRelease(order.id)}
+                    disabled={releasing === order.id}
+                  >
+                    {releasing === order.id ? (
+                      <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 animate-spin" /> Releasing...</span>
+                    ) : isPastDue ? (
+                      <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Release Payment</span>
+                    ) : (
+                      <span className="flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Force Release</span>
+                    )}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b">
@@ -129,9 +180,7 @@ export default function PayoutManager({
                   const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
                   return (
                     <tr key={order.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                        #{order.id.slice(-8).toUpperCase()}
-                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600">#{order.id.slice(-8).toUpperCase()}</td>
                       <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
                       <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
                       <td className="px-4 py-3">

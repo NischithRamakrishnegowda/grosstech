@@ -28,10 +28,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[68px]">
+        <div className="flex items-center justify-between h-[64px]">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shadow-sm group-hover:bg-green-700 transition-colors">
               <Leaf className="w-4 h-4 text-white" />
             </div>
@@ -66,13 +66,13 @@ export default function Header() {
             </Link>
           </nav>
 
-          {/* Right */}
-          <div className="flex items-center gap-2">
-            {/* Cart — only for buyers and guests */}
+          {/* Right — desktop shows full auth, mobile shows cart + hamburger only */}
+          <div className="flex items-center gap-1.5">
+            {/* Cart — buyers and guests */}
             {(!session || session.user.role === "BUYER") && (
               <Link
                 href="/checkout"
-                className="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-50 transition-colors"
+                className="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-slate-50 transition-colors"
               >
                 <ShoppingCart className="w-5 h-5 text-slate-600" />
                 {cartCount > 0 && (
@@ -83,13 +83,13 @@ export default function Header() {
               </Link>
             )}
 
-            {/* Auth */}
+            {/* Auth — desktop only for logged-in user dropdown */}
             {status === "loading" ? (
-              <div className="h-9 w-28 rounded-xl bg-slate-100 animate-pulse" />
+              <div className="hidden sm:block h-9 w-28 rounded-xl bg-slate-100 animate-pulse" />
             ) : session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-2 h-9 px-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all focus-visible:outline-none">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                     <User className="w-3 h-3 text-green-700" />
                   </div>
                   <span className="hidden sm:block max-w-[90px] truncate">{session.user.name}</span>
@@ -125,20 +125,23 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-                  Login
-                </Link>
-                <Link
-                  href="/signup"
-                  className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-green-100"
-                >
-                  Sign Up
-                </Link>
-              </div>
+              <>
+                {/* Desktop auth buttons */}
+                <div className="hidden md:flex items-center gap-2">
+                  <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-green-100"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              </>
             )}
 
-            {/* Mobile toggle */}
+            {/* Mobile hamburger */}
             <button
               className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-50 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -151,12 +154,25 @@ export default function Header() {
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="md:hidden border-t border-slate-100 py-3 space-y-0.5 pb-4">
-            <Link href="/#about"    className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>About</Link>
+            <Link href="/#about" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>About</Link>
             <Link href="/products" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>Products</Link>
             {session?.user.role === "ADMIN" && (
               <Link href="/admin/inventory" className={`block px-3 py-2.5 text-sm rounded-lg ${isInventoryActive ? "text-green-600 font-semibold bg-green-50" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`} onClick={() => setMobileOpen(false)}>Inventory</Link>
             )}
             <Link href="/#contact" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>Contact</Link>
+
+            {/* Auth links in mobile menu for guests */}
+            {!session && (
+              <>
+                <div className="border-t border-slate-100 my-2" />
+                <Link href="/login" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium" onClick={() => setMobileOpen(false)}>
+                  Login
+                </Link>
+                <Link href="/signup" className="block px-3 py-2.5 text-sm rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors text-center" onClick={() => setMobileOpen(false)}>
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         )}
       </div>
