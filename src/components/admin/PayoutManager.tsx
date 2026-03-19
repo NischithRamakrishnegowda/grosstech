@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface OrderItem {
   id: string;
@@ -26,8 +27,17 @@ interface Order {
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
   PAYMENT_HELD: "bg-blue-100 text-blue-700",
+  FAILED: "bg-red-100 text-red-700",
   RELEASED_TO_SELLER: "bg-green-100 text-green-700",
-  CANCELLED: "bg-red-100 text-red-700",
+  CANCELLED: "bg-gray-100 text-gray-600",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Processing",
+  PAYMENT_HELD: "Order Placed",
+  FAILED: "Failed",
+  RELEASED_TO_SELLER: "Released",
+  CANCELLED: "Cancelled",
 };
 
 export default function PayoutManager({
@@ -38,9 +48,12 @@ export default function PayoutManager({
   allOrders: Order[];
 }) {
   const router = useRouter();
+  const [releasing, setReleasing] = useState<string | null>(null);
 
   async function handleRelease(orderId: string) {
+    setReleasing(orderId);
     const res = await fetch(`/api/admin/payouts/${orderId}`, { method: "PUT" });
+    setReleasing(null);
     if (res.ok) {
       toast.success("Payment released to seller!");
       router.refresh();
@@ -108,35 +121,55 @@ export default function PayoutManager({
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Total</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Release Date</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {allOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      #{order.id.slice(-8).toUpperCase()}
-                    </td>
-                    <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
-                    <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100"}`}>
-                        {order.status.replace(/_/g, " ")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {new Date(order.createdAt).toLocaleDateString("en-IN")}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {order.releaseScheduledAt ? (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
+                {allOrders.map((order) => {
+                  const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
+                  return (
+                    <tr key={order.id} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
+                      <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
+                          {STATUS_LABELS[order.status] || order.status.replace(/_/g, " ")}
                         </span>
-                      ) : "—"}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                        {order.releaseScheduledAt && order.status === "PAYMENT_HELD" && (
+                          <span className={`flex items-center gap-1 mt-0.5 ${isPastDue ? "text-green-600" : "text-gray-400"}`}>
+                            <Clock className="w-3 h-3" />
+                            Due {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {order.status === "PAYMENT_HELD" && (
+                          <Button
+                            size="sm"
+                            variant={isPastDue ? "default" : "outline"}
+                            className={isPastDue ? "bg-green-600 hover:bg-green-700 h-7 text-xs" : "h-7 text-xs border-orange-300 text-orange-600 hover:bg-orange-50"}
+                            onClick={() => handleRelease(order.id)}
+                            disabled={releasing === order.id}
+                          >
+                            {releasing === order.id ? (
+                              <span className="flex items-center gap-1"><Clock className="w-3 h-3 animate-spin" /> Releasing...</span>
+                            ) : isPastDue ? (
+                              <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Release</span>
+                            ) : (
+                              <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Force Release</span>
+                            )}
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
