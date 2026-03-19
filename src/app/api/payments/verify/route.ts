@@ -56,16 +56,29 @@ export async function POST(req: Request) {
     const now = new Date();
     const releaseScheduledAt = new Date(now.getTime() + PAYMENT_HOLD_DAYS * 24 * 60 * 60 * 1000);
 
-    const order = await prisma.order.update({
-      where: { id: existingOrder.id },
-      data: {
-        razorpayPaymentId,
-        razorpaySignature,
-        status: "PAYMENT_HELD",
-        paymentCapturedAt: now,
-        releaseScheduledAt,
-      },
+    // Fetch order items to decrement stock
+    const orderItems = await prisma.orderItem.findMany({
+      where: { orderId: existingOrder.id },
     });
+
+    const [order] = await prisma.$transaction([
+      prisma.order.update({
+        where: { id: existingOrder.id },
+        data: {
+          razorpayPaymentId,
+          razorpaySignature,
+          status: "PAYMENT_HELD",
+          paymentCapturedAt: now,
+          releaseScheduledAt,
+        },
+      }),
+      ...orderItems.map((item) =>
+        prisma.priceOption.update({
+          where: { id: item.priceOptionId },
+          data: { stock: { decrement: item.quantity } },
+        })
+      ),
+    ]);
 
     // Send order emails (fire-and-forget)
     sendOrderEmails(order.id).catch((e) => console.error("Order email error:", e));
