@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PLATFORM_FEE, PAYMENT_HOLD_DAYS } from "@/lib/constants";
+import { PAYMENT_HOLD_DAYS } from "@/lib/constants";
 import crypto from "crypto";
 import { z } from "zod";
 import {
@@ -16,16 +16,6 @@ const schema = z.object({
   razorpayOrderId: z.string(),
   razorpayPaymentId: z.string(),
   razorpaySignature: z.string(),
-  items: z.array(
-    z.object({
-      listingId: z.string(),
-      priceOptionId: z.string(),
-      quantity: z.number().int().positive(),
-    })
-  ),
-  shippingAddress: z.string().optional(),
-  shippingPhone: z.string().optional(),
-  secondaryPhone: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -34,73 +24,46 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { razorpayOrderId, razorpayPaymentId, razorpaySignature, items, shippingAddress, shippingPhone, secondaryPhone } =
-      schema.parse(body);
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = schema.parse(body);
 
-    // Verify signature
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
-    const expectedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(razorpayOrderId + "|" + razorpayPaymentId)
-      .digest("hex");
+    const isMock = process.env.RAZORPAY_MODE === "mock";
 
-    if (expectedSignature !== razorpaySignature) {
-      // Send payment failed email
-      const buyer = await prisma.user.findUnique({ where: { id: session.user.id } });
-      if (buyer) {
-        const approxTotal = 0;
-        sendPaymentFailedEmail(buyer, approxTotal).catch(() => {});
+    if (!isMock) {
+      // Verify HMAC-SHA256 signature
+      const secret = process.env.RAZORPAY_KEY_SECRET;
+      if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
+      const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(razorpayOrderId + "|" + razorpayPaymentId)
+        .digest("hex");
+
+      if (expectedSignature !== razorpaySignature) {
+        const buyer = await prisma.user.findUnique({ where: { id: session.user.id } });
+        if (buyer) sendPaymentFailedEmail(buyer, 0).catch(() => {});
+        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
       }
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    // Idempotency: return existing order if already processed
+    // Find the PENDING order created at checkout initiation
     const existingOrder = await prisma.order.findFirst({ where: { razorpayOrderId } });
-    if (existingOrder) return NextResponse.json({ orderId: existingOrder.id });
+    if (!existingOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-    // Recalculate subtotal from DB
-    let subtotal = 0;
-    const itemsWithPrice = await Promise.all(
-      items.map(async (item) => {
-        const priceOption = await prisma.priceOption.findUnique({
-          where: { id: item.priceOptionId },
-        });
-        if (!priceOption) throw new Error("Invalid price option");
-        subtotal += priceOption.price * item.quantity;
-        return { ...item, priceAtOrder: priceOption.price };
-      })
-    );
+    // Idempotency: already processed
+    if (existingOrder.status === "PAYMENT_HELD") {
+      return NextResponse.json({ orderId: existingOrder.id });
+    }
 
-    const total = subtotal + PLATFORM_FEE;
     const now = new Date();
-    const releaseScheduledAt = new Date(
-      now.getTime() + PAYMENT_HOLD_DAYS * 24 * 60 * 60 * 1000
-    );
+    const releaseScheduledAt = new Date(now.getTime() + PAYMENT_HOLD_DAYS * 24 * 60 * 60 * 1000);
 
-    const order = await prisma.order.create({
+    const order = await prisma.order.update({
+      where: { id: existingOrder.id },
       data: {
-        razorpayOrderId,
         razorpayPaymentId,
         razorpaySignature,
-        buyerId: session.user.id,
-        subtotal,
-        platformFee: PLATFORM_FEE,
-        total,
         status: "PAYMENT_HELD",
         paymentCapturedAt: now,
         releaseScheduledAt,
-        shippingAddress: shippingAddress || null,
-        shippingPhone: shippingPhone || null,
-        secondaryPhone: secondaryPhone || null,
-        items: {
-          create: itemsWithPrice.map((item) => ({
-            listingId: item.listingId,
-            priceOptionId: item.priceOptionId,
-            quantity: item.quantity,
-            priceAtOrder: item.priceAtOrder,
-          })),
-        },
       },
     });
 
@@ -132,10 +95,8 @@ async function sendOrderEmails(orderId: string) {
   });
   if (!fullOrder) return;
 
-  // Email buyer
   await sendBuyerOrderConfirmation(fullOrder.buyer, fullOrder, fullOrder.items as Parameters<typeof sendBuyerOrderConfirmation>[2]);
 
-  // Email each unique seller (only for SELLER-sourced items)
   const sellerMap = new Map<string, { seller: { name: string; email: string }; items: typeof fullOrder.items }>();
   for (const item of fullOrder.items) {
     if (item.listing.seller.role === "SELLER") {
@@ -153,7 +114,6 @@ async function sendOrderEmails(orderId: string) {
     );
   }
 
-  // Always email admin
   await sendAdminOrderNotification(
     fullOrder,
     fullOrder.buyer,

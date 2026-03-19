@@ -14,6 +14,9 @@ const schema = z.object({
       quantity: z.number().int().positive(),
     })
   ),
+  shippingAddress: z.string().optional(),
+  shippingPhone: z.string().optional(),
+  secondaryPhone: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -23,37 +26,78 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { items } = schema.parse(body);
+    const { items, shippingAddress, shippingPhone, secondaryPhone } = schema.parse(body);
 
-    // Fetch all prices in one query — never trust client
+    // Fetch all prices from DB — never trust client
     const priceOptions = await prisma.priceOption.findMany({
       where: { id: { in: items.map((i) => i.priceOptionId) } },
     });
     const priceMap = new Map(priceOptions.map((p) => [p.id, p]));
 
     let subtotal = 0;
+    const itemsWithPrice: Array<{ listingId: string; priceOptionId: string; quantity: number; priceAtOrder: number }> = [];
     for (const item of items) {
       const po = priceMap.get(item.priceOptionId);
       if (!po) return NextResponse.json({ error: "Invalid price option" }, { status: 400 });
       subtotal += po.price * item.quantity;
+      itemsWithPrice.push({ ...item, priceAtOrder: po.price });
     }
 
     const total = subtotal + PLATFORM_FEE;
+    const isMock = process.env.RAZORPAY_MODE === "mock";
 
-    const order = await razorpay.orders.create({
-      amount: Math.round(total * 100), // paise
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`,
+    let razorpayOrderId: string;
+    let amount: number;
+    let currency = "INR";
+
+    if (isMock) {
+      // No real Razorpay call in mock mode
+      razorpayOrderId = `mock_order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      amount = Math.round(total * 100);
+    } else {
+      const rzpOrder = await razorpay.orders.create({
+        amount: Math.round(total * 100),
+        currency: "INR",
+        receipt: `receipt_${Date.now()}`,
+      });
+      razorpayOrderId = rzpOrder.id;
+      amount = rzpOrder.amount as number;
+      currency = rzpOrder.currency;
+    }
+
+    // Store order as PENDING in DB immediately
+    const order = await prisma.order.create({
+      data: {
+        razorpayOrderId,
+        buyerId: session.user.id,
+        subtotal,
+        platformFee: PLATFORM_FEE,
+        total,
+        status: "PENDING",
+        shippingAddress: shippingAddress || null,
+        shippingPhone: shippingPhone || null,
+        secondaryPhone: secondaryPhone || null,
+        items: {
+          create: itemsWithPrice.map((item) => ({
+            listingId: item.listingId,
+            priceOptionId: item.priceOptionId,
+            quantity: item.quantity,
+            priceAtOrder: item.priceAtOrder,
+          })),
+        },
+      },
     });
 
     return NextResponse.json({
-      razorpayOrderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      razorpayOrderId,
+      internalOrderId: order.id,
+      amount,
+      currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
       subtotal,
       platformFee: PLATFORM_FEE,
       total,
+      isMock,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

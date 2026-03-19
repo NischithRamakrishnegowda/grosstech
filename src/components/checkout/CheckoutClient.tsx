@@ -13,12 +13,20 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { PLATFORM_FEE } from "@/lib/constants";
+import MockPaymentModal from "@/components/checkout/MockPaymentModal";
 
 export default function CheckoutClient() {
   const { items, removeItem, updateQty, clearCart } = useCart();
   const { data: session } = useSession();
   const router = useRouter();
   const [paying, setPaying] = useState(false);
+
+  // Mock modal state
+  const [mockModal, setMockModal] = useState<{
+    internalOrderId: string;
+    razorpayOrderId: string;
+    amount: number;
+  } | null>(null);
 
   // Shipping fields (prefilled from session)
   const [lane1, setLane1] = useState("");
@@ -61,6 +69,7 @@ export default function CheckoutClient() {
 
     setPaying(true);
     try {
+      // Create order (stores PENDING in DB, includes shipping + items)
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,11 +79,26 @@ export default function CheckoutClient() {
             priceOptionId: i.priceOptionId,
             quantity: i.quantity,
           })),
+          shippingAddress,
+          shippingPhone,
+          secondaryPhone,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      if (data.isMock) {
+        // Show mock payment modal
+        setMockModal({
+          internalOrderId: data.internalOrderId,
+          razorpayOrderId: data.razorpayOrderId,
+          amount: data.amount,
+        });
+        setPaying(false);
+        return;
+      }
+
+      // Real Razorpay modal
       const Razorpay = (window as unknown as { Razorpay: new (opts: unknown) => { open: () => void } }).Razorpay;
       const rzp = new Razorpay({
         key: data.keyId,
@@ -91,14 +115,6 @@ export default function CheckoutClient() {
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
-              items: items.map((i) => ({
-                listingId: i.listingId,
-                priceOptionId: i.priceOptionId,
-                quantity: i.quantity,
-              })),
-              shippingAddress,
-              shippingPhone,
-              secondaryPhone,
             }),
           });
           if (verifyRes.ok) {
@@ -106,6 +122,12 @@ export default function CheckoutClient() {
             clearCart();
             router.push(`/checkout/success?orderId=${orderId}`);
           } else {
+            // Mark order as FAILED
+            await fetch("/api/payments/update-status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ internalOrderId: data.internalOrderId, status: "FAILED" }),
+            }).catch(() => {});
             toast.error("Payment verification failed");
             setPaying(false);
           }
@@ -116,7 +138,17 @@ export default function CheckoutClient() {
           contact: shippingPhone,
         },
         theme: { color: "#16a34a" },
-        modal: { ondismiss: () => setPaying(false) },
+        modal: {
+          ondismiss: () => {
+            // Mark order as CANCELLED
+            fetch("/api/payments/update-status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ internalOrderId: data.internalOrderId, status: "CANCELLED" }),
+            }).catch(() => {});
+            setPaying(false);
+          },
+        },
       });
       rzp.open();
     } catch {
@@ -155,177 +187,192 @@ export default function CheckoutClient() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left column: cart + shipping */}
-      <div className="lg:col-span-2 space-y-4">
-        {/* Cart items */}
-        {items.map((item, idx) => (
-          <div
-            key={item.priceOptionId}
-            className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 hover:shadow-md transition-all duration-200 animate-slide-right"
-            style={{ animationDelay: `${idx * 60}ms` }}
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
-              {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
-              ) : "📦"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 truncate">{item.name}</p>
-              <p className="text-sm text-gray-500">{item.brand ? `${item.brand} · ` : ""}{item.weight}</p>
-              <p className="text-green-600 font-bold mt-1">₹{item.price} <span className="text-xs text-gray-400 font-normal">/ unit</span></p>
-              {item.quantity >= item.stock && (
-                <p className="text-xs text-orange-500 flex items-center gap-1 mt-1">
-                  <AlertCircle className="w-3 h-3" /> Max stock reached
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              <button
-                onClick={() => removeItem(item.priceOptionId)}
-                className="text-gray-300 hover:text-red-500 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => updateQty(item.priceOptionId, item.quantity - 1)}
-                  disabled={item.quantity <= 1}
-                  className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
-                >
-                  <Minus className="w-3 h-3" />
-                </button>
-                <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
-                <button
-                  onClick={() => updateQty(item.priceOptionId, item.quantity + 1)}
-                  disabled={item.quantity >= item.stock}
-                  className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
+    <>
+      {mockModal && (
+        <MockPaymentModal
+          internalOrderId={mockModal.internalOrderId}
+          razorpayOrderId={mockModal.razorpayOrderId}
+          amount={mockModal.amount}
+          onClearCart={clearCart}
+          onClose={() => {
+            setMockModal(null);
+            setPaying(false);
+          }}
+        />
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column: cart + shipping */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Cart items */}
+          {items.map((item, idx) => (
+            <div
+              key={item.priceOptionId}
+              className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 hover:shadow-md transition-all duration-200 animate-slide-right"
+              style={{ animationDelay: `${idx * 60}ms` }}
+            >
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
+                {item.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+                ) : "📦"}
               </div>
-              <p className="text-sm font-bold text-gray-800">₹{item.price * item.quantity}</p>
-            </div>
-          </div>
-        ))}
-
-        {/* Shipping details */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4 animate-fade-in">
-          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-green-600" /> Delivery Details
-          </h3>
-
-          <div className="space-y-1.5">
-            <Label>Lane 1 <span className="text-red-500">*</span></Label>
-            <Input
-              placeholder="House no., Street, Area"
-              value={lane1}
-              onChange={(e) => setLane1(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Lane 2 <span className="text-gray-400 text-xs">(optional)</span></Label>
-            <Input
-              placeholder="Apartment, Building, Colony"
-              value={lane2}
-              onChange={(e) => setLane2(e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Pincode <span className="text-red-500">*</span></Label>
-              <Input
-                placeholder="6-digit pincode"
-                maxLength={6}
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Landmark <span className="text-gray-400 text-xs">(optional)</span></Label>
-              <Input
-                placeholder="Near school, temple, etc."
-                value={landmark}
-                onChange={(e) => setLandmark(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5" /> Contact Phone
-              </Label>
-              <Input
-                type="tel"
-                placeholder={session?.user?.phone || "Primary phone"}
-                value={shippingPhone}
-                onChange={(e) => setShippingPhone(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Alternate Phone <span className="text-gray-400 text-xs">(optional)</span></Label>
-              <Input
-                type="tel"
-                placeholder="Secondary number"
-                value={secondaryPhone}
-                onChange={(e) => setSecondaryPhone(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {session?.user && (
-            <p className="text-xs text-slate-400">
-              Order confirmation will be sent to <span className="text-slate-600">{session.user.email}</span>
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Order summary */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm animate-fade-in">
-        <h2 className="font-bold text-gray-900 mb-4 text-lg">Order Summary</h2>
-
-        <div className="space-y-3 text-sm">
-          {items.map((item) => (
-            <div key={item.priceOptionId} className="flex justify-between text-gray-500">
-              <span className="truncate mr-2">{item.name} × {item.quantity}</span>
-              <span className="shrink-0 font-medium text-gray-700">₹{item.price * item.quantity}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{item.name}</p>
+                <p className="text-sm text-gray-500">{item.brand ? `${item.brand} · ` : ""}{item.weight}</p>
+                <p className="text-green-600 font-bold mt-1">₹{item.price} <span className="text-xs text-gray-400 font-normal">/ unit</span></p>
+                {item.quantity >= item.stock && (
+                  <p className="text-xs text-orange-500 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" /> Max stock reached
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <button
+                  onClick={() => removeItem(item.priceOptionId)}
+                  className="text-gray-300 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => updateQty(item.priceOptionId, item.quantity - 1)}
+                    disabled={item.quantity <= 1}
+                    className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
+                  <button
+                    onClick={() => updateQty(item.priceOptionId, item.quantity + 1)}
+                    disabled={item.quantity >= item.stock}
+                    className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+                <p className="text-sm font-bold text-gray-800">₹{item.price * item.quantity}</p>
+              </div>
             </div>
           ))}
-          <Separator />
-          <div className="flex justify-between text-gray-600">
-            <span>Subtotal</span>
-            <span>₹{subtotal}</span>
-          </div>
-          <div className="flex justify-between text-gray-600">
-            <span>Platform Fee</span>
-            <span>₹{PLATFORM_FEE}</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between font-bold text-gray-900 text-base">
-            <span>Total</span>
-            <span className="text-green-600">₹{total}</span>
+
+          {/* Shipping details */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4 animate-fade-in">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-green-600" /> Delivery Details
+            </h3>
+
+            <div className="space-y-1.5">
+              <Label>Lane 1 <span className="text-red-500">*</span></Label>
+              <Input
+                placeholder="House no., Street, Area"
+                value={lane1}
+                onChange={(e) => setLane1(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Lane 2 <span className="text-gray-400 text-xs">(optional)</span></Label>
+              <Input
+                placeholder="Apartment, Building, Colony"
+                value={lane2}
+                onChange={(e) => setLane2(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Pincode <span className="text-red-500">*</span></Label>
+                <Input
+                  placeholder="6-digit pincode"
+                  maxLength={6}
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Landmark <span className="text-gray-400 text-xs">(optional)</span></Label>
+                <Input
+                  placeholder="Near school, temple, etc."
+                  value={landmark}
+                  onChange={(e) => setLandmark(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" /> Contact Phone
+                </Label>
+                <Input
+                  type="tel"
+                  placeholder={session?.user?.phone || "Primary phone"}
+                  value={shippingPhone}
+                  onChange={(e) => setShippingPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Alternate Phone <span className="text-gray-400 text-xs">(optional)</span></Label>
+                <Input
+                  type="tel"
+                  placeholder="Secondary number"
+                  value={secondaryPhone}
+                  onChange={(e) => setSecondaryPhone(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {session?.user && (
+              <p className="text-xs text-slate-400">
+                Order confirmation will be sent to <span className="text-slate-600">{session.user.email}</span>
+              </p>
+            )}
           </div>
         </div>
 
-        <Button
-          size="lg"
-          className="w-full mt-6 bg-green-600 hover:bg-green-700 transition-all duration-200 active:scale-[0.98]"
-          onClick={handlePayment}
-          disabled={paying}
-        >
-          {paying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-          Pay ₹{total} via Razorpay
-        </Button>
+        {/* Order summary */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm animate-fade-in">
+          <h2 className="font-bold text-gray-900 mb-4 text-lg">Order Summary</h2>
 
-        <p className="text-xs text-gray-400 text-center mt-3">
-          Secure payment powered by Razorpay
-        </p>
+          <div className="space-y-3 text-sm">
+            {items.map((item) => (
+              <div key={item.priceOptionId} className="flex justify-between text-gray-500">
+                <span className="truncate mr-2">{item.name} × {item.quantity}</span>
+                <span className="shrink-0 font-medium text-gray-700">₹{item.price * item.quantity}</span>
+              </div>
+            ))}
+            <Separator />
+            <div className="flex justify-between text-gray-600">
+              <span>Subtotal</span>
+              <span>₹{subtotal}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Platform Fee</span>
+              <span>₹{PLATFORM_FEE}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-bold text-gray-900 text-base">
+              <span>Total</span>
+              <span className="text-green-600">₹{total}</span>
+            </div>
+          </div>
+
+          <Button
+            size="lg"
+            className="w-full mt-6 bg-green-600 hover:bg-green-700 transition-all duration-200 active:scale-[0.98]"
+            onClick={handlePayment}
+            disabled={paying}
+          >
+            {paying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Pay ₹{total} via Razorpay
+          </Button>
+
+          <p className="text-xs text-gray-400 text-center mt-3">
+            Secure payment powered by Razorpay
+          </p>
+        </div>
       </div>
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-    </div>
+    </>
   );
 }
