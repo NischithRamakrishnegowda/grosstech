@@ -147,7 +147,7 @@ export default function ProductForm({
               <div className="w-28">
                 <Input
                   type="number"
-                  placeholder="Price ₹"
+                  placeholder="Price (e.g. 250)"
                   {...register(`priceOptions.${index}.price`)}
                 />
                 {errors.priceOptions?.[index]?.price && (
@@ -157,7 +157,7 @@ export default function ProductForm({
               <div className="w-24">
                 <Input
                   type="number"
-                  placeholder="Stock"
+                  placeholder="Stock (e.g. 100)"
                   {...register(`priceOptions.${index}.stock`)}
                 />
               </div>
