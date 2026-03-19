@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Package2 } from "lucide-react";
+import { ShoppingCart, Package2, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useSession } from "next-auth/react";
@@ -68,7 +68,7 @@ function getImageSrc(slug: string, name: string): string | null {
 }
 
 export default function ProductCard({ listing }: { listing: Listing }) {
-  const { addItem } = useCart();
+  const { addItem, removeItem, updateQty, items } = useCart();
   const { data: session } = useSession();
   const router = useRouter();
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -83,6 +83,27 @@ export default function ProductCard({ listing }: { listing: Listing }) {
   const imageSrc = getImageSrc(listing.category.slug, listing.name);
 
   const isBuyer = !session || session.user.role === "BUYER";
+
+  const cartItem = lowestPrice ? items.find((i) => i.priceOptionId === lowestPrice.id) : undefined;
+  const cartQty = cartItem?.quantity ?? 0;
+
+  function handleDecrement() {
+    if (!lowestPrice) return;
+    if (cartQty <= 1) {
+      removeItem(lowestPrice.id);
+    } else {
+      updateQty(lowestPrice.id, cartQty - 1);
+    }
+  }
+
+  function handleIncrement() {
+    if (!lowestPrice) return;
+    if (cartQty === 0) {
+      handleAddToCart();
+    } else {
+      updateQty(lowestPrice.id, cartQty + 1);
+    }
+  }
 
   function handleAddToCart() {
     if (!session) {
@@ -207,16 +228,35 @@ export default function ProductCard({ listing }: { listing: Listing }) {
             </Link>
           </Button>
           {isBuyer ? (
-            <Button
-              size="sm"
-              className="flex-1 h-9 rounded-xl bg-green-600 hover:bg-green-700 text-xs transition-all duration-200 active:scale-95 disabled:opacity-50"
-              onClick={handleAddToCart}
-              disabled={!lowestPrice || isOutOfStock}
-            >
-              <ShoppingCart className="w-3.5 h-3.5 sm:mr-1.5 shrink-0" />
-              <span className="hidden sm:inline">{isOutOfStock ? "Sold Out" : "Add to Cart"}</span>
-              <span className="sm:hidden">{isOutOfStock ? "Sold Out" : "Add"}</span>
-            </Button>
+            cartQty > 0 && !isOutOfStock ? (
+              <div className="flex-1 flex items-center justify-between h-9 rounded-xl border-2 border-green-500 bg-green-50 overflow-hidden">
+                <button
+                  onClick={handleDecrement}
+                  className="h-full px-2.5 text-green-600 hover:bg-green-100 transition-colors active:scale-90"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-sm font-semibold text-green-700 tabular-nums">{cartQty}</span>
+                <button
+                  onClick={handleIncrement}
+                  disabled={cartQty >= (lowestPrice?.stock ?? 0)}
+                  className="h-full px-2.5 text-green-600 hover:bg-green-100 transition-colors active:scale-90 disabled:opacity-40"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                className="flex-1 h-9 rounded-xl bg-green-600 hover:bg-green-700 text-xs transition-all duration-200 active:scale-95 disabled:opacity-50"
+                onClick={handleAddToCart}
+                disabled={!lowestPrice || isOutOfStock}
+              >
+                <ShoppingCart className="w-3.5 h-3.5 sm:mr-1.5 shrink-0" />
+                <span className="hidden sm:inline">{isOutOfStock ? "Sold Out" : "Add to Cart"}</span>
+                <span className="sm:hidden">{isOutOfStock ? "Sold Out" : "Add"}</span>
+              </Button>
+            )
           ) : (
             <Link href="/signup?role=BUYER" className="flex-1">
               <div className="h-9 rounded-xl bg-green-50 border border-green-200 text-xs text-green-700 font-medium flex items-center justify-center hover:bg-green-100 transition-colors cursor-pointer w-full">
