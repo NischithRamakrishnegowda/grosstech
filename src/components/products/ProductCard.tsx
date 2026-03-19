@@ -201,7 +201,10 @@ export default function ProductCard({ listing }: { listing: Listing }) {
             className="flex-1 text-xs h-9 rounded-xl border-slate-200 text-slate-600 hover:border-green-400 hover:text-green-600 transition-all duration-200"
             asChild
           >
-            <Link href={`/products/${listing.id}`}>Details</Link>
+            <Link href={`/products/${listing.id}`}>
+              <span className="hidden sm:inline">Details</span>
+              <span className="sm:hidden">View</span>
+            </Link>
           </Button>
           {isBuyer ? (
             <Button
@@ -210,13 +213,15 @@ export default function ProductCard({ listing }: { listing: Listing }) {
               onClick={handleAddToCart}
               disabled={!lowestPrice || isOutOfStock}
             >
-              <ShoppingCart className="w-3.5 h-3.5 mr-1" />
-              {isOutOfStock ? "Sold Out" : "Add to Cart"}
+              <ShoppingCart className="w-3.5 h-3.5 sm:mr-1.5 shrink-0" />
+              <span className="hidden sm:inline">{isOutOfStock ? "Sold Out" : "Add to Cart"}</span>
+              <span className="sm:hidden">{isOutOfStock ? "Sold Out" : "Add"}</span>
             </Button>
           ) : (
             <Link href="/signup?role=BUYER" className="flex-1">
               <div className="h-9 rounded-xl bg-green-50 border border-green-200 text-xs text-green-700 font-medium flex items-center justify-center hover:bg-green-100 transition-colors cursor-pointer w-full">
-                Sign up to buy
+                <span className="hidden sm:inline">Sign up to buy</span>
+                <span className="sm:hidden">Sign up</span>
               </div>
             </Link>
           )}
