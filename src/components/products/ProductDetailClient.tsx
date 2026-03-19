@@ -85,7 +85,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
   const isLowStock = selectedOption.stock > 0 && selectedOption.stock <= 50;
 
   useEffect(() => {
-    if (session) {
+    if (session?.user.role === "BUYER") {
       fetch(`/api/seller/contact/${listing.seller.id}`)
         .then((r) => r.json())
         .then((data) => {
@@ -293,7 +293,8 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
             </Link>
           )}
 
-          {/* Seller info */}
+          {/* Seller info — only for logged-in BUYER accounts */}
+          {session?.user.role === "BUYER" && (
           <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Seller Information</h3>
             <p className="text-sm text-gray-600 mb-3">
@@ -349,6 +350,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
               </div>
             ) : null}
           </div>
+          )}
         </div>
       </div>
 
