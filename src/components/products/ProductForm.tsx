@@ -217,25 +217,6 @@ export default function ProductForm({
 
         {/* Hidden registered input so imageUrl stays in form data */}
         <input type="hidden" {...register("imageUrl")} />
-
-        {!imagePreview && (
-          <div className="flex items-center gap-2">
-            <div className="h-px flex-1 bg-gray-100" />
-            <span className="text-xs text-gray-400">or paste URL</span>
-            <div className="h-px flex-1 bg-gray-100" />
-          </div>
-        )}
-        {!imagePreview && (
-          <Input
-            placeholder="https://..."
-            value={currentImageUrl || ""}
-            onChange={(e) => {
-              setValue("imageUrl", e.target.value, { shouldValidate: true });
-              setImagePreview(e.target.value);
-            }}
-          />
-        )}
-        {errors.imageUrl && <p className="text-xs text-red-500">{errors.imageUrl.message}</p>}
       </div>
 
       {/* Price options */}
