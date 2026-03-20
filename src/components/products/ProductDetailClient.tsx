@@ -78,6 +78,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
   const [imgError, setImgError] = useState(false);
   const [contactInfo, setContactInfo] = useState<SellerContact | null>(null);
   const [contactLocked, setContactLocked] = useState(true);
+  const [contactChecking, setContactChecking] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
   const [unlockLoading, setUnlockLoading] = useState(false);
   const [mockModal, setMockModal] = useState<{ razorpayOrderId: string } | null>(null);
@@ -88,6 +89,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
 
   useEffect(() => {
     if (session?.user.role === "BUYER") {
+      setContactChecking(true);
       fetch(`/api/seller/contact/${listing.seller.id}`)
         .then((r) => r.json())
         .then((data) => {
@@ -96,7 +98,8 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
             setContactLocked(false);
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setContactChecking(false));
     }
   }, [session, listing.seller.id]);
 
@@ -306,7 +309,13 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
           <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Seller Information</h3>
 
-            {contactLocked ? (
+            {contactChecking ? (
+              <div className="space-y-2.5 animate-pulse">
+                <div className="h-4 bg-slate-100 rounded w-3/4" />
+                <div className="h-4 bg-slate-100 rounded w-1/2" />
+                <div className="h-9 bg-slate-100 rounded-xl w-full mt-3" />
+              </div>
+            ) : contactLocked ? (
               <div className="relative">
                 <div className="blur-sm select-none text-sm text-gray-600 space-y-1.5 mb-3 pointer-events-none">
                   <div className="flex items-center gap-2"><Phone className="w-4 h-4" />+91 ••••••••••</div>

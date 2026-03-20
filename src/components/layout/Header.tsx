@@ -68,8 +68,8 @@ export default function Header() {
 
           {/* Right — desktop shows full auth, mobile shows cart + hamburger only */}
           <div className="flex items-center gap-1.5">
-            {/* Cart — buyers and guests */}
-            {(!session || session.user.role === "BUYER") && (
+            {/* Cart — buyers and guests (hide while session resolves to avoid flicker) */}
+            {status !== "loading" && (!session || session.user.role === "BUYER") && (
               <Link
                 href="/checkout"
                 className="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-slate-50 transition-colors"

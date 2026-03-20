@@ -68,7 +68,7 @@ function getImageSrc(slug: string, name: string): string | null {
 }
 
 export default function ProductCard({ listing }: { listing: Listing }) {
-  const { addItem, removeItem, updateQty, items } = useCart();
+  const { addItem, removeItem, updateQty, items, cartReady } = useCart();
   const { data: session } = useSession();
   const router = useRouter();
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -228,7 +228,7 @@ export default function ProductCard({ listing }: { listing: Listing }) {
             </Link>
           </Button>
           {isBuyer ? (
-            cartQty > 0 && !isOutOfStock ? (
+            cartReady && cartQty > 0 && !isOutOfStock ? (
               <div className="flex-1 flex items-center justify-between h-9 rounded-xl border-2 border-green-500 bg-green-50 overflow-hidden">
                 <button
                   onClick={handleDecrement}

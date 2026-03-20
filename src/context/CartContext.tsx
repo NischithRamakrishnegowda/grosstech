@@ -54,12 +54,14 @@ function reducer(state: CartItem[], action: Action): CartItem[] {
 
 const CartContext = createContext<{
   items: CartItem[];
+  cartReady: boolean;
   addItem: (item: CartItem) => void;
   removeItem: (priceOptionId: string) => void;
   updateQty: (priceOptionId: string, quantity: number) => void;
   clearCart: () => void;
 }>({
   items: [],
+  cartReady: false,
   addItem: () => {},
   removeItem: () => {},
   updateQty: () => {},
@@ -97,7 +99,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const removeItem = useCallback((priceOptionId: string) => dispatch({ type: "REMOVE", priceOptionId }), []);
   const updateQty = useCallback((priceOptionId: string, quantity: number) => dispatch({ type: "UPDATE_QTY", priceOptionId, quantity }), []);
   const clearCart = useCallback(() => dispatch({ type: "CLEAR" }), []);
-  const value = useMemo(() => ({ items, addItem, removeItem, updateQty, clearCart }), [items, addItem, removeItem, updateQty, clearCart]);
+  const cartReady = cartUserId !== null;
+  const value = useMemo(() => ({ items, cartReady, addItem, removeItem, updateQty, clearCart }), [items, cartReady, addItem, removeItem, updateQty, clearCart]);
 
   return (
     <CartContext.Provider value={value}>
