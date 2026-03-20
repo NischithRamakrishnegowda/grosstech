@@ -23,15 +23,18 @@ export async function POST(req: Request) {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature, sellerId } =
       schema.parse(body);
 
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
-    const expectedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(razorpayOrderId + "|" + razorpayPaymentId)
-      .digest("hex");
+    const isMock = process.env.RAZORPAY_MODE === "mock";
+    if (!isMock) {
+      const secret = process.env.RAZORPAY_KEY_SECRET;
+      if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
+      const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(razorpayOrderId + "|" + razorpayPaymentId)
+        .digest("hex");
 
-    if (expectedSignature !== razorpaySignature) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+      if (expectedSignature !== razorpaySignature) {
+        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+      }
     }
 
     await prisma.contactUnlock.upsert({

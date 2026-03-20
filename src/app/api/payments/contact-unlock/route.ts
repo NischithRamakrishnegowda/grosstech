@@ -15,6 +15,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { sellerId } = schema.parse(body);
 
+    const isMock = process.env.RAZORPAY_MODE === "mock";
+
+    if (isMock) {
+      const mockOrderId = `mock_contact_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      return NextResponse.json({
+        isMock: true,
+        razorpayOrderId: mockOrderId,
+        amount: CONTACT_UNLOCK_FEE * 100,
+        currency: "INR",
+      });
+    }
+
     const order = await razorpay.orders.create({
       amount: CONTACT_UNLOCK_FEE * 100,
       currency: "INR",

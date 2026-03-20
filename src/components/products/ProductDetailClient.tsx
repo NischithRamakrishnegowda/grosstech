@@ -5,7 +5,7 @@ import Script from "next/script";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, ArrowLeft, Lock, Phone, Mail, MapPin, Loader2, Package2 } from "lucide-react";
+import { ShoppingCart, ArrowLeft, Lock, Phone, Mail, MapPin, Loader2, Package2, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -79,6 +79,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
   const [contactLocked, setContactLocked] = useState(true);
   const [contactLoading, setContactLoading] = useState(false);
   const [unlockLoading, setUnlockLoading] = useState(false);
+  const [mockModal, setMockModal] = useState<{ razorpayOrderId: string } | null>(null);
 
   const emoji = CATEGORY_EMOJIS[listing.category.slug] || "📦";
   const imageSrc = getImageSrc(listing.category.slug, listing.name);
@@ -119,6 +120,32 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
     toast.success(`${listing.name} (${selectedOption.weight}) added to cart`);
   }
 
+  async function verifyAndReveal(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string) {
+    setContactLoading(true);
+    try {
+      const verifyRes = await fetch("/api/payments/contact-unlock/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ razorpayOrderId, razorpayPaymentId, razorpaySignature, sellerId: listing.seller.id }),
+      });
+      if (verifyRes.ok) {
+        const contactRes = await fetch(`/api/seller/contact/${listing.seller.id}`);
+        const contactData = await contactRes.json();
+        if (!contactData.locked) {
+          setContactInfo(contactData.seller);
+          setContactLocked(false);
+          toast.success("Seller contact unlocked!");
+        }
+      } else {
+        toast.error("Payment verification failed");
+      }
+    } finally {
+      setContactLoading(false);
+      setUnlockLoading(false);
+      setMockModal(null);
+    }
+  }
+
   async function handleUnlockContact() {
     if (!session) {
       router.push(`/login?callbackUrl=/products/${listing.id}`);
@@ -134,6 +161,12 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      if (data.isMock) {
+        setMockModal({ razorpayOrderId: data.razorpayOrderId });
+        setUnlockLoading(false);
+        return;
+      }
+
       const Razorpay = (window as unknown as { Razorpay: new (opts: unknown) => { open: () => void } }).Razorpay;
       const rzp = new Razorpay({
         key: data.keyId,
@@ -143,33 +176,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
         name: "Gross Tech",
         description: "Seller Contact Unlock",
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
-          setContactLoading(true);
-          try {
-            const verifyRes = await fetch("/api/payments/contact-unlock/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-                sellerId: listing.seller.id,
-              }),
-            });
-            if (verifyRes.ok) {
-              const contactRes = await fetch(`/api/seller/contact/${listing.seller.id}`);
-              const contactData = await contactRes.json();
-              if (!contactData.locked) {
-                setContactInfo(contactData.seller);
-                setContactLocked(false);
-                toast.success("Seller contact unlocked!");
-              }
-            } else {
-              toast.error("Payment verification failed");
-            }
-          } finally {
-            setContactLoading(false);
-            setUnlockLoading(false);
-          }
+          await verifyAndReveal(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
         },
         prefill: { email: session.user.email || "" },
         theme: { color: "#16a34a" },
@@ -297,11 +304,6 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
           {session?.user.role === "BUYER" && (
           <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Seller Information</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              <span className="font-medium">
-                {listing.seller.businessName || listing.seller.name}
-              </span>
-            </p>
 
             {contactLocked ? (
               <div className="relative">
@@ -355,6 +357,36 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
       </div>
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+
+      {/* Mock payment modal for contact unlock */}
+      {mockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Mock Payment</h3>
+            <p className="text-sm text-gray-500 mb-1">Seller Contact Unlock</p>
+            <p className="text-2xl font-bold text-green-600 mb-6">₹{CONTACT_UNLOCK_FEE}</p>
+            <div className="space-y-3">
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={contactLoading}
+                onClick={() => verifyAndReveal(mockModal.razorpayOrderId, "mock_pay_" + Date.now(), "mock_sig")}
+              >
+                {contactLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                Simulate Success
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                disabled={contactLoading}
+                onClick={() => { setMockModal(null); setUnlockLoading(false); toast.error("Payment cancelled"); }}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
