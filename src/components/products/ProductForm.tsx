@@ -20,7 +20,7 @@ const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   brand: z.string().optional(),
   description: z.string().optional(),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
   categoryId: z.string().min(1, "Select a category"),
   priceOptions: z.array(priceOptionSchema).min(1, "Add at least one price option"),
 });
@@ -74,26 +74,50 @@ export default function ProductForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentImageUrl = watch("imageUrl");
 
+  async function compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+          else { width = Math.round((width * MAX) / height); height = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
+      img.src = url;
+    });
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Instant local preview
-    const localUrl = URL.createObjectURL(file);
-    setImagePreview(localUrl);
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10 MB");
+      return;
+    }
+
+    // Instant local preview while compressing
+    setImagePreview(URL.createObjectURL(file));
     setImageUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-      setValue("imageUrl", data.url, { shouldValidate: true });
-      setImagePreview(data.url);
-      toast.success("Image uploaded");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      const base64 = await compressImage(file);
+      setValue("imageUrl", base64, { shouldValidate: true });
+      setImagePreview(base64);
+      toast.success("Image ready");
+    } catch {
+      toast.error("Failed to process image");
       setImagePreview(currentImageUrl || "");
       if (fileInputRef.current) fileInputRef.current.value = "";
     } finally {
