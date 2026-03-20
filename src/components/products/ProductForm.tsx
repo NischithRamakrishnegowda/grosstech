@@ -3,10 +3,12 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
 
 const priceOptionSchema = z.object({
   weight: z.string().min(1, "Required"),
@@ -49,6 +51,8 @@ export default function ProductForm({
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(schema),
@@ -63,10 +67,45 @@ export default function ProductForm({
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "priceOptions",
-  });
+  const { fields, append, remove } = useFieldArray({ control, name: "priceOptions" });
+
+  const [imagePreview, setImagePreview] = useState<string>(defaultValues?.imageUrl || "");
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentImageUrl = watch("imageUrl");
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Instant local preview
+    const localUrl = URL.createObjectURL(file);
+    setImagePreview(localUrl);
+    setImageUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setValue("imageUrl", data.url, { shouldValidate: true });
+      setImagePreview(data.url);
+      toast.success("Image uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+      setImagePreview(currentImageUrl || "");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } finally {
+      setImageUploading(false);
+    }
+  }
+
+  function handleRemoveImage() {
+    setValue("imageUrl", "", { shouldValidate: false });
+    setImagePreview("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -109,9 +148,69 @@ export default function ProductForm({
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label>Image URL</Label>
-        <Input placeholder="https://..." {...register("imageUrl")} />
+      {/* Image upload */}
+      <div className="space-y-2">
+        <Label>Product Image</Label>
+
+        {imagePreview ? (
+          <div className="relative w-full aspect-video max-h-48 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+            {imageUploading && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-green-600" />
+              </div>
+            )}
+            {!imageUploading && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-red-50 transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center gap-2 text-gray-400 hover:border-green-300 hover:text-green-500 transition-colors bg-gray-50 hover:bg-green-50/30"
+          >
+            <ImagePlus className="w-8 h-8" />
+            <p className="text-sm font-medium">Click to upload image</p>
+            <p className="text-xs">JPG, PNG, WebP — max 5 MB</p>
+          </button>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {/* Hidden registered input so imageUrl stays in form data */}
+        <input type="hidden" {...register("imageUrl")} />
+
+        {!imagePreview && (
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-gray-100" />
+            <span className="text-xs text-gray-400">or paste URL</span>
+            <div className="h-px flex-1 bg-gray-100" />
+          </div>
+        )}
+        {!imagePreview && (
+          <Input
+            placeholder="https://..."
+            value={currentImageUrl || ""}
+            onChange={(e) => {
+              setValue("imageUrl", e.target.value, { shouldValidate: true });
+              setImagePreview(e.target.value);
+            }}
+          />
+        )}
         {errors.imageUrl && <p className="text-xs text-red-500">{errors.imageUrl.message}</p>}
       </div>
 
@@ -175,9 +274,9 @@ export default function ProductForm({
         <p className="text-xs text-gray-400">Weight · Price (₹) · Stock quantity</p>
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700">
+      <Button type="submit" disabled={loading || imageUploading} className="w-full bg-green-600 hover:bg-green-700">
         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-        {submitLabel}
+        {imageUploading ? "Uploading image..." : submitLabel}
       </Button>
     </form>
   );
