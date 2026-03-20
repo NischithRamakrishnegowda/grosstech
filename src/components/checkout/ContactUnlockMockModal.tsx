@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function ContactUnlockMockModal({ razorpayOrderId, amount, onSuccess, onClose }: Props) {
-  const [loading, setLoading] = useState<"success" | "cancel" | null>(null);
+  const [loading, setLoading] = useState<"success" | "fail" | "cancel" | null>(null);
 
   async function handleSuccess() {
     setLoading("success");
@@ -24,6 +24,12 @@ export default function ContactUnlockMockModal({ razorpayOrderId, amount, onSucc
       toast.error("Payment simulation failed");
       setLoading(null);
     }
+  }
+
+  function handleFail() {
+    setLoading("fail");
+    toast.error("Payment failed (simulated)");
+    setTimeout(() => { setLoading(null); onClose(); }, 800);
   }
 
   function handleCancel() {
@@ -57,12 +63,18 @@ export default function ContactUnlockMockModal({ razorpayOrderId, amount, onSucc
             onClick={handleSuccess}
             disabled={loading !== null}
           >
-            {loading === "success" ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-            )}
+            {loading === "success" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
             Simulate Success
+          </Button>
+
+          <Button
+            variant="outline"
+            className="w-full border-red-200 text-red-600 hover:bg-red-50"
+            onClick={handleFail}
+            disabled={loading !== null}
+          >
+            {loading === "fail" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <XCircle className="w-4 h-4 mr-2" />}
+            Simulate Failure
           </Button>
 
           <Button
