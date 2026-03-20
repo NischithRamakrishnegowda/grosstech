@@ -5,7 +5,8 @@ import Script from "next/script";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, ArrowLeft, Lock, Phone, Mail, MapPin, Loader2, Package2, CheckCircle, XCircle } from "lucide-react";
+import { ShoppingCart, ArrowLeft, Lock, Phone, Mail, MapPin, Loader2, Package2 } from "lucide-react";
+import ContactUnlockMockModal from "@/components/checkout/ContactUnlockMockModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -358,34 +359,14 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-      {/* Mock payment modal for contact unlock */}
       {mockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Mock Payment</h3>
-            <p className="text-sm text-gray-500 mb-1">Seller Contact Unlock</p>
-            <p className="text-2xl font-bold text-green-600 mb-6">₹{CONTACT_UNLOCK_FEE}</p>
-            <div className="space-y-3">
-              <Button
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={contactLoading}
-                onClick={() => verifyAndReveal(mockModal.razorpayOrderId, "mock_pay_" + Date.now(), "mock_sig")}
-              >
-                {contactLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                Simulate Success
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-red-300 text-red-600 hover:bg-red-50"
-                disabled={contactLoading}
-                onClick={() => { setMockModal(null); setUnlockLoading(false); toast.error("Payment cancelled"); }}
-              >
-                <XCircle className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ContactUnlockMockModal
+          razorpayOrderId={mockModal.razorpayOrderId}
+          amount={CONTACT_UNLOCK_FEE * 100}
+          sellerId={listing.seller.id}
+          onSuccess={verifyAndReveal}
+          onClose={() => { setMockModal(null); setUnlockLoading(false); }}
+        />
       )}
     </div>
   );
