@@ -80,7 +80,7 @@ export default function ProductCard({ listing }: { listing: Listing }) {
   const isLowStock = totalStock > 0 && totalStock <= 50;
   const isOutOfStock = totalStock === 0;
 
-  const imageSrc = getImageSrc(listing.category.slug, listing.name);
+  const imageSrc = listing.imageUrl || getImageSrc(listing.category.slug, listing.name);
 
   const isBuyer = !session || session.user.role === "BUYER";
 

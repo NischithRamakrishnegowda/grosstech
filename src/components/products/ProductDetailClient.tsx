@@ -84,7 +84,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
   const [mockModal, setMockModal] = useState<{ razorpayOrderId: string } | null>(null);
 
   const emoji = CATEGORY_EMOJIS[listing.category.slug] || "📦";
-  const imageSrc = getImageSrc(listing.category.slug, listing.name);
+  const imageSrc = listing.imageUrl || getImageSrc(listing.category.slug, listing.name);
   const isLowStock = selectedOption.stock > 0 && selectedOption.stock <= 50;
 
   useEffect(() => {
