@@ -206,7 +206,7 @@ export default function ProductCard({ listing }: { listing: Listing }) {
           <div className="flex items-center justify-between mt-1">
             <p className="text-xs text-slate-400">
               {listing.brand ? listing.brand + " · " : ""}
-              {listing.source === "ADMIN" ? "Gross Tech" : (listing.seller.businessName || listing.seller.name)}
+              {listing.source === "ADMIN" ? "Gross Tech" : "Verified Seller"}
             </p>
             <span className={`inline-flex items-center gap-1 text-[10px] font-medium whitespace-nowrap ${isOutOfStock ? "text-red-400" : isLowStock ? "text-orange-500" : "text-slate-400"}`}>
               <Package2 className="w-3 h-3" />
