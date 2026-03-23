@@ -1,10 +1,5 @@
 import Link from "next/link";
 import { Users, Tag } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-
-const CATEGORY_EMOJIS: Record<string, string> = {
-  grains: "🌾", sugar: "🍚", oil: "🫙", pulses: "🫘", spices: "🌶️",
-};
 
 interface ItemCardProps {
   item: {
@@ -19,42 +14,42 @@ interface ItemCardProps {
 }
 
 export default function ItemCard({ item }: ItemCardProps) {
-  const emoji = CATEGORY_EMOJIS[item.category.slug] || "📦";
-
   return (
     <Link href={`/products/items/${item.slug}`} className="block group">
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-green-200 transition-all duration-300 hover:-translate-y-0.5">
-        {/* Image / Emoji */}
-        <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative overflow-hidden">
+        {/* Image */}
+        <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
           {item.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <img
+              src={item.imageUrl}
+              alt={item.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
           ) : (
-            <span className="text-5xl select-none group-hover:scale-110 transition-transform duration-300">{emoji}</span>
+            <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No image</div>
           )}
-          <Badge
-            className="absolute top-2 left-2 text-xs"
-            variant="secondary"
-          >
+          <span className="absolute top-2 left-2 text-[10px] sm:text-xs font-semibold bg-white/90 backdrop-blur-sm text-gray-600 px-2 py-0.5 rounded-lg shadow-sm">
             {item.category.name}
-          </Badge>
+          </span>
         </div>
 
         {/* Info */}
-        <div className="p-4">
-          <h3 className="font-bold text-gray-900 text-lg group-hover:text-green-700 transition-colors">
+        <div className="p-3 sm:p-4">
+          <h3 className="font-bold text-gray-900 text-sm sm:text-lg leading-tight group-hover:text-green-700 transition-colors line-clamp-1">
             {item.name}
           </h3>
 
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1.5 text-sm text-gray-500">
-              <Users className="w-3.5 h-3.5" />
+          <div className="flex items-center justify-between mt-1.5 sm:mt-2 gap-1">
+            <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-500">
+              <Users className="w-3 sm:w-3.5 h-3 sm:h-3.5 shrink-0" />
               <span>{item.sellerCount} seller{item.sellerCount !== 1 ? "s" : ""}</span>
             </div>
             {item.lowestPrice !== null && (
-              <div className="flex items-center gap-1 text-sm">
-                <Tag className="w-3.5 h-3.5 text-green-600" />
-                <span className="font-semibold text-green-600">From ₹{item.lowestPrice}</span>
+              <div className="flex items-center gap-0.5 sm:gap-1 text-xs sm:text-sm shrink-0">
+                <Tag className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-green-600" />
+                <span className="font-semibold text-green-600">₹{item.lowestPrice}</span>
               </div>
             )}
           </div>

@@ -160,7 +160,7 @@ export default function Header() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-slate-100 py-3 space-y-0.5 pb-4">
+          <div className="md:hidden border-t border-slate-100 py-3 space-y-0.5 pb-4 animate-fade-in">
             <Link href="/#about" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>About</Link>
             <Link href="/products" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>Products</Link>
             {session && (

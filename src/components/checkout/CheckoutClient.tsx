@@ -242,27 +242,27 @@ export default function CheckoutClient() {
                 <button
                   onClick={() => removeItem(item.priceOptionId)}
                   aria-label={`Remove ${item.name}`}
-                  className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                  className="p-2 -m-1 text-gray-300 hover:text-red-500 active:scale-90 transition-all"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => updateQty(item.priceOptionId, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                     aria-label="Decrease quantity"
-                    className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                    className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-100 active:scale-90 transition-all disabled:opacity-40"
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-7 text-center text-sm font-semibold">{item.quantity}</span>
+                  <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
                   <button
                     onClick={() => updateQty(item.priceOptionId, item.quantity + 1)}
                     disabled={item.quantity >= item.stock}
                     aria-label="Increase quantity"
-                    className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                    className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-100 active:scale-90 transition-all disabled:opacity-40"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
                 <p className="text-sm font-bold text-gray-800">₹{item.price * item.quantity}</p>

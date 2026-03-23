@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
-import { Search, X } from "lucide-react";
+import { useState, useEffect, useCallback, useTransition } from "react";
+import { Search, X, Loader2, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -16,10 +16,12 @@ interface Category {
 export default function ProductFilters({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
+  const [showPriceFilter, setShowPriceFilter] = useState(!!(searchParams.get("minPrice") || searchParams.get("maxPrice")));
 
   const currentCategory = searchParams.get("category") || "";
   const currentMode = searchParams.get("mode") || "RETAIL";
@@ -34,7 +36,9 @@ export default function ProductFilters({ categories }: { categories: Category[] 
           params.set(key, value);
         }
       }
-      router.push(`/products?${params.toString()}`);
+      startTransition(() => {
+        router.push(`/products?${params.toString()}`);
+      });
     },
     [router, searchParams]
   );
@@ -69,13 +73,16 @@ export default function ProductFilters({ categories }: { categories: Category[] 
     setSearch("");
     setMinPrice("");
     setMaxPrice("");
-    router.push("/products");
+    setShowPriceFilter(false);
+    startTransition(() => {
+      router.push("/products");
+    });
   }
 
   const hasFilters = search || minPrice || maxPrice || currentCategory || currentMode !== "RETAIL";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -83,31 +90,34 @@ export default function ProductFilters({ categories }: { categories: Category[] 
           placeholder="Search items... (e.g. Rice, Toor Dal, Oil)"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 pr-10 rounded-xl"
+          className="pl-10 pr-10 h-11 rounded-xl text-base sm:text-sm"
         />
-        {search && (
+        {search ? (
           <button
             onClick={() => setSearch("")}
             aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
           >
             <X className="w-4 h-4" />
           </button>
-        )}
+        ) : isPending ? (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500 animate-spin" />
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Controls row */}
+      <div className="flex flex-wrap items-center gap-2">
         {/* Mode toggle */}
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           {(["RETAIL", "BULK"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => updateParams({ mode: mode === "RETAIL" ? null : mode })}
               aria-pressed={currentMode === mode}
-              className={`px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
                 currentMode === mode
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
+                  ? "bg-green-600 text-white shadow-inner"
+                  : "bg-white text-gray-600 hover:bg-gray-50 active:bg-gray-100"
               }`}
             >
               {mode === "RETAIL" ? "Retail" : "Bulk"}
@@ -115,52 +125,75 @@ export default function ProductFilters({ categories }: { categories: Category[] 
           ))}
         </div>
 
-        {/* Price range */}
-        <div className="flex items-center gap-2">
+        {/* Price filter toggle */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowPriceFilter(!showPriceFilter)}
+          className={`rounded-xl h-[42px] ${showPriceFilter ? "border-green-300 text-green-600" : ""}`}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />
+          Price
+        </Button>
+
+        {/* Clear all */}
+        {hasFilters && (
+          <button
+            onClick={handleClearFilters}
+            className="text-sm text-gray-500 hover:text-red-500 transition-colors ml-1"
+          >
+            Clear all
+          </button>
+        )}
+
+        {/* Loading indicator */}
+        {isPending && (
+          <div className="flex items-center gap-1.5 text-sm text-green-600 ml-auto">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span className="hidden sm:inline">Loading...</span>
+          </div>
+        )}
+      </div>
+
+      {/* Price range — collapsible */}
+      {showPriceFilter && (
+        <div className="flex items-center gap-2 animate-fade-in">
           <Input
             type="number"
             min="0"
             placeholder="Min ₹"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
-            className="w-24 sm:w-28 rounded-xl text-sm"
+            onKeyDown={(e) => e.key === "Enter" && handlePriceApply()}
+            className="w-28 rounded-xl text-sm h-10"
             aria-label="Minimum price"
           />
-          <span className="text-gray-400 text-sm">—</span>
+          <span className="text-gray-300">—</span>
           <Input
             type="number"
             min="0"
             placeholder="Max ₹"
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
-            className="w-24 sm:w-28 rounded-xl text-sm"
+            onKeyDown={(e) => e.key === "Enter" && handlePriceApply()}
+            className="w-28 rounded-xl text-sm h-10"
             aria-label="Maximum price"
           />
           <Button
             size="sm"
-            variant="outline"
             onClick={handlePriceApply}
-            className="rounded-xl"
+            className="rounded-xl h-10 bg-green-600 hover:bg-green-700"
           >
-            Apply
+            Go
           </Button>
         </div>
-
-        {hasFilters && (
-          <button
-            onClick={handleClearFilters}
-            className="text-sm text-gray-500 hover:text-red-500 underline"
-          >
-            Clear all
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Category pills */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
         <button
           onClick={() => updateParams({ category: null })}
-          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 ${
             !currentCategory
               ? "bg-green-600 text-white shadow-sm shadow-green-200"
               : "bg-white border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600"
@@ -172,7 +205,7 @@ export default function ProductFilters({ categories }: { categories: Category[] 
           <button
             key={cat.id}
             onClick={() => updateParams({ category: cat.slug })}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 ${
               currentCategory === cat.slug
                 ? "bg-green-600 text-white shadow-sm shadow-green-200"
                 : "bg-white border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600"

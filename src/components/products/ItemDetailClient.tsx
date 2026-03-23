@@ -5,7 +5,7 @@ import Script from "next/script";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ShoppingCart, Lock, Loader2, Phone, Mail, MapPin, Package } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Lock, Loader2, Phone, Mail, MapPin, Package, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -51,10 +51,6 @@ interface SellerContact {
   businessName: string | null;
 }
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  grains: "🌾", sugar: "🍚", oil: "🫙", pulses: "🫘", spices: "🌶️",
-};
-
 export default function ItemDetailClient({
   item,
   listings,
@@ -66,18 +62,19 @@ export default function ItemDetailClient({
   const router = useRouter();
   const { addItem } = useCart();
   const [activeMode, setActiveMode] = useState<"RETAIL" | "BULK">("RETAIL");
+  const [addedOptId, setAddedOptId] = useState<string | null>(null);
 
   // Contact unlock state per seller
   const [unlockedSellers, setUnlockedSellers] = useState<Record<string, SellerContact>>({});
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [mockModal, setMockModal] = useState<{ razorpayOrderId: string; sellerId: string } | null>(null);
-
-  const emoji = CATEGORY_EMOJIS[item.category.slug] || "📦";
+  const [contactLoading, setContactLoading] = useState(true);
 
   // Check which sellers are already unlocked
   useEffect(() => {
-    if (session?.user.role !== "BUYER") return;
+    if (session?.user.role !== "BUYER") { setContactLoading(false); return; }
     const sellerIds = [...new Set(listings.map((l) => l.seller.id))];
+    let loaded = 0;
     sellerIds.forEach((sellerId) => {
       fetch(`/api/seller/contact/${sellerId}`)
         .then((r) => r.json())
@@ -86,8 +83,13 @@ export default function ItemDetailClient({
             setUnlockedSellers((prev) => ({ ...prev, [sellerId]: data.seller }));
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          loaded++;
+          if (loaded >= sellerIds.length) setContactLoading(false);
+        });
     });
+    if (sellerIds.length === 0) setContactLoading(false);
   }, [session, listings]);
 
   // Filter listings by mode
@@ -114,10 +116,12 @@ export default function ItemDetailClient({
       weight: opt.weight,
       price: opt.price,
       stock: opt.stock,
-      imageUrl: listing.imageUrl || undefined,
+      imageUrl: item.imageUrl || undefined,
       quantity: opt.minQty > 1 ? opt.minQty : 1,
       mode: opt.mode as "RETAIL" | "BULK",
     });
+    setAddedOptId(opt.id);
+    setTimeout(() => setAddedOptId(null), 1500);
     toast.success(`${item.name} (${opt.weight}) added to cart`);
   }
 
@@ -149,7 +153,7 @@ export default function ItemDetailClient({
       router.push(`/login?callbackUrl=/products/items/${item.slug}`);
       return;
     }
-    if (unlockingId) return; // prevent double-click
+    if (unlockingId) return;
     setUnlockingId(sellerId);
     try {
       const res = await fetch("/api/payments/contact-unlock", {
@@ -189,192 +193,249 @@ export default function ItemDetailClient({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <Link
         href="/products"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-green-600 transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-600 transition-colors mb-5"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Products
       </Link>
 
-      {/* Item header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-3xl shrink-0">
+      {/* Item header — responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden shrink-0">
           {item.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-2xl" />
+            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
           ) : (
-            emoji
+            <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No image</div>
           )}
         </div>
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{item.name}</h1>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1.5">
             <Badge variant="secondary">{item.category.name}</Badge>
-            <span className="text-sm text-gray-500">{filteredListings.length} seller{filteredListings.length !== 1 ? "s" : ""}</span>
+            <span className="text-sm text-gray-500">
+              {filteredListings.length} seller{filteredListings.length !== 1 ? "s" : ""} offering {activeMode.toLowerCase()}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Mode toggle */}
-      {(hasRetail || hasBulk) && (
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden w-fit mb-6">
-          {hasRetail && (
-            <button
-              onClick={() => setActiveMode("RETAIL")}
-              aria-pressed={activeMode === "RETAIL"}
-              className={`px-5 py-2.5 text-sm font-semibold transition-colors ${
-                activeMode === "RETAIL" ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              Retail
-            </button>
-          )}
-          {hasBulk && (
-            <button
-              onClick={() => setActiveMode("BULK")}
-              aria-pressed={activeMode === "BULK"}
-              className={`px-5 py-2.5 text-sm font-semibold transition-colors ${
-                activeMode === "BULK" ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              Bulk
-            </button>
-          )}
+      {/* Mode toggle — sticky on mobile */}
+      {hasRetail && hasBulk && (
+        <div className="sticky top-[64px] z-10 bg-gray-50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-3 mb-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-500 hidden sm:block">Mode:</span>
+            <div className="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white">
+              <button
+                onClick={() => setActiveMode("RETAIL")}
+                aria-pressed={activeMode === "RETAIL"}
+                className={`px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  activeMode === "RETAIL"
+                    ? "bg-green-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50 active:bg-gray-100"
+                }`}
+              >
+                Retail
+              </button>
+              <button
+                onClick={() => setActiveMode("BULK")}
+                aria-pressed={activeMode === "BULK"}
+                className={`px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  activeMode === "BULK"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50 active:bg-gray-100"
+                }`}
+              >
+                Bulk
+              </button>
+            </div>
+            {activeMode === "BULK" && (
+              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg font-medium animate-fade-in">
+                Wholesale pricing
+              </span>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Seller listings */}
-      {filteredListings.length === 0 ? (
-        <div className="text-center py-16">
-          <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-600">No {activeMode.toLowerCase()} listings</h3>
-          <p className="text-sm text-gray-400 mt-1">
-            {activeMode === "BULK" ? "No bulk options available for this item yet." : "No retail options available."}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredListings.map((listing) => {
-            const contact = unlockedSellers[listing.seller.id];
-            return (
-              <div key={listing.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Seller info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {listing.seller.businessName || listing.seller.name}
-                        </h3>
-                        {listing.brand && <p className="text-sm text-gray-500">{listing.brand}</p>}
-                      </div>
-                      {activeMode === "BULK" && (
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Bulk</Badge>
-                      )}
-                    </div>
+      {/* Only one mode available — just show a badge */}
+      {(hasRetail !== hasBulk) && hasBulk && (
+        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 mb-4">Bulk Only</Badge>
+      )}
 
-                    {listing.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2 mb-3">{listing.description}</p>
-                    )}
-
-                    {/* Price options */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {listing.priceOptions.map((opt) => (
-                        <div key={opt.id} className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleAddToCart(listing, opt)}
-                            disabled={opt.stock === 0 || (session?.user.role !== "BUYER" && !!session)}
-                            className={`text-sm border-2 rounded-xl px-3 py-2 transition-all ${
-                              opt.stock === 0
-                                ? "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
-                                : "border-gray-200 hover:border-green-400 hover:bg-green-50 text-gray-700"
-                            }`}
-                          >
-                            <div className="font-semibold">{opt.weight}</div>
-                            <div className="font-bold text-green-600">₹{opt.price}</div>
-                            <div className="text-xs text-gray-400">
-                              {opt.stock === 0 ? "Out of stock" : `${opt.stock} avail.`}
-                            </div>
-                            {opt.minQty > 1 && (
-                              <div className="text-xs text-blue-600 font-medium">Min: {opt.minQty}</div>
+      {/* Seller listings with smooth transitions */}
+      <div className="min-h-[200px]">
+        {filteredListings.length === 0 ? (
+          <div className="text-center py-16 animate-fade-in">
+            <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-gray-600">No {activeMode.toLowerCase()} listings</h3>
+            <p className="text-sm text-gray-400 mt-1">
+              {activeMode === "BULK"
+                ? "No bulk options available. Try switching to Retail."
+                : "No retail options. Try switching to Bulk."}
+            </p>
+            {hasRetail && hasBulk && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => setActiveMode(activeMode === "BULK" ? "RETAIL" : "BULK")}
+              >
+                Switch to {activeMode === "BULK" ? "Retail" : "Bulk"}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredListings.map((listing, i) => {
+              const contact = unlockedSellers[listing.seller.id];
+              return (
+                <div
+                  key={listing.id}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm animate-fade-up"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  {/* Mobile layout: stacked / Desktop: side by side */}
+                  <div className="p-4 sm:p-5">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      {/* Seller info + price options */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-base">
+                              {listing.seller.businessName || listing.seller.name}
+                            </h3>
+                            {listing.brand && (
+                              <p className="text-sm text-gray-500">Brand: {listing.brand}</p>
                             )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Quick add to cart */}
-                    {session?.user.role === "BUYER" && listing.priceOptions.some((o) => o.stock > 0) && (
-                      <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={() => {
-                          const opt = listing.priceOptions.find((o) => o.stock > 0);
-                          if (opt) handleAddToCart(listing, opt);
-                        }}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-1" />
-                        Add to Cart
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Contact section */}
-                  <div className="sm:w-64 shrink-0 border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-4">
-                    {session?.user.role === "BUYER" ? (
-                      contact ? (
-                        <div className="space-y-2 text-sm animate-fade-in">
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Contact</p>
-                          {contact.phone && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Phone className="w-3.5 h-3.5 text-green-500" />
-                              <a href={`tel:${contact.phone}`} className="hover:text-green-600 font-medium">{contact.phone}</a>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Mail className="w-3.5 h-3.5 text-green-500" />
-                            <a href={`mailto:${contact.email}`} className="hover:text-green-600 truncate">{contact.email}</a>
                           </div>
-                          {(contact.street || contact.city) && (
-                            <div className="flex items-start gap-2 text-gray-600">
-                              <MapPin className="w-3.5 h-3.5 text-green-500 mt-0.5" />
-                              <span className="text-xs">{[contact.city, contact.state].filter(Boolean).join(", ")}</span>
-                            </div>
+                          {activeMode === "BULK" && (
+                            <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 shrink-0">Bulk</Badge>
                           )}
                         </div>
-                      ) : (
-                        <div>
-                          <div className="blur-sm select-none text-sm text-gray-600 space-y-1.5 mb-3 pointer-events-none">
-                            <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />+91 ••••••</div>
-                            <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />••••@••••</div>
-                          </div>
+
+                        {listing.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2 mb-3">{listing.description}</p>
+                        )}
+
+                        {/* Price option cards */}
+                        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-3">
+                          {listing.priceOptions.map((opt) => {
+                            const isAdded = addedOptId === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                onClick={() => handleAddToCart(listing, opt)}
+                                disabled={opt.stock === 0 || (session?.user.role !== "BUYER" && !!session) || isAdded}
+                                className={`relative text-left border-2 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+                                  isAdded
+                                    ? "border-green-500 bg-green-50"
+                                    : opt.stock === 0
+                                      ? "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                      : "border-gray-200 hover:border-green-400 hover:bg-green-50 active:scale-[0.97] text-gray-700"
+                                }`}
+                              >
+                                {isAdded && (
+                                  <div className="absolute top-1 right-1">
+                                    <Check className="w-3.5 h-3.5 text-green-600" />
+                                  </div>
+                                )}
+                                <div className="font-semibold text-sm">{opt.weight}</div>
+                                <div className="font-bold text-green-600 text-base">₹{opt.price}</div>
+                                <div className="text-xs text-gray-400 mt-0.5">
+                                  {opt.stock === 0 ? "Out of stock" : `${opt.stock} avail.`}
+                                </div>
+                                {opt.minQty > 1 && (
+                                  <div className="text-xs text-blue-600 font-medium mt-0.5">Min: {opt.minQty}</div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Quick add */}
+                        {session?.user.role === "BUYER" && listing.priceOptions.some((o) => o.stock > 0) && (
                           <Button
-                            variant="outline"
                             size="sm"
-                            className="w-full border-green-500 text-green-600 hover:bg-green-50 text-xs"
-                            onClick={() => handleUnlockContact(listing.seller.id)}
-                            disabled={unlockingId === listing.seller.id}
+                            className="bg-green-600 hover:bg-green-700 active:scale-[0.97] transition-all"
+                            onClick={() => {
+                              const opt = listing.priceOptions.find((o) => o.stock > 0);
+                              if (opt) handleAddToCart(listing, opt);
+                            }}
                           >
-                            {unlockingId === listing.seller.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                            ) : (
-                              <Lock className="w-3.5 h-3.5 mr-1" />
-                            )}
-                            Unlock — ₹{CONTACT_UNLOCK_FEE}
+                            <ShoppingCart className="w-4 h-4 mr-1.5" />
+                            Add to Cart
                           </Button>
-                        </div>
-                      )
-                    ) : (
-                      <p className="text-xs text-gray-400">Sign in as a buyer to unlock seller contact</p>
-                    )}
+                        )}
+                      </div>
+
+                      {/* Contact section */}
+                      <div className="lg:w-56 xl:w-64 shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-4">
+                        {contactLoading ? (
+                          <div className="space-y-2 animate-pulse">
+                            <div className="h-3 bg-gray-100 rounded w-16 mb-3" />
+                            <div className="h-4 bg-gray-100 rounded w-full" />
+                            <div className="h-4 bg-gray-100 rounded w-3/4" />
+                          </div>
+                        ) : session?.user.role === "BUYER" ? (
+                          contact ? (
+                            <div className="space-y-2.5 text-sm animate-fade-in">
+                              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider flex items-center gap-1">
+                                <Check className="w-3 h-3" /> Contact Unlocked
+                              </p>
+                              {contact.phone && (
+                                <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors">
+                                  <Phone className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                                  <span className="font-medium">{contact.phone}</span>
+                                </a>
+                              )}
+                              <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors">
+                                <Mail className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                                <span className="truncate">{contact.email}</span>
+                              </a>
+                              {(contact.city || contact.state) && (
+                                <div className="flex items-start gap-2 text-gray-500">
+                                  <MapPin className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" />
+                                  <span className="text-xs">{[contact.city, contact.state].filter(Boolean).join(", ")}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="blur-sm select-none text-sm text-gray-400 space-y-2 mb-3 pointer-events-none" aria-hidden="true">
+                                <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />+91 98765 •••••</div>
+                                <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />seller@•••••.com</div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full border-green-500 text-green-600 hover:bg-green-50 active:scale-[0.97] transition-all"
+                                onClick={() => handleUnlockContact(listing.seller.id)}
+                                disabled={unlockingId === listing.seller.id}
+                              >
+                                {unlockingId === listing.seller.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                ) : (
+                                  <Lock className="w-3.5 h-3.5 mr-1.5" />
+                                )}
+                                Unlock Contact — ₹{CONTACT_UNLOCK_FEE}
+                              </Button>
+                            </div>
+                          )
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">Sign in as a buyer to unlock seller contact details</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
