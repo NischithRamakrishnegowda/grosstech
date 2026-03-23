@@ -3,12 +3,11 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2, Loader2, ImagePlus, X } from "lucide-react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useRef, useEffect } from "react";
-import { toast } from "sonner";
+import { useEffect } from "react";
 
 const priceOptionSchema = z.object({
   weight: z.string().min(1, "Required"),
@@ -85,10 +84,6 @@ export default function ProductForm({
 
   const { fields, append, remove } = useFieldArray({ control, name: "priceOptions" });
 
-  const [imagePreview, setImagePreview] = useState<string>(defaultValues?.imageUrl || "");
-  const [imageUploading, setImageUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const currentImageUrl = watch("imageUrl");
   const selectedCategoryId = watch("categoryId");
   const selectedItemId = watch("itemId");
 
@@ -113,64 +108,6 @@ export default function ProductForm({
       }
     }
   }, [selectedCategoryId, selectedItemId, items, setValue]);
-
-  async function compressImage(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const MAX = 800;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
-          else { width = Math.round((width * MAX) / height); height = MAX; }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
-      img.src = url;
-    });
-  }
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image must be under 10 MB");
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(file);
-    setImagePreview(previewUrl);
-    setImageUploading(true);
-
-    try {
-      const base64 = await compressImage(file);
-      URL.revokeObjectURL(previewUrl);
-      setValue("imageUrl", base64, { shouldValidate: true });
-      setImagePreview(base64);
-      toast.success("Image ready");
-    } catch {
-      toast.error("Failed to process image");
-      setImagePreview(currentImageUrl || "");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } finally {
-      setImageUploading(false);
-    }
-  }
-
-  function handleRemoveImage() {
-    setValue("imageUrl", "", { shouldValidate: false });
-    setImagePreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -223,51 +160,6 @@ export default function ProductForm({
           placeholder="Describe your product..."
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
         />
-      </div>
-
-      {/* Image upload */}
-      <div className="space-y-2">
-        <Label>Product Image</Label>
-
-        {imagePreview ? (
-          <div className="relative w-full aspect-video max-h-48 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-            {imageUploading && (
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-green-600" />
-              </div>
-            )}
-            {!imageUploading && (
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-red-50 transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-600" />
-              </button>
-            )}
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center gap-2 text-gray-400 hover:border-green-300 hover:text-green-500 transition-colors bg-gray-50 hover:bg-green-50/30"
-          >
-            <ImagePlus className="w-8 h-8" />
-            <p className="text-sm font-medium">Click to upload image</p>
-            <p className="text-xs">JPG, PNG, WebP — max 10 MB</p>
-          </button>
-        )}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-        <input type="hidden" {...register("imageUrl")} />
       </div>
 
       {/* Price options with mode */}
@@ -358,9 +250,9 @@ export default function ProductForm({
         </div>
       </div>
 
-      <Button type="submit" disabled={loading || imageUploading} className="w-full bg-green-600 hover:bg-green-700">
+      <Button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700">
         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-        {imageUploading ? "Uploading image..." : submitLabel}
+        {submitLabel}
       </Button>
     </form>
   );
