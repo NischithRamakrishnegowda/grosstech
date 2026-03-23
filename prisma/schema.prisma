@@ -25,6 +25,17 @@ enum ListingSource {
   SELLER
 }
 
+enum ListingStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum PriceMode {
+  RETAIL
+  BULK
+}
+
 model User {
   id            String   @id @default(cuid())
   name          String
@@ -33,7 +44,11 @@ model User {
   phone         String?
   role          Role     @default(BUYER)
   businessName  String?
-  address       String?
+  street        String?
+  city          String?
+  state         String?
+  pincode       String?
+  upiId         String?
   emailVerified Boolean  @default(false)
   phoneVerified Boolean  @default(false)
   createdAt     DateTime @default(now())
@@ -44,6 +59,7 @@ model User {
   contactUnlocksAsBuyer  ContactUnlock[] @relation("BuyerUnlocks")
   contactUnlocksAsSeller ContactUnlock[] @relation("SellerUnlocks")
   otpTokens              OtpToken[]
+  buyerRequests          BuyerRequest[]
 
   @@map("users")
 }
@@ -56,26 +72,48 @@ model Category {
   createdAt DateTime @default(now())
 
   listings Listing[]
+  items    Item[]
 
   @@map("categories")
 }
 
+model Item {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  imageUrl  String?
+  createdAt DateTime @default(now())
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  listings      Listing[]
+  buyerRequests BuyerRequest[]
+
+  @@map("items")
+}
+
 model Listing {
-  id          String        @id @default(cuid())
-  name        String
-  brand       String?
-  description String?
-  imageUrl    String?
-  source      ListingSource @default(SELLER)
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  name            String
+  brand           String?
+  description     String?
+  imageUrl        String?
+  source          ListingSource @default(SELLER)
+  isActive        Boolean       @default(true)
+  status          ListingStatus @default(APPROVED)
+  rejectionReason String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String
 
   seller   User   @relation(fields: [sellerId], references: [id])
   sellerId String
+
+  item   Item?   @relation(fields: [itemId], references: [id])
+  itemId String?
 
   priceOptions PriceOption[]
   orderItems   OrderItem[]
@@ -84,10 +122,12 @@ model Listing {
 }
 
 model PriceOption {
-  id     String @id @default(cuid())
+  id     String    @id @default(cuid())
   weight String
   price  Float
-  stock  Int    @default(0)
+  stock  Int       @default(0)
+  mode   PriceMode @default(RETAIL)
+  minQty Int       @default(1)
 
   listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   listingId String
@@ -189,4 +229,20 @@ model ContactUnlock {
 
   @@unique([buyerId, sellerId])
   @@map("contact_unlocks")
+}
+
+model BuyerRequest {
+  id          String   @id @default(cuid())
+  description String
+  quantity    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  buyer   User   @relation(fields: [buyerId], references: [id])
+  buyerId String
+
+  item   Item?   @relation(fields: [itemId], references: [id])
+  itemId String?
+
+  @@map("buyer_requests")
 }

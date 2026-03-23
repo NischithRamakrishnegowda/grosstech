@@ -11,12 +11,12 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
   const listing = await prisma.listing.findUnique({
-    where: { id, isActive: true },
+    where: { id, isActive: true, status: "APPROVED" },
     include: {
       category: true,
       priceOptions: { orderBy: { price: "asc" } },
       seller: {
-        select: { id: true, name: true, businessName: true, address: true },
+        select: { id: true, name: true, businessName: true },
       },
     },
   });

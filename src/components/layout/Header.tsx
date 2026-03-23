@@ -48,6 +48,11 @@ export default function Header() {
             <Link href="/products" className="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all">
               Products
             </Link>
+            {session && (
+              <Link href="/buyer-requests" className="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all">
+                Buy Requests
+              </Link>
+            )}
             {session?.user.role === "ADMIN" && (
               <Link
                 href="/admin/inventory"
@@ -145,6 +150,8 @@ export default function Header() {
             <button
               className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-50 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
+              aria-expanded={mobileOpen}
+              aria-label="Toggle navigation menu"
             >
               {mobileOpen ? <X className="w-5 h-5 text-slate-600" /> : <Menu className="w-5 h-5 text-slate-600" />}
             </button>
@@ -156,6 +163,9 @@ export default function Header() {
           <div className="md:hidden border-t border-slate-100 py-3 space-y-0.5 pb-4">
             <Link href="/#about" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>About</Link>
             <Link href="/products" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>Products</Link>
+            {session && (
+              <Link href="/buyer-requests" className="block px-3 py-2.5 text-sm rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setMobileOpen(false)}>Buy Requests</Link>
+            )}
             {session?.user.role === "ADMIN" && (
               <Link href="/admin/inventory" className={`block px-3 py-2.5 text-sm rounded-lg ${isInventoryActive ? "text-green-600 font-semibold bg-green-50" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`} onClick={() => setMobileOpen(false)}>Inventory</Link>
             )}

@@ -4,13 +4,15 @@ import PayoutManager from "@/components/admin/PayoutManager";
 export default async function AdminOrdersPage() {
   const now = new Date();
 
+  const sellerSelect = { select: { id: true, name: true, businessName: true, upiId: true } } as const;
+
   const readyOrders = await prisma.order.findMany({
     where: { status: "PAYMENT_HELD", releaseScheduledAt: { lte: now } },
     include: {
       buyer: { select: { name: true, email: true } },
       items: {
         include: {
-          listing: { select: { name: true, seller: { select: { name: true, businessName: true } } } },
+          listing: { select: { name: true, seller: sellerSelect } },
           priceOption: { select: { weight: true } },
         },
       },
@@ -23,7 +25,7 @@ export default async function AdminOrdersPage() {
       buyer: { select: { name: true, email: true } },
       items: {
         include: {
-          listing: { select: { name: true } },
+          listing: { select: { name: true, seller: sellerSelect } },
           priceOption: { select: { weight: true } },
         },
       },

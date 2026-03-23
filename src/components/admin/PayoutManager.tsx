@@ -1,16 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, Wallet, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
+import { PLATFORM_FEE } from "@/lib/constants";
 
 interface OrderItem {
   id: string;
   quantity: number;
   priceAtOrder: number;
-  listing: { name: string; seller?: { name: string; businessName: string | null } };
+  listing: { name: string; seller?: { id: string; name: string; businessName: string | null; upiId: string | null } };
   priceOption: { weight: string };
 }
 
@@ -40,6 +41,20 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelled",
 };
 
+// Group items by seller
+function groupBySeller(items: OrderItem[]) {
+  const groups: Record<string, { seller: OrderItem["listing"]["seller"]; items: OrderItem[]; subtotal: number }> = {};
+  for (const item of items) {
+    const sellerId = item.listing.seller?.id || "unknown";
+    if (!groups[sellerId]) {
+      groups[sellerId] = { seller: item.listing.seller, items: [], subtotal: 0 };
+    }
+    groups[sellerId].items.push(item);
+    groups[sellerId].subtotal += item.priceAtOrder * item.quantity;
+  }
+  return Object.values(groups);
+}
+
 export default function PayoutManager({
   readyOrders,
   allOrders,
@@ -49,11 +64,13 @@ export default function PayoutManager({
 }) {
   const router = useRouter();
   const [releasing, setReleasing] = useState<string | null>(null);
+  const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
 
   async function handleRelease(orderId: string) {
     setReleasing(orderId);
     const res = await fetch(`/api/admin/payouts/${orderId}`, { method: "PUT" });
     setReleasing(null);
+    setConfirmOrder(null);
     if (res.ok) {
       toast.success("Payment released to seller!");
       router.refresh();
@@ -71,39 +88,74 @@ export default function PayoutManager({
             <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
             <h2 className="font-semibold text-gray-900">Ready for Payout ({readyOrders.length})</h2>
           </div>
-          <div className="space-y-3">
-            {readyOrders.map((order) => (
-              <div key={order.id} className="bg-white rounded-2xl border-2 border-green-200 p-5">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-semibold text-gray-900">Order #{order.id.slice(-8).toUpperCase()}</p>
-                    <p className="text-xs text-gray-400">Buyer: {order.buyer.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">₹{order.total}</p>
+          <div className="space-y-4">
+            {readyOrders.map((order) => {
+              const sellerGroups = groupBySeller(order.items);
+              const netToSeller = order.total - PLATFORM_FEE;
+
+              return (
+                <div key={order.id} className="bg-white rounded-2xl border-2 border-green-200 p-5 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-4">
+                    <div>
+                      <p className="font-semibold text-gray-900">Order #{order.id.slice(-8).toUpperCase()}</p>
+                      <p className="text-xs text-gray-400">Buyer: {order.buyer.name} ({order.buyer.email})</p>
+                    </div>
                     <p className="text-xs text-gray-400">
                       Held since {new Date(order.createdAt).toLocaleDateString("en-IN")}
                     </p>
                   </div>
-                </div>
-                <div className="space-y-1 mb-4">
-                  {order.items.map((item) => (
-                    <p key={item.id} className="text-sm text-gray-600">
-                      {item.listing.name} ({item.priceOption.weight}) × {item.quantity} —{" "}
-                      <span className="font-medium">{item.listing.seller?.businessName || item.listing.seller?.name}</span>
-                    </p>
+
+                  {/* Seller groups */}
+                  {sellerGroups.map((group, i) => (
+                    <div key={i} className="mb-4 bg-gray-50 rounded-xl p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
+                        <p className="font-medium text-gray-800 text-sm">
+                          {group.seller?.businessName || group.seller?.name || "Unknown Seller"}
+                        </p>
+                        {group.seller?.upiId && (
+                          <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full font-mono flex items-center gap-1 w-fit">
+                            <Wallet className="w-3 h-3" />
+                            {group.seller.upiId}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        {group.items.map((item) => (
+                          <p key={item.id} className="text-sm text-gray-600">
+                            {item.listing.name} ({item.priceOption.weight}) x {item.quantity} = ₹{item.priceAtOrder * item.quantity}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
                   ))}
+
+                  {/* Fee breakdown */}
+                  <div className="border-t border-gray-100 pt-3 mb-4 space-y-1 text-sm">
+                    <div className="flex justify-between text-gray-500">
+                      <span>Order Total</span>
+                      <span>₹{order.total}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500">
+                      <span>Platform Fee</span>
+                      <span>- ₹{PLATFORM_FEE}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-green-700 pt-1 border-t border-dashed border-gray-200">
+                      <span>Net to Release</span>
+                      <span>₹{netToSeller}</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                    onClick={() => setConfirmOrder(order)}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Release ₹{netToSeller} to Seller
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={() => handleRelease(order.id)}
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Mark Released to Seller
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -112,118 +164,210 @@ export default function PayoutManager({
       <div>
         <h2 className="font-semibold text-gray-900 mb-4">All Orders</h2>
 
-        {/* Mobile card view */}
-        <div className="md:hidden space-y-3">
-          {allOrders.map((order) => {
-            const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
-            return (
-              <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <p className="font-mono text-xs text-gray-500">#{order.id.slice(-8).toUpperCase()}</p>
-                    <p className="font-semibold text-gray-900 mt-0.5">{order.buyer.name}</p>
-                    <p className="text-xs text-gray-400">{order.buyer.email}</p>
+        {allOrders.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <p className="text-lg font-medium">No orders yet</p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile card view */}
+            <div className="md:hidden space-y-3">
+              {allOrders.map((order) => {
+                const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
+                const sellerGroups = groupBySeller(order.items);
+                const primarySeller = sellerGroups[0]?.seller;
+                return (
+                  <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs text-gray-500">#{order.id.slice(-8).toUpperCase()}</p>
+                        <p className="font-semibold text-gray-900 mt-0.5">{order.buyer.name}</p>
+                        {primarySeller && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            Seller: {primarySeller.businessName || primarySeller.name}
+                            {primarySeller.upiId && <span className="font-mono ml-1">({primarySeller.upiId})</span>}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-green-600">₹{order.total}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
+                          {STATUS_LABELS[order.status] || order.status}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-3">
+                      {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                      {order.releaseScheduledAt && order.status === "PAYMENT_HELD" && (
+                        <span className={`ml-2 ${isPastDue ? "text-green-600 font-medium" : "text-gray-400"}`}>
+                          · Due {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
+                        </span>
+                      )}
+                    </p>
+                    {order.status === "PAYMENT_HELD" && (
+                      <Button
+                        size="sm"
+                        variant={isPastDue ? "default" : "outline"}
+                        className={`w-full ${isPastDue ? "bg-green-600 hover:bg-green-700" : "border-orange-300 text-orange-600 hover:bg-orange-50"}`}
+                        onClick={() => isPastDue ? setConfirmOrder(order) : handleRelease(order.id)}
+                        disabled={releasing === order.id}
+                      >
+                        {releasing === order.id ? (
+                          <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Releasing...</span>
+                        ) : isPastDue ? (
+                          <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Release Payment</span>
+                        ) : (
+                          <span className="flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Force Release</span>
+                        )}
+                      </Button>
+                    )}
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold text-green-600">₹{order.total}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
-                      {STATUS_LABELS[order.status] || order.status}
-                    </span>
+                );
+              })}
+            </div>
+
+            {/* Desktop table view */}
+            <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Order</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Buyer</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Seller</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Total</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {allOrders.map((order) => {
+                      const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
+                      const sellerGroups = groupBySeller(order.items);
+                      const primarySeller = sellerGroups[0]?.seller;
+                      return (
+                        <tr key={order.id} className="hover:bg-gray-50/50">
+                          <td className="px-4 py-3 font-mono text-xs text-gray-600">#{order.id.slice(-8).toUpperCase()}</td>
+                          <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
+                          <td className="px-4 py-3">
+                            <p className="text-gray-700 text-xs font-medium">{primarySeller?.businessName || primarySeller?.name || "—"}</p>
+                            {primarySeller?.upiId && (
+                              <p className="text-xs text-purple-500 font-mono mt-0.5">{primarySeller.upiId}</p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
+                              {STATUS_LABELS[order.status] || order.status.replace(/_/g, " ")}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">
+                            {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                            {order.releaseScheduledAt && order.status === "PAYMENT_HELD" && (
+                              <span className={`flex items-center gap-1 mt-0.5 ${isPastDue ? "text-green-600" : "text-gray-400"}`}>
+                                <Clock className="w-3 h-3" />
+                                Due {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {order.status === "PAYMENT_HELD" && (
+                              <Button
+                                size="sm"
+                                variant={isPastDue ? "default" : "outline"}
+                                className={isPastDue ? "bg-green-600 hover:bg-green-700 h-7 text-xs" : "h-7 text-xs border-orange-300 text-orange-600 hover:bg-orange-50"}
+                                onClick={() => isPastDue ? setConfirmOrder(order) : handleRelease(order.id)}
+                                disabled={releasing === order.id}
+                              >
+                                {releasing === order.id ? (
+                                  <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Releasing...</span>
+                                ) : isPastDue ? (
+                                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Release</span>
+                                ) : (
+                                  <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Force</span>
+                                )}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Confirmation Modal */}
+      {confirmOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmOrder(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900">Confirm Payment Release</h3>
+              <button onClick={() => setConfirmOrder(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <p className="text-sm text-gray-600">
+                Order <span className="font-mono font-medium">#{confirmOrder.id.slice(-8).toUpperCase()}</span>
+              </p>
+
+              {groupBySeller(confirmOrder.items).map((group, i) => (
+                <div key={i} className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-sm font-medium text-gray-800">{group.seller?.businessName || group.seller?.name}</p>
+                  {group.seller?.upiId && (
+                    <p className="text-xs text-purple-600 font-mono flex items-center gap-1 mt-0.5">
+                      <Wallet className="w-3 h-3" /> {group.seller.upiId}
+                    </p>
+                  )}
+                  <div className="mt-2 space-y-0.5">
+                    {group.items.map((item) => (
+                      <p key={item.id} className="text-xs text-gray-500">
+                        {item.listing.name} ({item.priceOption.weight}) x{item.quantity}
+                      </p>
+                    ))}
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 mb-3">
-                  {new Date(order.createdAt).toLocaleDateString("en-IN")}
-                  {order.releaseScheduledAt && order.status === "PAYMENT_HELD" && (
-                    <span className={`ml-2 ${isPastDue ? "text-green-600 font-medium" : "text-gray-400"}`}>
-                      · Due {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
-                    </span>
-                  )}
-                </p>
-                {order.status === "PAYMENT_HELD" && (
-                  <Button
-                    size="sm"
-                    variant={isPastDue ? "default" : "outline"}
-                    className={`w-full ${isPastDue ? "bg-green-600 hover:bg-green-700" : "border-orange-300 text-orange-600 hover:bg-orange-50"}`}
-                    onClick={() => handleRelease(order.id)}
-                    disabled={releasing === order.id}
-                  >
-                    {releasing === order.id ? (
-                      <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 animate-spin" /> Releasing...</span>
-                    ) : isPastDue ? (
-                      <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Release Payment</span>
-                    ) : (
-                      <span className="flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Force Release</span>
-                    )}
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              ))}
 
-        {/* Desktop table view */}
-        <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Order</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Buyer</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Total</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {allOrders.map((order) => {
-                  const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
-                  return (
-                    <tr key={order.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-600">#{order.id.slice(-8).toUpperCase()}</td>
-                      <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
-                      <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
-                          {STATUS_LABELS[order.status] || order.status.replace(/_/g, " ")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
-                        {new Date(order.createdAt).toLocaleDateString("en-IN")}
-                        {order.releaseScheduledAt && order.status === "PAYMENT_HELD" && (
-                          <span className={`flex items-center gap-1 mt-0.5 ${isPastDue ? "text-green-600" : "text-gray-400"}`}>
-                            <Clock className="w-3 h-3" />
-                            Due {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {order.status === "PAYMENT_HELD" && (
-                          <Button
-                            size="sm"
-                            variant={isPastDue ? "default" : "outline"}
-                            className={isPastDue ? "bg-green-600 hover:bg-green-700 h-7 text-xs" : "h-7 text-xs border-orange-300 text-orange-600 hover:bg-orange-50"}
-                            onClick={() => handleRelease(order.id)}
-                            disabled={releasing === order.id}
-                          >
-                            {releasing === order.id ? (
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3 animate-spin" /> Releasing...</span>
-                            ) : isPastDue ? (
-                              <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Release</span>
-                            ) : (
-                              <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Force Release</span>
-                            )}
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
+                <div className="flex justify-between text-gray-500">
+                  <span>Order Total</span>
+                  <span>₹{confirmOrder.total}</span>
+                </div>
+                <div className="flex justify-between text-gray-500">
+                  <span>Platform Fee</span>
+                  <span>- ₹{PLATFORM_FEE}</span>
+                </div>
+                <div className="flex justify-between font-bold text-green-700 pt-1 border-t border-dashed border-gray-200">
+                  <span>Amount to Release</span>
+                  <span>₹{confirmOrder.total - PLATFORM_FEE}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setConfirmOrder(null)}>Cancel</Button>
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={() => handleRelease(confirmOrder.id)}
+                disabled={releasing === confirmOrder.id}
+              >
+                {releasing === confirmOrder.id ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Releasing...</>
+                ) : (
+                  <><CheckCircle className="w-4 h-4 mr-1" /> Confirm Release</>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

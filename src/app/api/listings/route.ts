@@ -8,6 +8,8 @@ const priceOptionSchema = z.object({
   weight: z.string().min(1),
   price: z.number().positive(),
   stock: z.number().int().min(0),
+  mode: z.enum(["RETAIL", "BULK"]).default("RETAIL"),
+  minQty: z.number().int().min(1).default(1),
 });
 
 const schema = z.object({
@@ -16,6 +18,7 @@ const schema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().optional(),
   categoryId: z.string(),
+  itemId: z.string().optional(),
   priceOptions: z.array(priceOptionSchema).min(1),
 });
 
@@ -53,8 +56,11 @@ export async function POST(req: Request) {
         description: data.description,
         imageUrl: data.imageUrl,
         categoryId: data.categoryId,
+        itemId: data.itemId,
         sellerId: session.user.id,
         source: "SELLER",
+        status: "PENDING_APPROVAL",
+        isActive: false,
         priceOptions: { create: data.priceOptions },
       },
       include: { priceOptions: true, category: true },

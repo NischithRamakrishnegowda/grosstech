@@ -18,6 +18,10 @@ async function main() {
       password: adminPassword,
       role: Role.ADMIN,
       phone: "+919008578425",
+      street: "42 MG Road, Indiranagar",
+      city: "Bengaluru",
+      state: "Karnataka",
+      pincode: "560038",
       emailVerified: true,
       phoneVerified: true,
     },
@@ -35,7 +39,11 @@ async function main() {
       role: Role.SELLER,
       businessName: "Fresh Farms Pvt Ltd",
       phone: "9111111111",
-      address: "123 Market St, Bangalore",
+      street: "123 Market St, Jayanagar",
+      city: "Bengaluru",
+      state: "Karnataka",
+      pincode: "560041",
+      upiId: "freshfarms@upi",
     },
   });
 
@@ -50,10 +58,14 @@ async function main() {
       password: buyerPassword,
       role: Role.BUYER,
       phone: "9222222222",
+      street: "56 Residency Road, Shantinagar",
+      city: "Bengaluru",
+      state: "Karnataka",
+      pincode: "560025",
     },
   });
 
-  // Create categories (rice renamed to grains)
+  // Create categories
   const categories = [
     { name: "Grains", slug: "grains" },
     { name: "Sugar", slug: "sugar" },
@@ -72,7 +84,60 @@ async function main() {
     createdCategories[cat.slug] = created.id;
   }
 
-  // Listings — no imageUrl (local category images are used in the UI)
+  // Create predefined items under categories
+  const itemsByCategory: Record<string, { name: string; slug: string }[]> = {
+    grains: [
+      { name: "Rice", slug: "rice" },
+      { name: "Wheat", slug: "wheat" },
+      { name: "Ragi", slug: "ragi" },
+      { name: "Corn", slug: "corn" },
+      { name: "Jowar", slug: "jowar" },
+      { name: "Bajra", slug: "bajra" },
+    ],
+    sugar: [
+      { name: "Refined Sugar", slug: "refined-sugar" },
+      { name: "Jaggery", slug: "jaggery" },
+      { name: "Brown Sugar", slug: "brown-sugar" },
+    ],
+    oil: [
+      { name: "Sunflower Oil", slug: "sunflower-oil" },
+      { name: "Groundnut Oil", slug: "groundnut-oil" },
+      { name: "Coconut Oil", slug: "coconut-oil" },
+      { name: "Mustard Oil", slug: "mustard-oil" },
+    ],
+    pulses: [
+      { name: "Toor Dal", slug: "toor-dal" },
+      { name: "Moong Dal", slug: "moong-dal" },
+      { name: "Chana Dal", slug: "chana-dal" },
+      { name: "Urad Dal", slug: "urad-dal" },
+      { name: "Masoor Dal", slug: "masoor-dal" },
+    ],
+    spices: [
+      { name: "Turmeric Powder", slug: "turmeric-powder" },
+      { name: "Red Chilli Powder", slug: "red-chilli-powder" },
+      { name: "Cumin", slug: "cumin" },
+      { name: "Coriander Powder", slug: "coriander-powder" },
+      { name: "Garam Masala", slug: "garam-masala" },
+    ],
+  };
+
+  const createdItems: Record<string, string> = {};
+  for (const [categorySlug, items] of Object.entries(itemsByCategory)) {
+    for (const item of items) {
+      const created = await prisma.item.upsert({
+        where: { slug: item.slug },
+        update: { name: item.name },
+        create: {
+          name: item.name,
+          slug: item.slug,
+          categoryId: createdCategories[categorySlug],
+        },
+      });
+      createdItems[item.slug] = created.id;
+    }
+  }
+
+  // Listings linked to predefined items
   const listings = [
     {
       name: "Basmati Rice",
@@ -81,6 +146,7 @@ async function main() {
       source: ListingSource.ADMIN,
       categoryId: createdCategories["grains"],
       sellerId: admin.id,
+      itemId: createdItems["rice"],
       priceOptions: [
         { weight: "500g", price: 65, stock: 100 },
         { weight: "1kg", price: 120, stock: 200 },
@@ -95,6 +161,7 @@ async function main() {
       source: ListingSource.ADMIN,
       categoryId: createdCategories["grains"],
       sellerId: admin.id,
+      itemId: createdItems["wheat"],
       priceOptions: [
         { weight: "1kg", price: 45, stock: 300 },
         { weight: "5kg", price: 210, stock: 100 },
@@ -108,6 +175,7 @@ async function main() {
       source: ListingSource.ADMIN,
       categoryId: createdCategories["grains"],
       sellerId: admin.id,
+      itemId: createdItems["ragi"],
       priceOptions: [
         { weight: "500g", price: 55, stock: 150 },
         { weight: "1kg", price: 100, stock: 200 },
@@ -121,6 +189,7 @@ async function main() {
       source: ListingSource.ADMIN,
       categoryId: createdCategories["grains"],
       sellerId: admin.id,
+      itemId: createdItems["corn"],
       priceOptions: [
         { weight: "1kg", price: 40, stock: 200 },
         { weight: "5kg", price: 185, stock: 80 },
@@ -134,6 +203,7 @@ async function main() {
       source: ListingSource.ADMIN,
       categoryId: createdCategories["sugar"],
       sellerId: admin.id,
+      itemId: createdItems["refined-sugar"],
       priceOptions: [
         { weight: "500g", price: 30, stock: 200 },
         { weight: "1kg", price: 55, stock: 300 },
@@ -148,6 +218,7 @@ async function main() {
       source: ListingSource.SELLER,
       categoryId: createdCategories["oil"],
       sellerId: seller.id,
+      itemId: createdItems["sunflower-oil"],
       priceOptions: [
         { weight: "500ml", price: 75, stock: 150 },
         { weight: "1L", price: 140, stock: 200 },
@@ -161,6 +232,7 @@ async function main() {
       source: ListingSource.SELLER,
       categoryId: createdCategories["pulses"],
       sellerId: seller.id,
+      itemId: createdItems["toor-dal"],
       priceOptions: [
         { weight: "500g", price: 75, stock: 100 },
         { weight: "1kg", price: 145, stock: 150 },
@@ -174,6 +246,7 @@ async function main() {
       source: ListingSource.ADMIN,
       categoryId: createdCategories["spices"],
       sellerId: admin.id,
+      itemId: createdItems["turmeric-powder"],
       priceOptions: [
         { weight: "100g", price: 35, stock: 300 },
         { weight: "250g", price: 80, stock: 200 },
@@ -190,7 +263,12 @@ async function main() {
     if (existing) {
       await prisma.listing.update({
         where: { id: existing.id },
-        data: { imageUrl: null, description: listing.description, categoryId: listingData.categoryId },
+        data: {
+          imageUrl: null,
+          description: listing.description,
+          categoryId: listingData.categoryId,
+          itemId: listingData.itemId,
+        },
       });
     } else {
       await prisma.listing.create({
@@ -207,6 +285,7 @@ async function main() {
   console.log("Admin:  grosstechbengaluru@gmail.com / admin123");
   console.log("Seller: seller@grosstech.com / seller123");
   console.log("Buyer:  buyer@grosstech.com / buyer123");
+  console.log(`Seeded ${Object.keys(createdItems).length} predefined items across ${Object.keys(createdCategories).length} categories`);
 }
 
 main()

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingBag } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, MessageSquare } from "lucide-react";
 
 const links = [
   { href: "/seller/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/seller/listings", label: "Listings", icon: Package },
   { href: "/seller/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/buyer-requests", label: "Buy Requests", icon: MessageSquare },
 ];
 
 export default function SellerSidebar() {
@@ -42,7 +43,7 @@ export default function SellerSidebar() {
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 md:hidden">
-        <div className="grid grid-cols-3">
+        <div className="grid grid-cols-4">
           {links.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}

@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { DollarSign, ShoppingBag, Users, TrendingUp } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, TrendingUp, ClipboardCheck } from "lucide-react";
 
 export default async function AdminDashboardPage() {
-  const [totalOrders, totalListings, totalUsers] = await Promise.all([
+  const [totalOrders, totalListings, totalUsers, pendingApprovals] = await Promise.all([
     prisma.order.count(),
-    prisma.listing.count({ where: { isActive: true } }),
+    prisma.listing.count({ where: { isActive: true, status: "APPROVED" } }),
     prisma.user.count({ where: { role: "BUYER" } }),
+    prisma.listing.count({ where: { status: "PENDING_APPROVAL" } }),
   ]);
 
   const revenueData = await prisma.order.aggregate({
@@ -47,6 +48,21 @@ export default async function AdminDashboardPage() {
           </div>
         ))}
       </div>
+
+      {pendingApprovals > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <ClipboardCheck className="w-5 h-5 text-blue-600" />
+            <div>
+              <p className="font-semibold text-blue-800">{pendingApprovals} listing{pendingApprovals !== 1 ? "s" : ""} awaiting approval</p>
+              <p className="text-sm text-blue-600">Seller products need your review</p>
+            </div>
+          </div>
+          <a href="/admin/approvals" className="text-sm font-medium text-blue-700 underline">
+            Review →
+          </a>
+        </div>
+      )}
 
       {pendingPayouts > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">

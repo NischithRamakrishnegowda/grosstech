@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, BarChart2, ShoppingBag, Unlock } from "lucide-react";
+import { LayoutDashboard, Package, BarChart2, ShoppingBag, Unlock, ClipboardCheck, Layers, MessageSquare } from "lucide-react";
 
 const links = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck },
+  { href: "/admin/items", label: "Items", icon: Layers },
   { href: "/admin/inventory", label: "Inventory", icon: Package },
+  { href: "/admin/buyer-requests", label: "Buy Requests", icon: MessageSquare },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/admin/orders", label: "Payouts", icon: ShoppingBag },
   { href: "/admin/contact-revenue", label: "Info Sales", icon: Unlock },
@@ -44,7 +47,7 @@ export default function AdminSidebar() {
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 md:hidden">
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-4 gap-y-1">
           {links.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}

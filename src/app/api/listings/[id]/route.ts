@@ -9,6 +9,8 @@ const priceOptionSchema = z.object({
   weight: z.string().min(1),
   price: z.number().positive(),
   stock: z.number().int().min(0),
+  mode: z.enum(["RETAIL", "BULK"]).default("RETAIL"),
+  minQty: z.number().int().min(1).default(1),
 });
 
 const schema = z.object({
@@ -17,6 +19,7 @@ const schema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().optional(),
   categoryId: z.string().optional(),
+  itemId: z.string().optional(),
   isActive: z.boolean().optional(),
   priceOptions: z.array(priceOptionSchema).optional(),
 });
@@ -40,10 +43,14 @@ export async function PUT(
     const data = schema.parse(body);
     const { priceOptions, ...rest } = data;
 
+    // If a seller edits a rejected listing, resubmit for approval
+    const resubmit = session.user.role === "SELLER" && listing.status === "REJECTED";
+
     const updated = await prisma.listing.update({
       where: { id },
       data: {
         ...rest,
+        ...(resubmit && { status: "PENDING_APPROVAL", isActive: false, rejectionReason: null }),
         ...(priceOptions && {
           priceOptions: {
             deleteMany: {},

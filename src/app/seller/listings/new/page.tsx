@@ -14,6 +14,7 @@ export default function NewListingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { data: categories = [] } = useSWR("/api/categories", fetcher);
+  const { data: items = [] } = useSWR("/api/items?all=true", fetcher);
 
   async function handleSubmit(data: ProductFormData) {
     setLoading(true);
@@ -24,7 +25,7 @@ export default function NewListingPage() {
         body: JSON.stringify(data),
       });
       if (res.ok) {
-        toast.success("Listing created!");
+        toast.success("Listing submitted for approval!");
         router.push("/seller/listings");
       } else {
         const err = await res.json();
@@ -44,9 +45,10 @@ export default function NewListingPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <ProductForm
           categories={categories}
+          items={items}
           onSubmit={handleSubmit}
           loading={loading}
-          submitLabel="Create Listing"
+          submitLabel="Submit for Approval"
         />
       </div>
     </div>

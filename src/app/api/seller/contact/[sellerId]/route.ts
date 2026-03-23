@@ -22,7 +22,7 @@ export async function GET(
 
   const seller = await prisma.user.findUnique({
     where: { id: sellerId },
-    select: { name: true, phone: true, email: true, address: true, businessName: true },
+    select: { name: true, phone: true, email: true, street: true, city: true, state: true, pincode: true, businessName: true },
   });
 
   return NextResponse.json({ locked: false, seller });

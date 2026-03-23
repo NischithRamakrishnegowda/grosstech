@@ -40,6 +40,17 @@ export default function CheckoutClient() {
     if (session?.user?.phone) {
       setShippingPhone(session.user.phone);
     }
+    // Auto-fill address from user profile
+    if (session?.user) {
+      fetch("/api/user/address")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.street && !lane1) setLane1(data.street);
+          if (data.pincode && !pincode) setPincode(data.pincode);
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -230,25 +241,28 @@ export default function CheckoutClient() {
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <button
                   onClick={() => removeItem(item.priceOptionId)}
-                  className="text-gray-300 hover:text-red-500 transition-colors"
+                  aria-label={`Remove ${item.name}`}
+                  className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => updateQty(item.priceOptionId, item.quantity - 1)}
                     disabled={item.quantity <= 1}
-                    className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                    aria-label="Decrease quantity"
+                    className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
                   >
-                    <Minus className="w-3 h-3" />
+                    <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
+                  <span className="w-7 text-center text-sm font-semibold">{item.quantity}</span>
                   <button
                     onClick={() => updateQty(item.priceOptionId, item.quantity + 1)}
                     disabled={item.quantity >= item.stock}
-                    className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                    aria-label="Increase quantity"
+                    className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <p className="text-sm font-bold text-gray-800">₹{item.price * item.quantity}</p>

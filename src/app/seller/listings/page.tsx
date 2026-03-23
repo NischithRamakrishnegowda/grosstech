@@ -32,7 +32,7 @@ export default async function SellerListingsPage() {
         </Button>
       </div>
 
-      <SellerListingsTable listings={listings} />
+      <SellerListingsTable listings={JSON.parse(JSON.stringify(listings))} />
     </div>
   );
 }

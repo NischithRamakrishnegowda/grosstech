@@ -13,6 +13,7 @@ export interface CartItem {
   stock: number;
   imageUrl?: string;
   quantity: number;
+  mode?: "RETAIL" | "BULK";
 }
 
 type Action =

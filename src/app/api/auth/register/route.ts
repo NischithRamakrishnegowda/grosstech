@@ -14,6 +14,11 @@ const schema = z.object({
   role: z.enum(["BUYER", "SELLER"]),
   phone: z.string().regex(/^(\+91|91)?[6-9]\d{9}$/, "Invalid Indian phone number"),
   businessName: z.string().optional(),
+  street: z.string().min(3, "Street address is required"),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(1, "State is required"),
+  pincode: z.string().regex(/^\d{6}$/, "Invalid pincode"),
+  upiId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -40,6 +45,11 @@ export async function POST(req: Request) {
         role: data.role as Role,
         phone: data.phone,
         businessName: data.businessName,
+        street: data.street,
+        city: data.city,
+        state: data.state,
+        pincode: data.pincode,
+        upiId: data.upiId,
       },
     });
 

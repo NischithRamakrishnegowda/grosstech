@@ -14,6 +14,7 @@ export default function AdminNewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { data: categories = [] } = useSWR("/api/categories", fetcher);
+  const { data: items = [] } = useSWR("/api/items?all=true", fetcher);
 
   async function handleSubmit(data: ProductFormData) {
     setLoading(true);
@@ -44,6 +45,7 @@ export default function AdminNewProductPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <ProductForm
           categories={categories}
+          items={items}
           onSubmit={handleSubmit}
           loading={loading}
           submitLabel="Add to Inventory"

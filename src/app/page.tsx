@@ -11,7 +11,7 @@ export const revalidate = 60;
 
 async function getFeaturedListings() {
   return prisma.listing.findMany({
-    where: { isActive: true },
+    where: { isActive: true, status: "APPROVED" },
     include: {
       category: true,
       priceOptions: { orderBy: { price: "asc" }, take: 1 },
@@ -24,7 +24,7 @@ async function getFeaturedListings() {
 
 async function getCategories() {
   return prisma.category.findMany({
-    include: { _count: { select: { listings: { where: { isActive: true } } } } },
+    include: { _count: { select: { listings: { where: { isActive: true, status: "APPROVED" } } } } },
   });
 }
 

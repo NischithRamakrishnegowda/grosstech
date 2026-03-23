@@ -6,6 +6,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import ProductForm, { ProductFormData } from "@/components/products/ProductForm";
 import { toast } from "sonner";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function AdminEditProductPage() {
   const router = useRouter();
@@ -13,6 +16,7 @@ export default function AdminEditProductPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [listing, setListing] = useState<ProductFormData | null>(null);
+  const { data: items = [] } = useSWR("/api/items?all=true", fetcher);
 
   useEffect(() => {
     Promise.all([
@@ -27,10 +31,13 @@ export default function AdminEditProductPage() {
         description: data.description || "",
         imageUrl: data.imageUrl || "",
         categoryId: data.categoryId,
-        priceOptions: data.priceOptions.map((p: { weight: string; price: number; stock: number }) => ({
+        itemId: data.itemId || "",
+        priceOptions: data.priceOptions.map((p: { weight: string; price: number; stock: number; mode?: string; minQty?: number }) => ({
           weight: p.weight,
           price: p.price,
           stock: p.stock,
+          mode: p.mode || "RETAIL",
+          minQty: p.minQty || 1,
         })),
       });
     }).catch(() => {
@@ -76,6 +83,7 @@ export default function AdminEditProductPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <ProductForm
           categories={categories}
+          items={items}
           defaultValues={listing}
           onSubmit={handleSubmit}
           loading={loading}

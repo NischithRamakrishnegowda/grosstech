@@ -15,6 +15,17 @@ import { toast } from "sonner";
 
 const indianPhone = /^(\+91|91)?[6-9]\d{9}$/;
 
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Delhi", "Jammu & Kashmir", "Ladakh", "Puducherry",
+  "Chandigarh", "Andaman & Nicobar Islands", "Dadra & Nagar Haveli and Daman & Diu", "Lakshadweep",
+];
+
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -22,6 +33,11 @@ const schema = z.object({
   role: z.enum(["BUYER", "SELLER"]),
   phone: z.string().regex(indianPhone, "Enter a valid Indian mobile number"),
   businessName: z.string().optional(),
+  street: z.string().min(3, "Street address is required"),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(1, "Please select a state"),
+  pincode: z.string().regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
+  upiId: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -42,7 +58,7 @@ function SignupForm() {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { role: defaultRole },
+    defaultValues: { role: defaultRole, state: "" },
   });
 
   const role = watch("role");
@@ -152,6 +168,58 @@ function SignupForm() {
               <div className="space-y-1.5">
                 <Label htmlFor="businessName">Business Name</Label>
                 <Input id="businessName" placeholder="Your business name" {...register("businessName")} />
+              </div>
+            )}
+
+            {/* Address Section */}
+            <div className="border-t pt-4 mt-4">
+              <p className="text-sm font-semibold text-gray-700 mb-3">Address</p>
+
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="street">Street / Area *</Label>
+                  <Input id="street" placeholder="House no., Street, Area" {...register("street")} />
+                  {errors.street && <p className="text-xs text-red-500">{errors.street.message}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="city">City *</Label>
+                    <Input id="city" placeholder="City" {...register("city")} />
+                    {errors.city && <p className="text-xs text-red-500">{errors.city.message}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pincode">Pincode *</Label>
+                    <Input id="pincode" placeholder="560001" maxLength={6} {...register("pincode")} />
+                    {errors.pincode && <p className="text-xs text-red-500">{errors.pincode.message}</p>}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="state">State *</Label>
+                  <select
+                    id="state"
+                    {...register("state")}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">Select state</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {errors.state && <p className="text-xs text-red-500">{errors.state.message}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Seller UPI */}
+            {role === "SELLER" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="upiId">UPI ID *</Label>
+                <Input id="upiId" placeholder="yourbusiness@upi" {...register("upiId")} />
+                <p className="text-xs text-gray-400">For receiving payouts from the platform</p>
+                {errors.upiId && <p className="text-xs text-red-500">{errors.upiId.message}</p>}
               </div>
             )}
 

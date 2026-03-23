@@ -29,14 +29,17 @@ interface Listing {
   source: string;
   category: { id: string; name: string; slug: string };
   priceOptions: PriceOption[];
-  seller: { id: string; name: string; businessName: string | null; address: string | null };
+  seller: { id: string; name: string; businessName: string | null };
 }
 
 interface SellerContact {
   name: string;
   phone: string | null;
   email: string;
-  address: string | null;
+  street: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
   businessName: string | null;
 }
 
@@ -304,65 +307,73 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
             </Link>
           )}
 
-          {/* Seller info — only for logged-in BUYER accounts */}
-          {session?.user.role === "BUYER" && (
+          {/* Seller info */}
           <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Seller Information</h3>
+            <p className="text-sm text-gray-700 font-medium">
+              {listing.seller.businessName || listing.seller.name}
+            </p>
 
-            {contactChecking ? (
-              <div className="space-y-2.5 animate-pulse">
-                <div className="h-4 bg-slate-100 rounded w-3/4" />
-                <div className="h-4 bg-slate-100 rounded w-1/2" />
-                <div className="h-9 bg-slate-100 rounded-xl w-full mt-3" />
-              </div>
-            ) : contactLocked ? (
-              <div className="relative">
-                <div className="blur-sm select-none text-sm text-gray-600 space-y-1.5 mb-3 pointer-events-none">
-                  <div className="flex items-center gap-2"><Phone className="w-4 h-4" />+91 ••••••••••</div>
-                  <div className="flex items-center gap-2"><Mail className="w-4 h-4" />••••@••••.com</div>
-                  <div className="flex items-center gap-2"><MapPin className="w-4 h-4" />•••••, Karnataka</div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full border-green-500 text-green-600 hover:bg-green-50 transition-all duration-200"
-                  onClick={handleUnlockContact}
-                  disabled={unlockLoading || contactLoading}
-                >
-                  {unlockLoading || contactLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Lock className="w-4 h-4 mr-2" />
-                  )}
-                  Unlock Seller Contact — ₹{CONTACT_UNLOCK_FEE}
-                </Button>
-              </div>
-            ) : contactInfo ? (
-              <div className="space-y-2 text-sm animate-fade-in">
-                {contactInfo.phone && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Phone className="w-4 h-4 text-green-500" />
-                    <a href={`tel:${contactInfo.phone}`} className="hover:text-green-600 transition-colors font-medium">
-                      {contactInfo.phone}
-                    </a>
+            {/* Contact unlock — only for logged-in BUYER accounts */}
+            {session?.user.role === "BUYER" && (
+              <div className="mt-3">
+                {contactChecking ? (
+                  <div className="space-y-2.5 animate-pulse">
+                    <div className="h-4 bg-slate-100 rounded w-3/4" />
+                    <div className="h-4 bg-slate-100 rounded w-1/2" />
+                    <div className="h-9 bg-slate-100 rounded-xl w-full mt-3" />
                   </div>
-                )}
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Mail className="w-4 h-4 text-green-500" />
-                  <a href={`mailto:${contactInfo.email}`} className="hover:text-green-600 transition-colors">
-                    {contactInfo.email}
-                  </a>
-                </div>
-                {contactInfo.address && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin className="w-4 h-4 text-green-500" />
-                    {contactInfo.address}
+                ) : contactLocked ? (
+                  <div className="relative">
+                    <div className="blur-sm select-none text-sm text-gray-600 space-y-1.5 mb-3 pointer-events-none">
+                      <div className="flex items-center gap-2"><Phone className="w-4 h-4" />+91 ••••••••••</div>
+                      <div className="flex items-center gap-2"><Mail className="w-4 h-4" />••••@••••.com</div>
+                      <div className="flex items-center gap-2"><MapPin className="w-4 h-4" />•••••, Karnataka</div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-green-500 text-green-600 hover:bg-green-50 transition-all duration-200"
+                      onClick={handleUnlockContact}
+                      disabled={unlockLoading || contactLoading}
+                    >
+                      {unlockLoading || contactLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Lock className="w-4 h-4 mr-2" />
+                      )}
+                      Unlock Seller Contact — ₹{CONTACT_UNLOCK_FEE}
+                    </Button>
                   </div>
-                )}
+                ) : contactInfo ? (
+                  <div className="space-y-2 text-sm animate-fade-in">
+                    {contactInfo.phone && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Phone className="w-4 h-4 text-green-500" />
+                        <a href={`tel:${contactInfo.phone}`} className="hover:text-green-600 transition-colors font-medium">
+                          {contactInfo.phone}
+                        </a>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail className="w-4 h-4 text-green-500" />
+                      <a href={`mailto:${contactInfo.email}`} className="hover:text-green-600 transition-colors">
+                        {contactInfo.email}
+                      </a>
+                    </div>
+                    {(contactInfo.street || contactInfo.city) && (
+                      <div className="flex items-start gap-2 text-gray-600">
+                        <MapPin className="w-4 h-4 text-green-500 mt-0.5" />
+                        <span>
+                          {[contactInfo.street, contactInfo.city, contactInfo.state, contactInfo.pincode].filter(Boolean).join(", ")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+            )}
           </div>
-          )}
         </div>
       </div>
 
