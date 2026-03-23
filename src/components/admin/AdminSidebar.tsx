@@ -7,7 +7,7 @@ import { LayoutDashboard, Package, BarChart2, ShoppingBag, Unlock, ClipboardChec
 const links = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck },
-  { href: "/admin/items", label: "Items", icon: Layers },
+  { href: "/admin/items", label: "Catalog", icon: Layers },
   { href: "/admin/inventory", label: "Inventory", icon: Package },
   { href: "/admin/buyer-requests", label: "Buy Requests", icon: MessageSquare },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },

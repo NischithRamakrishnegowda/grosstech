@@ -2,9 +2,23 @@ import "dotenv/config";
 import { PrismaClient, Role, ListingSource } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import fs from "fs";
+import path from "path";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
+
+// Convert a local image file to a base64 data URL
+function imageToBase64(filePath: string): string | null {
+  try {
+    const abs = path.resolve(filePath);
+    if (!fs.existsSync(abs)) return null;
+    const buf = fs.readFileSync(abs);
+    const ext = path.extname(abs).toLowerCase();
+    const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+    return `data:${mime};base64,${buf.toString("base64")}`;
+  } catch { return null; }
+}
 
 async function main() {
   // Create admin user
@@ -65,81 +79,91 @@ async function main() {
     },
   });
 
-  // Create categories
+  // Create categories with images
+  // Images are in ~/Downloads — adjust path as needed
+  const dlDir = path.join(process.env.HOME || "/home/nischith-gowda", "Downloads");
+
   const categories = [
-    { name: "Grains", slug: "grains" },
-    { name: "Sugar", slug: "sugar" },
-    { name: "Oil", slug: "oil" },
-    { name: "Pulses", slug: "pulses" },
-    { name: "Spices", slug: "spices" },
+    { name: "Grains", slug: "grains", imgFile: "grains.jpg" },
+    { name: "Sugar", slug: "sugar", imgFile: "refinedsugar.jpg" },
+    { name: "Oil", slug: "oil", imgFile: "oil.jpg" },
+    { name: "Pulses", slug: "pulses", imgFile: "pulses.jpg" },
+    { name: "Spices", slug: "spices", imgFile: "spices.jpg" },
   ];
 
   const createdCategories: Record<string, string> = {};
   for (const cat of categories) {
+    const imageUrl = imageToBase64(path.join(dlDir, cat.imgFile));
     const created = await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: { name: cat.name },
-      create: cat,
+      update: { name: cat.name, ...(imageUrl ? { imageUrl } : {}) },
+      create: { name: cat.name, slug: cat.slug, ...(imageUrl ? { imageUrl } : {}) },
     });
     createdCategories[cat.slug] = created.id;
   }
 
   // Create predefined items under categories
-  // Items use their own image if available, otherwise the category image
-  const categoryImage: Record<string, string> = {
-    grains: "/categories/grains.jpg",
-    sugar: "/categories/sugar.jpg",
-    oil: "/categories/oil.jpg",
-    pulses: "/categories/pulses.jpg",
-    spices: "/categories/spices.jpg",
+  // Map item slugs to their image filenames in ~/Downloads
+  const itemImageFiles: Record<string, string> = {
+    "rice": "rice.jpg", "wheat": "wheat.jpg", "ragi": "ragi.jpg", "corn": "corn.jpg",
+    "jowar": "jowar.jpg", "bajra": "bajra.jpg",
+    "refined-sugar": "refinedsugar.jpg", "jaggery": "jaggery.jpg", "brown-sugar": "brownsugar.jpg",
+    "sunflower-oil": "sunfloweroil.jpg", "groundnut-oil": "groundnutoil.jpg",
+    "coconut-oil": "coconutoil.jpg", "mustard-oil": "mustardoil.jpg",
+    "toor-dal": "toordal.jpg", "moong-dal": "moongdal.jpg", "chana-dal": "chanadal.jpg",
+    "urad-dal": "uraddal.jpg", "masoor-dal": "masoordal.jpg",
+    "turmeric-powder": "turmeric.jpg", "red-chilli-powder": "redchillipowder.jpg",
+    "cumin": "cumin.jpg", "coriander-powder": "corianderpowder.jpg", "garam-masala": "garammasala.jpg",
   };
 
-  const itemsByCategory: Record<string, { name: string; slug: string; imageUrl: string }[]> = {
+  const itemsByCategory: Record<string, { name: string; slug: string }[]> = {
     grains: [
-      { name: "Rice", slug: "rice", imageUrl: "/categories/rice.jpg" },
-      { name: "Wheat", slug: "wheat", imageUrl: "/categories/wheat.jpg" },
-      { name: "Ragi", slug: "ragi", imageUrl: "/categories/ragi.jpg" },
-      { name: "Corn", slug: "corn", imageUrl: "/categories/corn.jpg" },
-      { name: "Jowar", slug: "jowar", imageUrl: categoryImage["grains"] },
-      { name: "Bajra", slug: "bajra", imageUrl: categoryImage["grains"] },
+      { name: "Rice", slug: "rice" },
+      { name: "Wheat", slug: "wheat" },
+      { name: "Ragi", slug: "ragi" },
+      { name: "Corn", slug: "corn" },
+      { name: "Jowar", slug: "jowar" },
+      { name: "Bajra", slug: "bajra" },
     ],
     sugar: [
-      { name: "Refined Sugar", slug: "refined-sugar", imageUrl: categoryImage["sugar"] },
-      { name: "Jaggery", slug: "jaggery", imageUrl: categoryImage["sugar"] },
-      { name: "Brown Sugar", slug: "brown-sugar", imageUrl: categoryImage["sugar"] },
+      { name: "Refined Sugar", slug: "refined-sugar" },
+      { name: "Jaggery", slug: "jaggery" },
+      { name: "Brown Sugar", slug: "brown-sugar" },
     ],
     oil: [
-      { name: "Sunflower Oil", slug: "sunflower-oil", imageUrl: categoryImage["oil"] },
-      { name: "Groundnut Oil", slug: "groundnut-oil", imageUrl: categoryImage["oil"] },
-      { name: "Coconut Oil", slug: "coconut-oil", imageUrl: categoryImage["oil"] },
-      { name: "Mustard Oil", slug: "mustard-oil", imageUrl: categoryImage["oil"] },
+      { name: "Sunflower Oil", slug: "sunflower-oil" },
+      { name: "Groundnut Oil", slug: "groundnut-oil" },
+      { name: "Coconut Oil", slug: "coconut-oil" },
+      { name: "Mustard Oil", slug: "mustard-oil" },
     ],
     pulses: [
-      { name: "Toor Dal", slug: "toor-dal", imageUrl: categoryImage["pulses"] },
-      { name: "Moong Dal", slug: "moong-dal", imageUrl: categoryImage["pulses"] },
-      { name: "Chana Dal", slug: "chana-dal", imageUrl: categoryImage["pulses"] },
-      { name: "Urad Dal", slug: "urad-dal", imageUrl: categoryImage["pulses"] },
-      { name: "Masoor Dal", slug: "masoor-dal", imageUrl: categoryImage["pulses"] },
+      { name: "Toor Dal", slug: "toor-dal" },
+      { name: "Moong Dal", slug: "moong-dal" },
+      { name: "Chana Dal", slug: "chana-dal" },
+      { name: "Urad Dal", slug: "urad-dal" },
+      { name: "Masoor Dal", slug: "masoor-dal" },
     ],
     spices: [
-      { name: "Turmeric Powder", slug: "turmeric-powder", imageUrl: categoryImage["spices"] },
-      { name: "Red Chilli Powder", slug: "red-chilli-powder", imageUrl: categoryImage["spices"] },
-      { name: "Cumin", slug: "cumin", imageUrl: categoryImage["spices"] },
-      { name: "Coriander Powder", slug: "coriander-powder", imageUrl: categoryImage["spices"] },
-      { name: "Garam Masala", slug: "garam-masala", imageUrl: categoryImage["spices"] },
+      { name: "Turmeric Powder", slug: "turmeric-powder" },
+      { name: "Red Chilli Powder", slug: "red-chilli-powder" },
+      { name: "Cumin", slug: "cumin" },
+      { name: "Coriander Powder", slug: "coriander-powder" },
+      { name: "Garam Masala", slug: "garam-masala" },
     ],
   };
 
   const createdItems: Record<string, string> = {};
   for (const [categorySlug, items] of Object.entries(itemsByCategory)) {
     for (const item of items) {
+      const imgFile = itemImageFiles[item.slug];
+      const imageUrl = imgFile ? imageToBase64(path.join(dlDir, imgFile)) : null;
       const created = await prisma.item.upsert({
         where: { slug: item.slug },
-        update: { name: item.name, imageUrl: item.imageUrl },
+        update: { name: item.name, ...(imageUrl ? { imageUrl } : {}) },
         create: {
           name: item.name,
           slug: item.slug,
-          imageUrl: item.imageUrl,
+          ...(imageUrl ? { imageUrl } : {}),
           categoryId: createdCategories[categorySlug],
         },
       });

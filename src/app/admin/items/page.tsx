@@ -2,9 +2,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import ItemManager from "@/components/admin/ItemManager";
+import CatalogTabs from "./CatalogTabs";
 
-export default async function AdminItemsPage() {
+export default async function AdminCatalogPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "ADMIN") redirect("/login");
 
@@ -16,12 +16,15 @@ export default async function AdminItemsPage() {
       },
       orderBy: [{ category: { name: "asc" } }, { name: "asc" }],
     }),
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.category.findMany({
+      include: { _count: { select: { items: true, listings: true } } },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return (
-    <ItemManager
-      initialItems={JSON.parse(JSON.stringify(items))}
+    <CatalogTabs
+      items={JSON.parse(JSON.stringify(items))}
       categories={JSON.parse(JSON.stringify(categories))}
     />
   );
