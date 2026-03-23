@@ -85,39 +85,48 @@ async function main() {
   }
 
   // Create predefined items under categories
+  // Items use their own image if available, otherwise the category image
+  const categoryImage: Record<string, string> = {
+    grains: "/categories/grains.jpg",
+    sugar: "/categories/sugar.jpg",
+    oil: "/categories/oil.jpg",
+    pulses: "/categories/pulses.jpg",
+    spices: "/categories/spices.jpg",
+  };
+
   const itemsByCategory: Record<string, { name: string; slug: string; imageUrl: string }[]> = {
     grains: [
-      { name: "Rice", slug: "rice", imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop" },
-      { name: "Wheat", slug: "wheat", imageUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop" },
-      { name: "Ragi", slug: "ragi", imageUrl: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400&h=300&fit=crop" },
-      { name: "Corn", slug: "corn", imageUrl: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=300&fit=crop" },
-      { name: "Jowar", slug: "jowar", imageUrl: "https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&h=300&fit=crop" },
-      { name: "Bajra", slug: "bajra", imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop&q=80" },
+      { name: "Rice", slug: "rice", imageUrl: "/categories/rice.jpg" },
+      { name: "Wheat", slug: "wheat", imageUrl: "/categories/wheat.jpg" },
+      { name: "Ragi", slug: "ragi", imageUrl: "/categories/ragi.jpg" },
+      { name: "Corn", slug: "corn", imageUrl: "/categories/corn.jpg" },
+      { name: "Jowar", slug: "jowar", imageUrl: categoryImage["grains"] },
+      { name: "Bajra", slug: "bajra", imageUrl: categoryImage["grains"] },
     ],
     sugar: [
-      { name: "Refined Sugar", slug: "refined-sugar", imageUrl: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=400&h=300&fit=crop" },
-      { name: "Jaggery", slug: "jaggery", imageUrl: "https://images.unsplash.com/photo-1611243017767-508da8db2b85?w=400&h=300&fit=crop" },
-      { name: "Brown Sugar", slug: "brown-sugar", imageUrl: "https://images.unsplash.com/photo-1589135233689-3e0e133f050f?w=400&h=300&fit=crop" },
+      { name: "Refined Sugar", slug: "refined-sugar", imageUrl: categoryImage["sugar"] },
+      { name: "Jaggery", slug: "jaggery", imageUrl: categoryImage["sugar"] },
+      { name: "Brown Sugar", slug: "brown-sugar", imageUrl: categoryImage["sugar"] },
     ],
     oil: [
-      { name: "Sunflower Oil", slug: "sunflower-oil", imageUrl: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&h=300&fit=crop" },
-      { name: "Groundnut Oil", slug: "groundnut-oil", imageUrl: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=400&h=300&fit=crop" },
-      { name: "Coconut Oil", slug: "coconut-oil", imageUrl: "https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=400&h=300&fit=crop" },
-      { name: "Mustard Oil", slug: "mustard-oil", imageUrl: "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=400&h=300&fit=crop" },
+      { name: "Sunflower Oil", slug: "sunflower-oil", imageUrl: categoryImage["oil"] },
+      { name: "Groundnut Oil", slug: "groundnut-oil", imageUrl: categoryImage["oil"] },
+      { name: "Coconut Oil", slug: "coconut-oil", imageUrl: categoryImage["oil"] },
+      { name: "Mustard Oil", slug: "mustard-oil", imageUrl: categoryImage["oil"] },
     ],
     pulses: [
-      { name: "Toor Dal", slug: "toor-dal", imageUrl: "https://images.unsplash.com/photo-1613743983303-b3e89f8a2b80?w=400&h=300&fit=crop" },
-      { name: "Moong Dal", slug: "moong-dal", imageUrl: "https://images.unsplash.com/photo-1612257416648-ee7a6c5b6d70?w=400&h=300&fit=crop" },
-      { name: "Chana Dal", slug: "chana-dal", imageUrl: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400&h=300&fit=crop" },
-      { name: "Urad Dal", slug: "urad-dal", imageUrl: "https://images.unsplash.com/photo-1613743983303-b3e89f8a2b80?w=400&h=300&fit=crop&q=80" },
-      { name: "Masoor Dal", slug: "masoor-dal", imageUrl: "https://images.unsplash.com/photo-1612257416648-ee7a6c5b6d70?w=400&h=300&fit=crop&q=80" },
+      { name: "Toor Dal", slug: "toor-dal", imageUrl: categoryImage["pulses"] },
+      { name: "Moong Dal", slug: "moong-dal", imageUrl: categoryImage["pulses"] },
+      { name: "Chana Dal", slug: "chana-dal", imageUrl: categoryImage["pulses"] },
+      { name: "Urad Dal", slug: "urad-dal", imageUrl: categoryImage["pulses"] },
+      { name: "Masoor Dal", slug: "masoor-dal", imageUrl: categoryImage["pulses"] },
     ],
     spices: [
-      { name: "Turmeric Powder", slug: "turmeric-powder", imageUrl: "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=400&h=300&fit=crop&q=80" },
-      { name: "Red Chilli Powder", slug: "red-chilli-powder", imageUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop" },
-      { name: "Cumin", slug: "cumin", imageUrl: "https://images.unsplash.com/photo-1599909533287-45014a529c85?w=400&h=300&fit=crop" },
-      { name: "Coriander Powder", slug: "coriander-powder", imageUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop&q=80" },
-      { name: "Garam Masala", slug: "garam-masala", imageUrl: "https://images.unsplash.com/photo-1532336414038-cf19250c5757?w=400&h=300&fit=crop" },
+      { name: "Turmeric Powder", slug: "turmeric-powder", imageUrl: categoryImage["spices"] },
+      { name: "Red Chilli Powder", slug: "red-chilli-powder", imageUrl: categoryImage["spices"] },
+      { name: "Cumin", slug: "cumin", imageUrl: categoryImage["spices"] },
+      { name: "Coriander Powder", slug: "coriander-powder", imageUrl: categoryImage["spices"] },
+      { name: "Garam Masala", slug: "garam-masala", imageUrl: categoryImage["spices"] },
     ],
   };
 
