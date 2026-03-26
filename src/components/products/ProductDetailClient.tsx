@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, ArrowLeft, Lock, Phone, Mail, MapPin, Loader2, Package2 } from "lucide-react";
-import ContactUnlockMockModal from "@/components/checkout/ContactUnlockMockModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -84,7 +83,6 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
   const [contactChecking, setContactChecking] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
   const [unlockLoading, setUnlockLoading] = useState(false);
-  const [mockModal, setMockModal] = useState<{ razorpayOrderId: string } | null>(null);
 
   const emoji = CATEGORY_EMOJIS[listing.category.slug] || "📦";
   const imageSrc = listing.imageUrl || getImageSrc(listing.category.slug, listing.name);
@@ -149,7 +147,6 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
     } finally {
       setContactLoading(false);
       setUnlockLoading(false);
-      setMockModal(null);
     }
   }
 
@@ -167,12 +164,6 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-
-      if (data.isMock) {
-        setMockModal({ razorpayOrderId: data.razorpayOrderId });
-        setUnlockLoading(false);
-        return;
-      }
 
       const Razorpay = (window as unknown as { Razorpay: new (opts: unknown) => { open: () => void } }).Razorpay;
       const rzp = new Razorpay({
@@ -379,15 +370,6 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-      {mockModal && (
-        <ContactUnlockMockModal
-          razorpayOrderId={mockModal.razorpayOrderId}
-          amount={CONTACT_UNLOCK_FEE * 100}
-          sellerId={listing.seller.id}
-          onSuccess={verifyAndReveal}
-          onClose={() => { setMockModal(null); setUnlockLoading(false); }}
-        />
-      )}
     </div>
   );
 }

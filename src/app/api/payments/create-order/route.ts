@@ -44,31 +44,17 @@ export async function POST(req: Request) {
     }
 
     const total = subtotal + PLATFORM_FEE;
-    const isMock = process.env.RAZORPAY_MODE === "mock";
 
-    let razorpayOrderId: string;
-    let amount: number;
-    let currency = "INR";
-
-    if (isMock) {
-      // No real Razorpay call in mock mode
-      razorpayOrderId = `mock_order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-      amount = Math.round(total * 100);
-    } else {
-      const rzpOrder = await razorpay.orders.create({
-        amount: Math.round(total * 100),
-        currency: "INR",
-        receipt: `receipt_${Date.now()}`,
-      });
-      razorpayOrderId = rzpOrder.id;
-      amount = rzpOrder.amount as number;
-      currency = rzpOrder.currency;
-    }
+    const rzpOrder = await razorpay.orders.create({
+      amount: Math.round(total * 100),
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`,
+    });
 
     // Store order as PENDING in DB immediately
     const order = await prisma.order.create({
       data: {
-        razorpayOrderId,
+        razorpayOrderId: rzpOrder.id,
         buyerId: session.user.id,
         subtotal,
         platformFee: PLATFORM_FEE,
@@ -89,15 +75,14 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({
-      razorpayOrderId,
+      razorpayOrderId: rzpOrder.id,
       internalOrderId: order.id,
-      amount,
-      currency,
+      amount: rzpOrder.amount,
+      currency: rzpOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
       subtotal,
       platformFee: PLATFORM_FEE,
       total,
-      isMock,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

@@ -26,22 +26,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = schema.parse(body);
 
-    const isMock = process.env.RAZORPAY_MODE === "mock";
+    // Verify HMAC-SHA256 signature
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(razorpayOrderId + "|" + razorpayPaymentId)
+      .digest("hex");
 
-    if (!isMock) {
-      // Verify HMAC-SHA256 signature
-      const secret = process.env.RAZORPAY_KEY_SECRET;
-      if (!secret) return NextResponse.json({ error: "Payment not configured" }, { status: 500 });
-      const expectedSignature = crypto
-        .createHmac("sha256", secret)
-        .update(razorpayOrderId + "|" + razorpayPaymentId)
-        .digest("hex");
-
-      if (expectedSignature !== razorpaySignature) {
-        const buyer = await prisma.user.findUnique({ where: { id: session.user.id } });
-        if (buyer) sendPaymentFailedEmail(buyer, 0).catch(() => {});
-        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-      }
+    if (expectedSignature !== razorpaySignature) {
+      const buyer = await prisma.user.findUnique({ where: { id: session.user.id } });
+      if (buyer) sendPaymentFailedEmail(buyer, 0).catch(() => {});
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     // Find the PENDING order created at checkout initiation

@@ -11,8 +11,6 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { CONTACT_UNLOCK_FEE } from "@/lib/constants";
-import ContactUnlockMockModal from "@/components/checkout/ContactUnlockMockModal";
-
 interface PriceOption {
   id: string;
   weight: string;
@@ -67,7 +65,6 @@ export default function ItemDetailClient({
   // Contact unlock state per seller
   const [unlockedSellers, setUnlockedSellers] = useState<Record<string, SellerContact>>({});
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
-  const [mockModal, setMockModal] = useState<{ razorpayOrderId: string; sellerId: string } | null>(null);
   const [contactLoading, setContactLoading] = useState(true);
 
   // Check which sellers are already unlocked
@@ -163,12 +160,6 @@ export default function ItemDetailClient({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-
-      if (data.isMock) {
-        setMockModal({ razorpayOrderId: data.razorpayOrderId, sellerId });
-        setUnlockingId(null);
-        return;
-      }
 
       const Razorpay = (window as unknown as { Razorpay: new (opts: unknown) => { open: () => void } }).Razorpay;
       const rzp = new Razorpay({
@@ -439,15 +430,6 @@ export default function ItemDetailClient({
 
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-      {mockModal && (
-        <ContactUnlockMockModal
-          razorpayOrderId={mockModal.razorpayOrderId}
-          amount={CONTACT_UNLOCK_FEE * 100}
-          sellerId={mockModal.sellerId}
-          onSuccess={(orderId, paymentId, sig) => verifyAndReveal(orderId, paymentId, sig, mockModal.sellerId)}
-          onClose={() => { setMockModal(null); setUnlockingId(null); }}
-        />
-      )}
     </div>
   );
 }

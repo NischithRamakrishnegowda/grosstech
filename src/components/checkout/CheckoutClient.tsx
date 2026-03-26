@@ -13,20 +13,12 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { PLATFORM_FEE } from "@/lib/constants";
-import MockPaymentModal from "@/components/checkout/MockPaymentModal";
 
 export default function CheckoutClient() {
   const { items, removeItem, updateQty, clearCart } = useCart();
   const { data: session } = useSession();
   const router = useRouter();
   const [paying, setPaying] = useState(false);
-
-  // Mock modal state
-  const [mockModal, setMockModal] = useState<{
-    internalOrderId: string;
-    razorpayOrderId: string;
-    amount: number;
-  } | null>(null);
 
   // Shipping fields (prefilled from session)
   const [lane1, setLane1] = useState("");
@@ -80,7 +72,6 @@ export default function CheckoutClient() {
 
     setPaying(true);
     try {
-      // Create order (stores PENDING in DB, includes shipping + items)
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -98,18 +89,6 @@ export default function CheckoutClient() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      if (data.isMock) {
-        // Show mock payment modal
-        setMockModal({
-          internalOrderId: data.internalOrderId,
-          razorpayOrderId: data.razorpayOrderId,
-          amount: data.amount,
-        });
-        setPaying(false);
-        return;
-      }
-
-      // Real Razorpay modal
       const Razorpay = (window as unknown as { Razorpay: new (opts: unknown) => { open: () => void } }).Razorpay;
       const rzp = new Razorpay({
         key: data.keyId,
@@ -133,7 +112,6 @@ export default function CheckoutClient() {
             clearCart();
             router.push(`/checkout/success?orderId=${orderId}`);
           } else {
-            // Mark order as FAILED
             await fetch("/api/payments/update-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -151,7 +129,6 @@ export default function CheckoutClient() {
         theme: { color: "#16a34a" },
         modal: {
           ondismiss: () => {
-            // Mark order as CANCELLED
             fetch("/api/payments/update-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -199,19 +176,6 @@ export default function CheckoutClient() {
 
   return (
     <>
-      {mockModal && (
-        <MockPaymentModal
-          internalOrderId={mockModal.internalOrderId}
-          razorpayOrderId={mockModal.razorpayOrderId}
-          amount={mockModal.amount}
-          onClearCart={clearCart}
-          onClose={() => {
-            setMockModal(null);
-            setPaying(false);
-          }}
-        />
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: cart + shipping */}
         <div className="lg:col-span-2 space-y-4">

@@ -3,11 +3,6 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
-  // Skip webhook processing in mock mode
-  if (process.env.RAZORPAY_MODE === "mock") {
-    return NextResponse.json({ status: "ok" });
-  }
-
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secret) {
     console.error("RAZORPAY_WEBHOOK_SECRET not set");
