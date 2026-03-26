@@ -141,7 +141,6 @@ export default function ItemDetailClient({
       }
     } finally {
       setUnlockingId(null);
-      setMockModal(null);
     }
   }
 
