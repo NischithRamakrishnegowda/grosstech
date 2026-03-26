@@ -1,28 +1,19 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import ProductCard from "@/components/products/ProductCard";
+import ItemCard from "@/components/products/ItemCard";
 
-interface PriceOption {
-  id: string;
-  weight: string;
-  price: number;
-  stock: number;
-}
-
-interface Listing {
+interface Item {
   id: string;
   name: string;
-  brand: string | null;
-  description: string | null;
+  slug: string;
   imageUrl: string | null;
-  source: string;
   category: { id: string; name: string; slug: string };
-  priceOptions: PriceOption[];
-  seller: { id: string; name: string; businessName: string | null };
+  sellerCount: number;
+  lowestPrice: number | null;
 }
 
-export default function FeaturedProducts({ listings }: { listings: Listing[] }) {
-  if (listings.length === 0) return null;
+export default function FeaturedProducts({ items }: { items: Item[] }) {
+  if (items.length === 0) return null;
 
   return (
     <section className="py-16 bg-slate-50">
@@ -41,13 +32,13 @@ export default function FeaturedProducts({ listings }: { listings: Listing[] }) 
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {listings.map((listing, i) => (
+          {items.map((item, i) => (
             <div
-              key={listing.id}
+              key={item.id}
               className="animate-fade-up"
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <ProductCard listing={listing} />
+              <ItemCard item={item} />
             </div>
           ))}
         </div>

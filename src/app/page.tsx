@@ -9,17 +9,41 @@ import { prisma } from "@/lib/prisma";
 
 export const revalidate = 60;
 
-async function getFeaturedListings() {
-  return prisma.listing.findMany({
-    where: { isActive: true, status: "APPROVED" },
+async function getFeaturedItems() {
+  const items = await prisma.item.findMany({
+    where: {
+      listings: {
+        some: { isActive: true, status: "APPROVED" },
+      },
+    },
     include: {
       category: true,
-      priceOptions: { orderBy: { price: "asc" }, take: 1 },
-      seller: { select: { id: true, name: true, businessName: true } },
+      _count: {
+        select: {
+          listings: { where: { isActive: true, status: "APPROVED" } },
+        },
+      },
+      listings: {
+        where: { isActive: true, status: "APPROVED" },
+        include: {
+          priceOptions: { orderBy: { price: "asc" }, take: 1 },
+        },
+        take: 1,
+      },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { name: "asc" },
     take: 8,
   });
+
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    imageUrl: item.imageUrl,
+    category: item.category,
+    sellerCount: item._count.listings,
+    lowestPrice: item.listings[0]?.priceOptions[0]?.price ?? null,
+  }));
 }
 
 async function getCategories() {
@@ -29,8 +53,8 @@ async function getCategories() {
 }
 
 export default async function HomePage() {
-  const [listings, categories] = await Promise.all([
-    getFeaturedListings(),
+  const [items, categories] = await Promise.all([
+    getFeaturedItems(),
     getCategories(),
   ]);
 
@@ -40,7 +64,7 @@ export default async function HomePage() {
       <main className="flex-1">
         <HeroSection />
         <CategoriesSection categories={categories} />
-        <FeaturedProducts listings={listings} />
+        <FeaturedProducts items={items} />
         <HowItWorks />
         <AboutSection />
       </main>

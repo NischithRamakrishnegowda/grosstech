@@ -68,13 +68,48 @@ export default function PayoutManager({
 
   async function handleRelease(orderId: string) {
     setReleasing(orderId);
-    const res = await fetch(`/api/admin/payouts/${orderId}`, { method: "PUT" });
-    setReleasing(null);
-    setConfirmOrder(null);
-    if (res.ok) {
-      toast.success("Payment released to seller!");
+    try {
+      const res = await fetch(`/api/admin/payouts/${orderId}`, { method: "PUT" });
+      const data = await res.json();
+      setReleasing(null);
+      setConfirmOrder(null);
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to release payment");
+        return;
+      }
+
+      // Show payout results per seller
+      const payouts = data.payouts as Array<{ seller: string; amount: number; success: boolean; payoutId?: string; error?: string }>;
+      if (payouts && payouts.length > 0) {
+        const allSuccess = payouts.every((p) => p.success);
+        const anySuccess = payouts.some((p) => p.success);
+
+        if (allSuccess) {
+          toast.success("Payment released via Razorpay to all sellers!");
+        } else if (anySuccess) {
+          toast.success("Payment released — some payouts need manual action", {
+            description: payouts.filter((p) => !p.success).map((p) => `${p.seller}: ${p.error}`).join("; "),
+          });
+        } else {
+          // All failed (e.g. RazorpayX not configured) — order still marked released
+          const firstError = payouts[0]?.error || "";
+          if (firstError.includes("not configured")) {
+            toast.success("Order marked as released (manual payout needed — RazorpayX not configured)");
+          } else {
+            toast.warning("Order released but automatic payout failed", {
+              description: payouts.map((p) => `${p.seller}: ${p.error}`).join("; "),
+            });
+          }
+        }
+      } else {
+        toast.success("Payment released to seller!");
+      }
+
       router.refresh();
-    } else {
+    } catch {
+      setReleasing(null);
+      setConfirmOrder(null);
       toast.error("Failed to release payment");
     }
   }
