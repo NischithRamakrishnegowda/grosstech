@@ -161,6 +161,9 @@ model Order {
   shippingPhone   String?
   secondaryPhone  String?
 
+  deliveryOption  String  @default("SELF_PICKUP")
+  deliveryCharge  Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

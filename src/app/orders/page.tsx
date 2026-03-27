@@ -81,11 +81,25 @@ export default async function OrdersPage() {
                     ))}
                   </div>
 
-                  <div className="border-t pt-3 flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                    <div className="text-gray-500 text-xs">
-                      Subtotal ₹{order.subtotal} + Fee ₹{order.platformFee}
+                  <div className="border-t pt-3 space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
+                      <div className="text-gray-500 text-xs">
+                        Subtotal ₹{order.subtotal} + Fee ₹{order.platformFee}
+                      </div>
+                      <div className="font-bold text-green-600">Total: ₹{order.total}</div>
                     </div>
-                    <div className="font-bold text-green-600">Total: ₹{order.total}</div>
+                    {order.deliveryOption === "DELIVERY" ? (
+                      <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                        🚚 Delivery
+                        {order.deliveryCharge != null
+                          ? ` · Charge: ₹${order.deliveryCharge} (paid separately)`
+                          : " · Delivery charge will be communicated by admin/seller"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                        📦 Self Pickup
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}

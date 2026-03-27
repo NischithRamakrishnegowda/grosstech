@@ -17,6 +17,7 @@ const schema = z.object({
   shippingAddress: z.string().optional(),
   shippingPhone: z.string().optional(),
   secondaryPhone: z.string().optional(),
+  deliveryOption: z.enum(["SELF_PICKUP", "DELIVERY"]).default("SELF_PICKUP"),
 });
 
 export async function POST(req: Request) {
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { items, shippingAddress, shippingPhone, secondaryPhone } = schema.parse(body);
+    const { items, shippingAddress, shippingPhone, secondaryPhone, deliveryOption } = schema.parse(body);
 
     // Fetch all prices from DB — never trust client
     const priceOptions = await prisma.priceOption.findMany({
@@ -63,6 +64,7 @@ export async function POST(req: Request) {
         shippingAddress: shippingAddress || null,
         shippingPhone: shippingPhone || null,
         secondaryPhone: secondaryPhone || null,
+        deliveryOption,
         items: {
           create: itemsWithPrice.map((item) => ({
             listingId: item.listingId,

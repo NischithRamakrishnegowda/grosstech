@@ -65,6 +65,19 @@ export default async function SellerOrdersPage() {
                 ))}
               </div>
 
+              <div className="flex flex-wrap gap-2 mb-2">
+                {order.deliveryOption === "DELIVERY" ? (
+                  <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                    🚚 Delivery
+                    {order.deliveryCharge != null ? ` · ₹${order.deliveryCharge}` : " · charge TBD"}
+                  </span>
+                ) : (
+                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                    📦 Self Pickup
+                  </span>
+                )}
+              </div>
+
               {order.status === "PAYMENT_HELD" && order.releaseScheduledAt && (
                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
                   Payment releases on {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CheckCircle, Clock, AlertCircle, Wallet, Landmark, X, Loader2 } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, Wallet, Landmark, X, Loader2, Truck, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useState } from "react";
 import { PLATFORM_FEE } from "@/lib/constants";
@@ -21,6 +22,8 @@ interface Order {
   status: string;
   releaseScheduledAt: Date | null;
   createdAt: Date;
+  deliveryOption: string;
+  deliveryCharge: number | null;
   buyer: { name: string; email: string };
   items: OrderItem[];
 }
@@ -90,6 +93,30 @@ export default function PayoutManager({
   const router = useRouter();
   const [releasing, setReleasing] = useState<string | null>(null);
   const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
+  const [deliveryChargeInput, setDeliveryChargeInput] = useState<Record<string, string>>({});
+  const [savingCharge, setSavingCharge] = useState<string | null>(null);
+
+  async function handleSetDeliveryCharge(orderId: string) {
+    const val = deliveryChargeInput[orderId];
+    const charge = parseFloat(val);
+    if (isNaN(charge) || charge < 0) {
+      toast.error("Enter a valid delivery charge");
+      return;
+    }
+    setSavingCharge(orderId);
+    const res = await fetch(`/api/admin/orders/${orderId}/delivery-charge`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deliveryCharge: charge }),
+    });
+    setSavingCharge(null);
+    if (res.ok) {
+      toast.success("Delivery charge saved");
+      router.refresh();
+    } else {
+      toast.error("Failed to save delivery charge");
+    }
+  }
 
   async function handleRelease(orderId: string) {
     setReleasing(orderId);
@@ -147,6 +174,35 @@ export default function PayoutManager({
                     </div>
                   ))}
 
+                  {/* Delivery info */}
+                  {order.deliveryOption === "DELIVERY" && (
+                    <div className="mb-3 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Truck className="w-3 h-3" /> Delivery
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Charge ₹"
+                          className="h-7 w-24 text-xs"
+                          value={deliveryChargeInput[order.id] ?? (order.deliveryCharge?.toString() || "")}
+                          onChange={(e) => setDeliveryChargeInput((p) => ({ ...p, [order.id]: e.target.value }))}
+                        />
+                        <Button size="sm" className="h-7 text-xs" onClick={() => handleSetDeliveryCharge(order.id)} disabled={savingCharge === order.id}>
+                          {savingCharge === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {order.deliveryOption === "SELF_PICKUP" && (
+                    <div className="mb-3">
+                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
+                        <PackageCheck className="w-3 h-3" /> Self Pickup
+                      </span>
+                    </div>
+                  )}
+
                   {/* Fee breakdown */}
                   <div className="border-t border-gray-100 pt-3 mb-4 space-y-1 text-sm">
                     <div className="flex justify-between text-gray-500">
@@ -157,6 +213,12 @@ export default function PayoutManager({
                       <span>Platform Fee</span>
                       <span>- ₹{PLATFORM_FEE}</span>
                     </div>
+                    {order.deliveryOption === "DELIVERY" && order.deliveryCharge != null && (
+                      <div className="flex justify-between text-blue-600">
+                        <span>Delivery Charge (separate)</span>
+                        <span>₹{order.deliveryCharge}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-semibold text-green-700 pt-1 border-t border-dashed border-gray-200">
                       <span>Net to Release</span>
                       <span>₹{netToSeller}</span>
@@ -216,7 +278,7 @@ export default function PayoutManager({
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 mb-3">
+                    <p className="text-xs text-gray-400 mb-2">
                       {new Date(order.createdAt).toLocaleDateString("en-IN")}
                       {order.releaseScheduledAt && order.status === "PAYMENT_HELD" && (
                         <span className={`ml-2 ${isPastDue ? "text-green-600 font-medium" : "text-gray-400"}`}>
@@ -224,6 +286,17 @@ export default function PayoutManager({
                         </span>
                       )}
                     </p>
+                    <div className="mb-3">
+                      {order.deliveryOption === "DELIVERY" ? (
+                        <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                          <Truck className="w-3 h-3" /> Delivery{order.deliveryCharge != null ? ` · ₹${order.deliveryCharge}` : " · charge not set"}
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                          <PackageCheck className="w-3 h-3" /> Self Pickup
+                        </span>
+                      )}
+                    </div>
                     {order.status === "PAYMENT_HELD" && (
                       <Button
                         size="sm"
@@ -256,6 +329,7 @@ export default function PayoutManager({
                       <th className="px-4 py-3 text-left font-medium text-gray-600">Buyer</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-600">Seller</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-600">Total</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Delivery</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-600">Action</th>
@@ -275,6 +349,17 @@ export default function PayoutManager({
                             {primarySeller && <SellerPaymentInfo seller={primarySeller} />}
                           </td>
                           <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
+                          <td className="px-4 py-3">
+                            {order.deliveryOption === "DELIVERY" ? (
+                              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                <Truck className="w-3 h-3" /> {order.deliveryCharge != null ? `₹${order.deliveryCharge}` : "TBD"}
+                              </span>
+                            ) : (
+                              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                <PackageCheck className="w-3 h-3" /> Pickup
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3">
                             <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
                               {STATUS_LABELS[order.status] || order.status.replace(/_/g, " ")}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone, ShieldAlert } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone, ShieldAlert, Truck, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ export default function CheckoutClient() {
   const { data: session } = useSession();
   const router = useRouter();
   const [paying, setPaying] = useState(false);
+  const [deliveryOption, setDeliveryOption] = useState<"SELF_PICKUP" | "DELIVERY">("SELF_PICKUP");
 
   // Shipping fields (prefilled from session)
   const [lane1, setLane1] = useState("");
@@ -57,13 +58,15 @@ export default function CheckoutClient() {
       toast.error("Your cart is empty");
       return;
     }
-    if (!lane1.trim()) {
-      toast.error("Please enter your street address (Lane 1)");
-      return;
-    }
-    if (!pincode.trim() || !/^\d{6}$/.test(pincode.trim())) {
-      toast.error("Please enter a valid 6-digit pincode");
-      return;
+    if (deliveryOption === "DELIVERY") {
+      if (!lane1.trim()) {
+        toast.error("Please enter your street address (Lane 1)");
+        return;
+      }
+      if (!pincode.trim() || !/^\d{6}$/.test(pincode.trim())) {
+        toast.error("Please enter a valid 6-digit pincode");
+        return;
+      }
     }
 
     const shippingAddress = [lane1.trim(), lane2.trim(), landmark.trim(), `Pincode: ${pincode.trim()}`]
@@ -84,6 +87,7 @@ export default function CheckoutClient() {
           shippingAddress,
           shippingPhone,
           secondaryPhone,
+          deliveryOption,
         }),
       });
       const data = await res.json();
@@ -234,14 +238,54 @@ export default function CheckoutClient() {
             </div>
           ))}
 
+          {/* Delivery option */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 animate-fade-in">
+            <h3 className="font-semibold text-gray-900 mb-3">Delivery Option</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setDeliveryOption("SELF_PICKUP")}
+                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
+                  deliveryOption === "SELF_PICKUP"
+                    ? "border-green-500 bg-green-50 text-green-700"
+                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                }`}
+              >
+                <PackageCheck className="w-6 h-6" />
+                <span className="font-semibold text-sm">Self Pickup</span>
+                <span className="text-xs text-gray-400">Pick up from seller</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeliveryOption("DELIVERY")}
+                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
+                  deliveryOption === "DELIVERY"
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                }`}
+              >
+                <Truck className="w-6 h-6" />
+                <span className="font-semibold text-sm">Delivery</span>
+                <span className="text-xs text-gray-400">Delivered to you</span>
+              </button>
+            </div>
+            {deliveryOption === "DELIVERY" && (
+              <p className="text-xs text-blue-600 mt-3 bg-blue-50 rounded-lg px-3 py-2">
+                Delivery charge will be calculated based on your location and communicated separately by admin/seller.
+              </p>
+            )}
+          </div>
+
           {/* Shipping details */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4 animate-fade-in">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-green-600" /> Delivery Details
+              <MapPin className="w-4 h-4 text-green-600" />
+              {deliveryOption === "DELIVERY" ? "Delivery Address" : "Your Address"}
+              {deliveryOption === "SELF_PICKUP" && <span className="text-xs font-normal text-gray-400">(optional)</span>}
             </h3>
 
             <div className="space-y-1.5">
-              <Label>Lane 1 <span className="text-red-500">*</span></Label>
+              <Label>Lane 1 {deliveryOption === "DELIVERY" && <span className="text-red-500">*</span>}</Label>
               <Input
                 placeholder="House no., Street, Area"
                 value={lane1}
@@ -258,7 +302,7 @@ export default function CheckoutClient() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Pincode <span className="text-red-500">*</span></Label>
+                <Label>Pincode {deliveryOption === "DELIVERY" && <span className="text-red-500">*</span>}</Label>
                 <Input
                   placeholder="6-digit pincode"
                   maxLength={6}
@@ -326,6 +370,12 @@ export default function CheckoutClient() {
             <div className="flex justify-between text-gray-600">
               <span>Platform Fee</span>
               <span>₹{PLATFORM_FEE}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Delivery</span>
+              <span className={deliveryOption === "DELIVERY" ? "text-blue-600 text-xs" : ""}>
+                {deliveryOption === "DELIVERY" ? "Charged separately" : "Self Pickup"}
+              </span>
             </div>
             <Separator />
             <div className="flex justify-between font-bold text-gray-900 text-base">

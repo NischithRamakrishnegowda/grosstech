@@ -69,6 +69,8 @@ interface Order {
   shippingAddress?: string | null;
   shippingPhone?: string | null;
   secondaryPhone?: string | null;
+  deliveryOption?: string | null;
+  deliveryCharge?: number | null;
   createdAt: Date;
 }
 
@@ -187,6 +189,13 @@ export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, ite
             </div>
           </div>
           ${order.shippingAddress ? `<div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:8px"><p style="margin:0 0 4px;font-size:13px;color:#6b7280">Delivery Address</p><p style="margin:0;color:#374151">${order.shippingAddress}</p></div>` : ""}
+          <div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:${order.deliveryOption === "DELIVERY" ? "#eff6ff" : "#f3f4f6"};display:inline-block">
+            <span style="font-size:13px;color:${order.deliveryOption === "DELIVERY" ? "#1d4ed8" : "#6b7280"}">
+              ${order.deliveryOption === "DELIVERY"
+                ? `🚚 Delivery${order.deliveryCharge != null ? ` — Charge: ₹${order.deliveryCharge} (paid separately)` : " — Delivery charge will be communicated by admin/seller"}`
+                : "📦 Self Pickup"}
+            </span>
+          </div>
           ${contactSection(items)}
           <p style="color:#6b7280;font-size:12px;margin-top:24px">Reply to this email for any support queries.</p>
         </div>
@@ -228,7 +237,10 @@ export async function sendSellerOrderNotification(
             <p style="margin:0 0 6px"><strong>Email:</strong> ${buyer.email}</p>
             <p style="margin:0 0 6px"><strong>Phone:</strong> ${buyer.phone || "—"}</p>
             ${order.secondaryPhone ? `<p style="margin:0 0 6px"><strong>Alt Phone:</strong> ${order.secondaryPhone}</p>` : ""}
-            ${order.shippingAddress ? `<p style="margin:0"><strong>Address:</strong> ${order.shippingAddress}</p>` : ""}
+            ${order.shippingAddress ? `<p style="margin:0 0 6px"><strong>Address:</strong> ${order.shippingAddress}</p>` : ""}
+            <p style="margin:0"><strong>Delivery:</strong> ${order.deliveryOption === "DELIVERY"
+              ? `Delivery required${order.deliveryCharge != null ? ` (charge: ₹${order.deliveryCharge})` : " (charge to be set by admin)"}`
+              : "Self Pickup"}</p>
           </div>
           <p style="color:#6b7280;font-size:12px;margin-top:24px">Contact us at ${ADMIN_EMAIL} for any platform queries.</p>
         </div>
@@ -259,7 +271,10 @@ export async function sendAdminOrderNotification(order: Order, buyer: Buyer, ite
             <p style="margin:0 0 4px">${buyer.name} · ${buyer.email} · ${buyer.phone || "—"}</p>
             ${order.shippingPhone ? `<p style="margin:0 0 4px">Shipping phone: ${order.shippingPhone}</p>` : ""}
             ${order.secondaryPhone ? `<p style="margin:0 0 4px">Alt phone: ${order.secondaryPhone}</p>` : ""}
-            ${order.shippingAddress ? `<p style="margin:0">Address: ${order.shippingAddress}</p>` : ""}
+            ${order.shippingAddress ? `<p style="margin:0 0 4px">Address: ${order.shippingAddress}</p>` : ""}
+            <p style="margin:0"><strong>Delivery:</strong> ${order.deliveryOption === "DELIVERY"
+              ? `Delivery — charge to be set in admin panel`
+              : "Self Pickup"}</p>
           </div>
           <h4 style="margin:0 0 8px">Items</h4>
           <table style="width:100%;border-collapse:collapse;margin:0 0 16px">
