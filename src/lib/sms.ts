@@ -8,8 +8,8 @@ export async function sendOtpSms(phone: string, code: string): Promise<void> {
   try {
     const params = new URLSearchParams({
       authorization: apiKey,
-      route: "q",
-      message: `Your GrossTech OTP: ${code}. Valid for 10 minutes. Do not share.`,
+      route: "otp",
+      variables_values: code,
       numbers: number,
       flash: "0",
     });
@@ -22,6 +22,8 @@ export async function sendOtpSms(phone: string, code: string): Promise<void> {
     const json = await res.json();
     if (!json.return) {
       console.error("Fast2SMS error:", json.message);
+    } else {
+      console.log("Fast2SMS sent:", json.message);
     }
   } catch (e) {
     console.error("sendOtpSms error:", e);
