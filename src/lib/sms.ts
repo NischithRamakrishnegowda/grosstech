@@ -1,9 +1,13 @@
 export async function sendOtpSms(phone: string, code: string): Promise<void> {
   const apiKey = process.env.FAST2SMS_API_KEY;
-  if (!apiKey) return;
+  if (!apiKey) {
+    console.error("Fast2SMS: FAST2SMS_API_KEY is not set");
+    return;
+  }
 
   // Strip +91 or 91 prefix — Fast2SMS needs 10-digit number
   const number = phone.replace(/^\+?91/, "").replace(/^0/, "");
+  console.log(`Fast2SMS: sending OTP to ${number}`);
 
   try {
     const params = new URLSearchParams({
