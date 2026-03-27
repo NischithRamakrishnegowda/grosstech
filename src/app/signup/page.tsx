@@ -38,6 +38,8 @@ const schema = z.object({
   state: z.string().min(1, "Please select a state"),
   pincode: z.string().regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
   upiId: z.string().optional(),
+  accountNumber: z.string().optional(),
+  ifscCode: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -213,13 +215,29 @@ function SignupForm() {
               </div>
             </div>
 
-            {/* Seller UPI */}
+            {/* Seller Payment Details */}
             {role === "SELLER" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="upiId">UPI ID *</Label>
-                <Input id="upiId" placeholder="yourbusiness@upi" {...register("upiId")} />
-                <p className="text-xs text-gray-400">For receiving payouts from the platform</p>
-                {errors.upiId && <p className="text-xs text-red-500">{errors.upiId.message}</p>}
+              <div className="border-t pt-4 mt-4">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Payment Details</p>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="upiId">UPI ID</Label>
+                    <Input id="upiId" placeholder="yourbusiness@upi" {...register("upiId")} />
+                    {errors.upiId && <p className="text-xs text-red-500">{errors.upiId.message}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="accountNumber">Bank Account Number</Label>
+                    <Input id="accountNumber" placeholder="1234567890" {...register("accountNumber")} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ifscCode">IFSC Code</Label>
+                    <Input id="ifscCode" placeholder="SBIN0001234" {...register("ifscCode")} />
+                  </div>
+
+                  <p className="text-xs text-gray-400">For receiving payouts from the platform (UPI or bank account)</p>
+                </div>
               </div>
             )}
 

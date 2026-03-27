@@ -19,6 +19,8 @@ const schema = z.object({
   state: z.string().min(1, "State is required"),
   pincode: z.string().regex(/^\d{6}$/, "Invalid pincode"),
   upiId: z.string().optional(),
+  accountNumber: z.string().optional(),
+  ifscCode: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -50,6 +52,8 @@ export async function POST(req: Request) {
         state: data.state,
         pincode: data.pincode,
         upiId: data.upiId,
+        accountNumber: data.accountNumber,
+        ifscCode: data.ifscCode,
       },
     });
 
