@@ -4,6 +4,7 @@ import Footer from "@/components/layout/Footer";
 import ItemCard from "@/components/products/ItemCard";
 import ProductFilters from "@/components/products/ProductFilters";
 import { prisma } from "@/lib/prisma";
+import { Search } from "lucide-react";
 
 export const revalidate = 30;
 
@@ -134,7 +135,7 @@ export default async function ProductsPage({
             </p>
           </div>
 
-          <Suspense fallback={null}>
+          <Suspense fallback={<div className="h-[130px] animate-pulse bg-gray-50 rounded-2xl" />}>
             <ProductFilters categories={categories} />
           </Suspense>
         </div>
@@ -144,7 +145,9 @@ export default async function ProductsPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {items.length === 0 ? (
             <div className="text-center py-24 animate-fade-up">
-              <div className="text-6xl mb-4">🔍</div>
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-gray-300" />
+              </div>
               <h2 className="text-xl font-bold text-gray-700">No items found</h2>
               <p className="text-gray-400 mt-2">
                 {params.mode === "BULK"

@@ -5,7 +5,7 @@ import { CheckCircle, Clock, AlertCircle, Wallet, Landmark, X, Loader2, Truck, P
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PLATFORM_FEE } from "@/lib/constants";
 
 interface OrderItem {
@@ -95,6 +95,12 @@ export default function PayoutManager({
   const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
   const [deliveryChargeInput, setDeliveryChargeInput] = useState<Record<string, string>>({});
   const [savingCharge, setSavingCharge] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setConfirmOrder(null); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   async function handleSetDeliveryCharge(orderId: string) {
     const val = deliveryChargeInput[orderId];

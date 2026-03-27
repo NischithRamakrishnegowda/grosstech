@@ -40,10 +40,11 @@ const STATUS_LABELS: Record<string, string> = {
 export default function SellerListingsTable({ listings }: { listings: Listing[] }) {
   const router = useRouter();
   const [expandedRejection, setExpandedRejection] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Deactivate "${name}"?`)) return;
+  async function handleDelete(id: string) {
     const res = await fetch(`/api/listings/${id}`, { method: "DELETE" });
+    setDeleteConfirmId(null);
     if (res.ok) {
       toast.success("Listing deactivated");
       router.refresh();
@@ -118,12 +119,22 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                   <Pencil className="w-3.5 h-3.5" /> {listing.status === "REJECTED" ? "Edit & Resubmit" : "Edit"}
                 </Link>
                 {listing.status !== "PENDING_APPROVAL" && (
-                  <button
-                    onClick={() => handleDelete(listing.id, listing.name)}
-                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 transition-colors ml-auto"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Deactivate
-                  </button>
+                  <div className="ml-auto">
+                    {deleteConfirmId === listing.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Deactivate?</span>
+                        <button onClick={() => handleDelete(listing.id)} className="text-xs text-red-600 font-semibold hover:underline">Yes</button>
+                        <button onClick={() => setDeleteConfirmId(null)} className="text-xs text-gray-400 hover:underline">No</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirmId(listing.id)}
+                        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Deactivate
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -191,7 +202,7 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end items-center gap-2">
                           <Link href={`/products/${listing.id}`} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors">
                             <Eye className="w-4 h-4" />
                           </Link>
@@ -199,12 +210,21 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                             <Pencil className="w-4 h-4" />
                           </Link>
                           {listing.status !== "PENDING_APPROVAL" && (
-                            <button
-                              onClick={() => handleDelete(listing.id, listing.name)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            deleteConfirmId === listing.id ? (
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="text-gray-500 hidden lg:inline">Deactivate?</span>
+                                <button onClick={() => handleDelete(listing.id)} className="text-red-600 font-semibold hover:underline px-1">Yes</button>
+                                <button onClick={() => setDeleteConfirmId(null)} className="text-gray-400 hover:underline px-1">No</button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteConfirmId(listing.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Deactivate"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )
                           )}
                         </div>
                       </td>

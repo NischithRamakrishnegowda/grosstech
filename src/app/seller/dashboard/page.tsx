@@ -62,7 +62,13 @@ export default async function SellerDashboardPage() {
           <Link href="/seller/listings" className="text-sm text-green-600 hover:underline">View all</Link>
         </div>
         {recentListings.length === 0 ? (
-          <p className="text-gray-400 text-sm py-4 text-center">No listings yet. Add your first product!</p>
+          <div className="py-8 text-center">
+            <Package className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+            <p className="text-gray-400 text-sm mb-3">No listings yet.</p>
+            <Link href="/seller/listings/new" className="inline-flex items-center gap-1.5 text-sm bg-green-600 text-white font-semibold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add your first product
+            </Link>
+          </div>
         ) : (
           <div className="space-y-3">
             {recentListings.map((listing) => (

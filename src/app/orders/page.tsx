@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
+import { Truck, Package, ShoppingBag } from "lucide-react";
+import Link from "next/link";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -47,7 +49,14 @@ export default async function OrdersPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
 
           {orders.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">No orders yet.</div>
+            <div className="text-center py-16">
+              <ShoppingBag className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">No orders yet</p>
+              <p className="text-gray-400 text-sm mt-1">Start shopping to see your orders here</p>
+              <Link href="/products" className="mt-5 inline-block bg-green-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-green-700 transition-colors text-sm">
+                Browse Products
+              </Link>
+            </div>
           ) : (
             <div className="space-y-4">
               {orders.map((order) => (
@@ -89,15 +98,15 @@ export default async function OrdersPage() {
                       <div className="font-bold text-green-600">Total: ₹{order.total}</div>
                     </div>
                     {order.deliveryOption === "DELIVERY" ? (
-                      <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-                        🚚 Delivery
+                      <span className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">
+                        <Truck className="w-3 h-3" /> Delivery
                         {order.deliveryCharge != null
-                          ? ` · Charge: ₹${order.deliveryCharge} (paid separately)`
-                          : " · Delivery charge will be communicated by admin/seller"}
+                          ? ` · ₹${order.deliveryCharge} (paid separately)`
+                          : " · Charge to be communicated"}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                        📦 Self Pickup
+                      <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">
+                        <Package className="w-3 h-3" /> Self Pickup
                       </span>
                     )}
                   </div>

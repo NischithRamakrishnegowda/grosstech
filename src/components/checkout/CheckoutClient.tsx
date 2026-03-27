@@ -4,7 +4,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone, ShieldAlert, Truck, PackageCheck } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, Loader2, AlertCircle, MapPin, Phone, ShieldAlert, Truck, PackageCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -190,11 +190,13 @@ export default function CheckoutClient() {
               className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 hover:shadow-md transition-all duration-200 animate-slide-right"
               style={{ animationDelay: `${idx * 60}ms` }}
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
                 {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
-                ) : "📦"}
+                ) : (
+                  <Package className="w-7 h-7 text-gray-300" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 truncate">{item.name}</p>
