@@ -12,8 +12,8 @@ export async function sendOtpSms(phone: string, code: string): Promise<void> {
   try {
     const params = new URLSearchParams({
       authorization: apiKey,
-      route: "q",
-      message: `Your GrossTech OTP is ${code}. Valid for 10 minutes. Do not share.`,
+      route: "otp",
+      variables_values: code,
       numbers: number,
       flash: "0",
     });
