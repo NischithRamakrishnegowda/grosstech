@@ -4,7 +4,7 @@ import PayoutManager from "@/components/admin/PayoutManager";
 export default async function AdminOrdersPage() {
   const now = new Date();
 
-  const sellerSelect = { select: { id: true, name: true, businessName: true, upiId: true } } as const;
+  const sellerSelect = { select: { id: true, name: true, businessName: true, upiId: true, accountNumber: true, ifscCode: true } } as const;
 
   const readyOrders = await prisma.order.findMany({
     where: { status: "PAYMENT_HELD", releaseScheduledAt: { lte: now } },

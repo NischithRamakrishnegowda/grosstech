@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Leaf, Mail, Phone, MapPin } from "lucide-react";
 
 export default function Footer() {
+  const adminEmail = process.env.ADMIN_EMAIL || "support@grosstech.in";
+  const adminPhone = process.env.ADMIN_PHONE || "";
+
   return (
     <footer className="bg-slate-100 border-t border-slate-200 text-slate-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -39,12 +42,14 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-green-600 shrink-0" />
-                <span>grosstechbengaluru@gmail.com</span>
+                <span>{adminEmail}</span>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-green-600 shrink-0" />
-                <span>+91 90085 78425</span>
-              </li>
+              {adminPhone && (
+                <li className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-green-600 shrink-0" />
+                  <span>{adminPhone}</span>
+                </li>
+              )}
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                 <span>Bangalore, Karnataka, India</span>
@@ -54,7 +59,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-slate-200/70 mt-8 pt-6 text-center text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} Gross Tech. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Gross Tech. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -49,6 +49,8 @@ model User {
   state         String?
   pincode       String?
   upiId         String?
+  accountNumber String?
+  ifscCode      String?
   emailVerified Boolean  @default(false)
   phoneVerified Boolean  @default(false)
   createdAt     DateTime @default(now())

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CheckCircle, Clock, AlertCircle, Wallet, X, Loader2 } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, Wallet, Landmark, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -11,7 +11,7 @@ interface OrderItem {
   id: string;
   quantity: number;
   priceAtOrder: number;
-  listing: { name: string; seller?: { id: string; name: string; businessName: string | null; upiId: string | null } };
+  listing: { name: string; seller?: { id: string; name: string; businessName: string | null; upiId: string | null; accountNumber: string | null; ifscCode: string | null } };
   priceOption: { weight: string };
 }
 
@@ -55,6 +55,31 @@ function groupBySeller(items: OrderItem[]) {
   return Object.values(groups);
 }
 
+function SellerPaymentInfo({ seller }: { seller: OrderItem["listing"]["seller"] }) {
+  if (!seller) return null;
+  const hasUpi = !!seller.upiId;
+  const hasBank = !!seller.accountNumber && !!seller.ifscCode;
+  if (!hasUpi && !hasBank) {
+    return <p className="text-xs text-red-400 mt-1">No payment details on file</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2 mt-1">
+      {hasUpi && (
+        <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full font-mono flex items-center gap-1 w-fit">
+          <Wallet className="w-3 h-3" />
+          {seller.upiId}
+        </span>
+      )}
+      {hasBank && (
+        <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-mono flex items-center gap-1 w-fit">
+          <Landmark className="w-3 h-3" />
+          {seller.accountNumber} · {seller.ifscCode}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function PayoutManager({
   readyOrders,
   allOrders,
@@ -68,48 +93,13 @@ export default function PayoutManager({
 
   async function handleRelease(orderId: string) {
     setReleasing(orderId);
-    try {
-      const res = await fetch(`/api/admin/payouts/${orderId}`, { method: "PUT" });
-      const data = await res.json();
-      setReleasing(null);
-      setConfirmOrder(null);
-
-      if (!res.ok) {
-        toast.error(data.error || "Failed to release payment");
-        return;
-      }
-
-      // Show payout results per seller
-      const payouts = data.payouts as Array<{ seller: string; amount: number; success: boolean; payoutId?: string; error?: string }>;
-      if (payouts && payouts.length > 0) {
-        const allSuccess = payouts.every((p) => p.success);
-        const anySuccess = payouts.some((p) => p.success);
-
-        if (allSuccess) {
-          toast.success("Payment released via Razorpay to all sellers!");
-        } else if (anySuccess) {
-          toast.success("Payment released — some payouts need manual action", {
-            description: payouts.filter((p) => !p.success).map((p) => `${p.seller}: ${p.error}`).join("; "),
-          });
-        } else {
-          // All failed (e.g. RazorpayX not configured) — order still marked released
-          const firstError = payouts[0]?.error || "";
-          if (firstError.includes("not configured")) {
-            toast.success("Order marked as released (manual payout needed — RazorpayX not configured)");
-          } else {
-            toast.warning("Order released but automatic payout failed", {
-              description: payouts.map((p) => `${p.seller}: ${p.error}`).join("; "),
-            });
-          }
-        }
-      } else {
-        toast.success("Payment released to seller!");
-      }
-
+    const res = await fetch(`/api/admin/payouts/${orderId}`, { method: "PUT" });
+    setReleasing(null);
+    setConfirmOrder(null);
+    if (res.ok) {
+      toast.success("Payment marked as released!");
       router.refresh();
-    } catch {
-      setReleasing(null);
-      setConfirmOrder(null);
+    } else {
       toast.error("Failed to release payment");
     }
   }
@@ -143,18 +133,11 @@ export default function PayoutManager({
                   {/* Seller groups */}
                   {sellerGroups.map((group, i) => (
                     <div key={i} className="mb-4 bg-gray-50 rounded-xl p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                        <p className="font-medium text-gray-800 text-sm">
-                          {group.seller?.businessName || group.seller?.name || "Unknown Seller"}
-                        </p>
-                        {group.seller?.upiId && (
-                          <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full font-mono flex items-center gap-1 w-fit">
-                            <Wallet className="w-3 h-3" />
-                            {group.seller.upiId}
-                          </span>
-                        )}
-                      </div>
-                      <div className="space-y-1">
+                      <p className="font-medium text-gray-800 text-sm">
+                        {group.seller?.businessName || group.seller?.name || "Unknown Seller"}
+                      </p>
+                      <SellerPaymentInfo seller={group.seller} />
+                      <div className="space-y-1 mt-2">
                         {group.items.map((item) => (
                           <p key={item.id} className="text-sm text-gray-600">
                             {item.listing.name} ({item.priceOption.weight}) x {item.quantity} = ₹{item.priceAtOrder * item.quantity}
@@ -218,10 +201,12 @@ export default function PayoutManager({
                         <p className="font-mono text-xs text-gray-500">#{order.id.slice(-8).toUpperCase()}</p>
                         <p className="font-semibold text-gray-900 mt-0.5">{order.buyer.name}</p>
                         {primarySeller && (
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            Seller: {primarySeller.businessName || primarySeller.name}
-                            {primarySeller.upiId && <span className="font-mono ml-1">({primarySeller.upiId})</span>}
-                          </p>
+                          <div className="mt-0.5">
+                            <p className="text-xs text-gray-400">
+                              Seller: {primarySeller.businessName || primarySeller.name}
+                            </p>
+                            <SellerPaymentInfo seller={primarySeller} />
+                          </div>
                         )}
                       </div>
                       <div className="text-right shrink-0">
@@ -287,9 +272,7 @@ export default function PayoutManager({
                           <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
                           <td className="px-4 py-3">
                             <p className="text-gray-700 text-xs font-medium">{primarySeller?.businessName || primarySeller?.name || "—"}</p>
-                            {primarySeller?.upiId && (
-                              <p className="text-xs text-purple-500 font-mono mt-0.5">{primarySeller.upiId}</p>
-                            )}
+                            {primarySeller && <SellerPaymentInfo seller={primarySeller} />}
                           </td>
                           <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
                           <td className="px-4 py-3">
@@ -355,11 +338,7 @@ export default function PayoutManager({
               {groupBySeller(confirmOrder.items).map((group, i) => (
                 <div key={i} className="bg-gray-50 rounded-xl p-3">
                   <p className="text-sm font-medium text-gray-800">{group.seller?.businessName || group.seller?.name}</p>
-                  {group.seller?.upiId && (
-                    <p className="text-xs text-purple-600 font-mono flex items-center gap-1 mt-0.5">
-                      <Wallet className="w-3 h-3" /> {group.seller.upiId}
-                    </p>
-                  )}
+                  <SellerPaymentInfo seller={group.seller} />
                   <div className="mt-2 space-y-0.5">
                     {group.items.map((item) => (
                       <p key={item.id} className="text-xs text-gray-500">

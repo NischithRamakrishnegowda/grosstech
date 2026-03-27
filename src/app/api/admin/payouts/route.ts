@@ -19,7 +19,7 @@ export async function GET() {
       buyer: { select: { name: true, email: true } },
       items: {
         include: {
-          listing: { select: { name: true, seller: { select: { id: true, name: true, businessName: true, upiId: true } } } },
+          listing: { select: { name: true, seller: { select: { id: true, name: true, businessName: true, upiId: true, accountNumber: true, ifscCode: true } } } },
           priceOption: { select: { weight: true } },
         },
       },
