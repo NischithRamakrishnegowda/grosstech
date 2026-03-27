@@ -1,33 +1,25 @@
 export async function sendOtpSms(phone: string, code: string): Promise<void> {
-  const apiKey = process.env.FAST2SMS_API_KEY;
+  const apiKey = process.env.TWOFACTOR_API_KEY;
   if (!apiKey) {
-    console.error("Fast2SMS: FAST2SMS_API_KEY is not set");
+    console.error("2Factor: TWOFACTOR_API_KEY is not set");
     return;
   }
 
-  // Strip +91 or 91 prefix — Fast2SMS needs 10-digit number
+  // Strip +91 or 91 prefix — 2Factor needs 10-digit number
   const number = phone.replace(/^\+?91/, "").replace(/^0/, "");
-  console.log(`Fast2SMS: sending OTP to ${number}`);
+  console.log(`2Factor: sending OTP to ${number}`);
 
   try {
-    const params = new URLSearchParams({
-      authorization: apiKey,
-      route: "otp",
-      variables_values: code,
-      numbers: number,
-      flash: "0",
-    });
-
-    const res = await fetch(`https://www.fast2sms.com/dev/bulkV2?${params}`, {
-      method: "GET",
-      headers: { "cache-control": "no-cache" },
-    });
+    const res = await fetch(
+      `https://2factor.in/API/V1/${apiKey}/SMS/${number}/${code}`,
+      { method: "GET" }
+    );
 
     const json = await res.json();
-    if (!json.return) {
-      console.error("Fast2SMS error:", json.message);
+    if (json.Status === "Success") {
+      console.log("2Factor sent:", json.Details);
     } else {
-      console.log("Fast2SMS sent:", json.message);
+      console.error("2Factor error:", json.Details);
     }
   } catch (e) {
     console.error("sendOtpSms error:", e);
