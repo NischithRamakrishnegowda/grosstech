@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -86,15 +85,8 @@ function SignupForm() {
         return;
       }
 
-      // Sign in immediately, then redirect to verify page
-      await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
-
+      // Redirect to verify page — user must verify both email and phone before they can log in
       router.push(`/verify?email=${encodeURIComponent(json.email)}&phone=${encodeURIComponent(json.phone || "")}`);
-      router.refresh();
     } catch {
       toast.error("Something went wrong");
     } finally {

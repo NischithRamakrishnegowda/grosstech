@@ -24,6 +24,7 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const raw = searchParams.get("callbackUrl") || "/";
   const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  const justVerified = searchParams.get("verified") === "1";
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -47,7 +48,9 @@ export default function LoginForm() {
       redirect: false,
     });
     setLoading(false);
-    if (result?.error) {
+    if (result?.error === "UNVERIFIED") {
+      toast.error("Please verify your email and phone before logging in. Check your inbox and SMS.");
+    } else if (result?.error) {
       toast.error("Invalid email or password");
     } else {
       router.push(callbackUrl);
@@ -122,7 +125,9 @@ export default function LoginForm() {
         redirect: false,
       });
 
-      if (result?.error) {
+      if (result?.error === "UNVERIFIED") {
+        toast.error("Please verify your email and phone before logging in. Check your inbox and SMS.");
+      } else if (result?.error) {
         toast.error("Login failed");
       } else {
         router.push(callbackUrl);
@@ -149,6 +154,12 @@ export default function LoginForm() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
+          {justVerified && (
+            <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 flex items-center gap-2">
+              <span className="text-green-500">✓</span>
+              Account verified! You can now sign in.
+            </div>
+          )}
           {/* Password login */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">

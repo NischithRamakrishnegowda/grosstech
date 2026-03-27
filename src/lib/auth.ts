@@ -33,6 +33,8 @@ export const authOptions: NextAuthOptions = {
           const user = await prisma.user.findUnique({ where: { id: token.userId } });
           if (!user) return null;
 
+          if (!user.emailVerified || !user.phoneVerified) throw new Error("UNVERIFIED");
+
           // Invalidate token
           await prisma.otpToken.update({
             where: { id: token.id },
@@ -50,6 +52,8 @@ export const authOptions: NextAuthOptions = {
 
         const valid = await bcrypt.compare(credentials.password, user.password);
         if (!valid) return null;
+
+        if (!user.emailVerified || !user.phoneVerified) throw new Error("UNVERIFIED");
 
         return { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone };
       },

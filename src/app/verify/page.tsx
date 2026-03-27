@@ -100,11 +100,10 @@ function VerifyContent() {
     }
   }
 
-  const eitherVerified = emailVerified || phoneVerified;
+  const bothVerified = emailVerified && phoneVerified;
 
   function proceed() {
-    router.push("/");
-    router.refresh();
+    router.push("/login?verified=1");
   }
 
   return (
@@ -122,7 +121,7 @@ function VerifyContent() {
 
         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
           <p className="text-slate-600 text-sm text-center">
-            Verify your email or phone number to continue. At least one is required.
+            Verify both your email and phone number to activate your account.
           </p>
 
           {/* Email OTP */}
@@ -209,9 +208,9 @@ function VerifyContent() {
             )}
           </div>
 
-          {eitherVerified ? (
+          {bothVerified ? (
             <Button onClick={proceed} className="w-full bg-green-600 hover:bg-green-700">
-              <CheckCircle2 className="w-4 h-4 mr-2" /> Continue to Dashboard
+              <CheckCircle2 className="w-4 h-4 mr-2" /> Continue to Login
             </Button>
           ) : (
             <Button
