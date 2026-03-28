@@ -61,6 +61,7 @@ export default function ItemDetailClient({
   const { addItem } = useCart();
   const [activeMode, setActiveMode] = useState<"RETAIL" | "BULK">("RETAIL");
   const [addedOptId, setAddedOptId] = useState<string | null>(null);
+  const [selectedOpts, setSelectedOpts] = useState<Record<string, string>>({});
 
   // Contact unlock state per seller
   const [unlockedSellers, setUnlockedSellers] = useState<Record<string, SellerContact>>({});
@@ -99,6 +100,15 @@ export default function ItemDetailClient({
 
   const hasRetail = listings.some((l) => l.priceOptions.some((o) => o.mode === "RETAIL"));
   const hasBulk = listings.some((l) => l.priceOptions.some((o) => o.mode === "BULK"));
+
+  function getSelectedOpt(listing: SellerListing): PriceOption {
+    const id = selectedOpts[listing.id];
+    return (
+      listing.priceOptions.find((o) => o.id === id) ??
+      listing.priceOptions.find((o) => o.stock > 0) ??
+      listing.priceOptions[0]
+    );
+  }
 
   function handleAddToCart(listing: SellerListing, opt: PriceOption) {
     if (!session) {
@@ -313,25 +323,20 @@ export default function ItemDetailClient({
                         {/* Price option cards */}
                         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-3">
                           {listing.priceOptions.map((opt) => {
-                            const isAdded = addedOptId === opt.id;
+                            const isSelected = getSelectedOpt(listing).id === opt.id;
                             return (
                               <button
                                 key={opt.id}
-                                onClick={() => handleAddToCart(listing, opt)}
-                                disabled={opt.stock === 0 || (session?.user.role !== "BUYER" && !!session) || isAdded}
+                                onClick={() => setSelectedOpts((prev) => ({ ...prev, [listing.id]: opt.id }))}
+                                disabled={opt.stock === 0 || (session?.user.role !== "BUYER" && !!session)}
                                 className={`relative text-left border-2 rounded-xl px-3 py-2.5 transition-all duration-200 ${
-                                  isAdded
-                                    ? "border-green-500 bg-green-50"
+                                  isSelected && opt.stock > 0
+                                    ? "border-green-500 bg-green-50 text-green-700"
                                     : opt.stock === 0
                                       ? "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
                                       : "border-gray-200 hover:border-green-400 hover:bg-green-50 active:scale-[0.97] text-gray-700"
                                 }`}
                               >
-                                {isAdded && (
-                                  <div className="absolute top-1 right-1">
-                                    <Check className="w-3.5 h-3.5 text-green-600" />
-                                  </div>
-                                )}
                                 <div className="font-semibold text-sm">{opt.weight}</div>
                                 <div className="font-bold text-green-600 text-base">₹{opt.price}</div>
                                 <div className="text-xs text-gray-400 mt-0.5">
@@ -345,20 +350,22 @@ export default function ItemDetailClient({
                           })}
                         </div>
 
-                        {/* Quick add */}
-                        {session?.user.role === "BUYER" && listing.priceOptions.some((o) => o.stock > 0) && (
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 active:scale-[0.97] transition-all"
-                            onClick={() => {
-                              const opt = listing.priceOptions.find((o) => o.stock > 0);
-                              if (opt) handleAddToCart(listing, opt);
-                            }}
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-1.5" />
-                            Add to Cart
-                          </Button>
-                        )}
+                        {/* Add to Cart — uses selected option */}
+                        {session?.user.role === "BUYER" && listing.priceOptions.some((o) => o.stock > 0) && (() => {
+                          const opt = getSelectedOpt(listing);
+                          const isAdded = addedOptId === opt.id;
+                          return (
+                            <Button
+                              size="sm"
+                              disabled={isAdded}
+                              className="bg-green-600 hover:bg-green-700 active:scale-[0.97] transition-all"
+                              onClick={() => handleAddToCart(listing, opt)}
+                            >
+                              {isAdded ? <Check className="w-4 h-4 mr-1.5" /> : <ShoppingCart className="w-4 h-4 mr-1.5" />}
+                              {isAdded ? "Added!" : `Add to Cart · ${opt.weight}`}
+                            </Button>
+                          );
+                        })()}
                       </div>
 
                       {/* Contact section */}
