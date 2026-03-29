@@ -141,8 +141,8 @@ model PriceOption {
 
 model Order {
   id                String  @id @default(cuid())
-  razorpayOrderId   String? @unique
-  razorpayPaymentId String? @unique
+  razorpayOrderId   String?
+  razorpayPaymentId String?
   razorpaySignature String?
 
   buyer   User   @relation("BuyerOrders", fields: [buyerId], references: [id])

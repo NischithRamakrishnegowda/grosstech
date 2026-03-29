@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { PLATFORM_FEE } from "@/lib/constants";
 
 interface OrderItem {
   id: string;
@@ -43,20 +42,6 @@ const STATUS_LABELS: Record<string, string> = {
   RELEASED_TO_SELLER: "Released",
   CANCELLED: "Cancelled",
 };
-
-// Group items by seller
-function groupBySeller(items: OrderItem[]) {
-  const groups: Record<string, { seller: OrderItem["listing"]["seller"]; items: OrderItem[]; subtotal: number }> = {};
-  for (const item of items) {
-    const sellerId = item.listing.seller?.id || "unknown";
-    if (!groups[sellerId]) {
-      groups[sellerId] = { seller: item.listing.seller, items: [], subtotal: 0 };
-    }
-    groups[sellerId].items.push(item);
-    groups[sellerId].subtotal += item.priceAtOrder * item.quantity;
-  }
-  return Object.values(groups);
-}
 
 function SellerPaymentInfo({ seller }: { seller: OrderItem["listing"]["seller"] }) {
   if (!seller) return null;
@@ -148,8 +133,8 @@ export default function PayoutManager({
           </div>
           <div className="space-y-4">
             {readyOrders.map((order) => {
-              const sellerGroups = groupBySeller(order.items);
-              const netToSeller = order.total - PLATFORM_FEE;
+              const seller = order.items[0]?.listing?.seller;
+              const netToSeller = order.total;
 
               return (
                 <div key={order.id} className="bg-white rounded-2xl border-2 border-green-200 p-5 shadow-sm">
@@ -163,22 +148,20 @@ export default function PayoutManager({
                     </p>
                   </div>
 
-                  {/* Seller groups */}
-                  {sellerGroups.map((group, i) => (
-                    <div key={i} className="mb-4 bg-gray-50 rounded-xl p-4">
-                      <p className="font-medium text-gray-800 text-sm">
-                        {group.seller?.businessName || group.seller?.name || "Unknown Seller"}
-                      </p>
-                      <SellerPaymentInfo seller={group.seller} />
-                      <div className="space-y-1 mt-2">
-                        {group.items.map((item) => (
-                          <p key={item.id} className="text-sm text-gray-600">
-                            {item.listing.name} ({item.priceOption.weight}) x {item.quantity} = ₹{item.priceAtOrder * item.quantity}
-                          </p>
-                        ))}
-                      </div>
+                  {/* Seller info */}
+                  <div className="mb-4 bg-gray-50 rounded-xl p-4">
+                    <p className="font-medium text-gray-800 text-sm">
+                      {seller?.businessName || seller?.name || "Unknown Seller"}
+                    </p>
+                    <SellerPaymentInfo seller={seller} />
+                    <div className="space-y-1 mt-2">
+                      {order.items.map((item) => (
+                        <p key={item.id} className="text-sm text-gray-600">
+                          {item.listing.name} ({item.priceOption.weight}) x {item.quantity} = ₹{item.priceAtOrder * item.quantity}
+                        </p>
+                      ))}
                     </div>
-                  ))}
+                  </div>
 
                   {/* Delivery info */}
                   {order.deliveryOption === "DELIVERY" && (
@@ -211,22 +194,14 @@ export default function PayoutManager({
 
                   {/* Fee breakdown */}
                   <div className="border-t border-gray-100 pt-3 mb-4 space-y-1 text-sm">
-                    <div className="flex justify-between text-gray-500">
-                      <span>Order Total</span>
-                      <span>₹{order.total}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-500">
-                      <span>Platform Fee</span>
-                      <span>- ₹{PLATFORM_FEE}</span>
-                    </div>
                     {order.deliveryOption === "DELIVERY" && order.deliveryCharge != null && (
                       <div className="flex justify-between text-blue-600">
                         <span>Delivery Charge (separate)</span>
                         <span>₹{order.deliveryCharge}</span>
                       </div>
                     )}
-                    <div className="flex justify-between font-semibold text-green-700 pt-1 border-t border-dashed border-gray-200">
-                      <span>Net to Release</span>
+                    <div className="flex justify-between font-semibold text-green-700">
+                      <span>Amount to Release</span>
                       <span>₹{netToSeller}</span>
                     </div>
                   </div>
@@ -237,7 +212,7 @@ export default function PayoutManager({
                     onClick={() => setConfirmOrder(order)}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Release ₹{netToSeller} to Seller
+                    Release ₹{netToSeller} to {seller?.businessName || seller?.name || "Seller"}
                   </Button>
                 </div>
               );
@@ -260,20 +235,19 @@ export default function PayoutManager({
             <div className="md:hidden space-y-3">
               {allOrders.map((order) => {
                 const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
-                const sellerGroups = groupBySeller(order.items);
-                const primarySeller = sellerGroups[0]?.seller;
+                const seller = order.items[0]?.listing?.seller;
                 return (
                   <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="min-w-0">
                         <p className="font-mono text-xs text-gray-500">#{order.id.slice(-8).toUpperCase()}</p>
                         <p className="font-semibold text-gray-900 mt-0.5">{order.buyer.name}</p>
-                        {primarySeller && (
+                        {seller && (
                           <div className="mt-0.5">
                             <p className="text-xs text-gray-400">
-                              Seller: {primarySeller.businessName || primarySeller.name}
+                              Seller: {seller.businessName || seller.name}
                             </p>
-                            <SellerPaymentInfo seller={primarySeller} />
+                            <SellerPaymentInfo seller={seller} />
                           </div>
                         )}
                       </div>
@@ -344,15 +318,14 @@ export default function PayoutManager({
                   <tbody className="divide-y divide-gray-50">
                     {allOrders.map((order) => {
                       const isPastDue = order.releaseScheduledAt && new Date(order.releaseScheduledAt) <= new Date();
-                      const sellerGroups = groupBySeller(order.items);
-                      const primarySeller = sellerGroups[0]?.seller;
+                      const seller = order.items[0]?.listing?.seller;
                       return (
                         <tr key={order.id} className="hover:bg-gray-50/50">
                           <td className="px-4 py-3 font-mono text-xs text-gray-600">#{order.id.slice(-8).toUpperCase()}</td>
                           <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
                           <td className="px-4 py-3">
-                            <p className="text-gray-700 text-xs font-medium">{primarySeller?.businessName || primarySeller?.name || "—"}</p>
-                            {primarySeller && <SellerPaymentInfo seller={primarySeller} />}
+                            <p className="text-gray-700 text-xs font-medium">{seller?.businessName || seller?.name || "—"}</p>
+                            {seller && <SellerPaymentInfo seller={seller} />}
                           </td>
                           <td className="px-4 py-3 font-semibold text-green-600">₹{order.total}</td>
                           <td className="px-4 py-3">
@@ -426,32 +399,27 @@ export default function PayoutManager({
                 Order <span className="font-mono font-medium">#{confirmOrder.id.slice(-8).toUpperCase()}</span>
               </p>
 
-              {groupBySeller(confirmOrder.items).map((group, i) => (
-                <div key={i} className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-sm font-medium text-gray-800">{group.seller?.businessName || group.seller?.name}</p>
-                  <SellerPaymentInfo seller={group.seller} />
-                  <div className="mt-2 space-y-0.5">
-                    {group.items.map((item) => (
-                      <p key={item.id} className="text-xs text-gray-500">
-                        {item.listing.name} ({item.priceOption.weight}) x{item.quantity}
-                      </p>
-                    ))}
+              {(() => {
+                const seller = confirmOrder.items[0]?.listing?.seller;
+                return (
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-sm font-medium text-gray-800">{seller?.businessName || seller?.name || "Unknown Seller"}</p>
+                    <SellerPaymentInfo seller={seller} />
+                    <div className="mt-2 space-y-0.5">
+                      {confirmOrder.items.map((item) => (
+                        <p key={item.id} className="text-xs text-gray-500">
+                          {item.listing.name} ({item.priceOption.weight}) x{item.quantity}
+                        </p>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })()}
 
               <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
-                <div className="flex justify-between text-gray-500">
-                  <span>Order Total</span>
-                  <span>₹{confirmOrder.total}</span>
-                </div>
-                <div className="flex justify-between text-gray-500">
-                  <span>Platform Fee</span>
-                  <span>- ₹{PLATFORM_FEE}</span>
-                </div>
-                <div className="flex justify-between font-bold text-green-700 pt-1 border-t border-dashed border-gray-200">
+                <div className="flex justify-between font-bold text-green-700">
                   <span>Amount to Release</span>
-                  <span>₹{confirmOrder.total - PLATFORM_FEE}</span>
+                  <span>₹{confirmOrder.total}</span>
                 </div>
               </div>
             </div>

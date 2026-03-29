@@ -30,8 +30,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cannot update order in current status" }, { status: 409 });
     }
 
-    await prisma.order.update({
-      where: { id: internalOrderId },
+    // Update all split orders sharing the same razorpayOrderId (one per seller)
+    await prisma.order.updateMany({
+      where: {
+        razorpayOrderId: order.razorpayOrderId ?? internalOrderId,
+        buyerId: session.user.id,
+        status: "PENDING",
+      },
       data: { status },
     });
 

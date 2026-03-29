@@ -40,50 +40,58 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    // Find the PENDING order created at checkout initiation
-    const existingOrder = await prisma.order.findFirst({ where: { razorpayOrderId } });
-    if (!existingOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    // Find ALL orders for this Razorpay payment (one per seller)
+    const existingOrders = await prisma.order.findMany({ where: { razorpayOrderId } });
+    if (!existingOrders.length) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
     // Idempotency: already processed
-    if (existingOrder.status === "PAYMENT_HELD") {
-      return NextResponse.json({ orderId: existingOrder.id });
+    if (existingOrders.every((o) => o.status === "PAYMENT_HELD")) {
+      return NextResponse.json({ orderId: existingOrders[0].id });
     }
 
     const now = new Date();
     const releaseScheduledAt = new Date(now.getTime() + PAYMENT_HOLD_DAYS * 24 * 60 * 60 * 1000);
 
-    // Fetch order items to decrement stock
+    // Fetch all order items across all seller orders
     const orderItems = await prisma.orderItem.findMany({
-      where: { orderId: existingOrder.id },
+      where: { orderId: { in: existingOrders.map((o) => o.id) } },
     });
 
-    const [order] = await prisma.$transaction([
-      prisma.order.update({
-        where: { id: existingOrder.id },
-        data: {
-          razorpayPaymentId,
-          razorpaySignature,
-          status: "PAYMENT_HELD",
-          paymentCapturedAt: now,
-          releaseScheduledAt,
-        },
-      }),
-      ...orderItems.map((item) =>
-        prisma.priceOption.update({
-          where: { id: item.priceOptionId },
-          data: { stock: { decrement: item.quantity } },
-        })
-      ),
-    ]);
+    await prisma.$transaction(async (tx) => {
+      // Update all seller orders
+      await Promise.all(
+        existingOrders.map((o) =>
+          tx.order.update({
+            where: { id: o.id },
+            data: {
+              razorpayPaymentId,
+              razorpaySignature,
+              status: "PAYMENT_HELD",
+              paymentCapturedAt: now,
+              releaseScheduledAt,
+            },
+          })
+        )
+      );
+      // Decrement stock for all items
+      await Promise.all(
+        orderItems.map((item) =>
+          tx.priceOption.update({
+            where: { id: item.priceOptionId },
+            data: { stock: { decrement: item.quantity } },
+          })
+        )
+      );
+    });
 
     // Send order emails (awaited — fire-and-forget breaks on Vercel serverless)
     try {
-      await sendOrderEmails(order.id);
+      await sendOrderEmails(existingOrders[0].id);
     } catch (e) {
       console.error("Order email error:", e);
     }
 
-    return NextResponse.json({ orderId: order.id });
+    return NextResponse.json({ orderId: existingOrders[0].id });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });

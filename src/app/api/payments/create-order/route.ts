@@ -35,13 +35,22 @@ export async function POST(req: Request) {
     });
     const priceMap = new Map(priceOptions.map((p) => [p.id, p]));
 
+    // Fetch listings to get sellerId per item
+    const listings = await prisma.listing.findMany({
+      where: { id: { in: items.map((i) => i.listingId) } },
+      select: { id: true, sellerId: true },
+    });
+    const listingSellerMap = new Map(listings.map((l) => [l.id, l.sellerId]));
+
     let subtotal = 0;
-    const itemsWithPrice: Array<{ listingId: string; priceOptionId: string; quantity: number; priceAtOrder: number }> = [];
+    const itemsWithPrice: Array<{ listingId: string; priceOptionId: string; quantity: number; priceAtOrder: number; sellerId: string }> = [];
     for (const item of items) {
       const po = priceMap.get(item.priceOptionId);
       if (!po) return NextResponse.json({ error: "Invalid price option" }, { status: 400 });
+      const sellerId = listingSellerMap.get(item.listingId);
+      if (!sellerId) return NextResponse.json({ error: "Invalid listing" }, { status: 400 });
       subtotal += po.price * item.quantity;
-      itemsWithPrice.push({ ...item, priceAtOrder: po.price });
+      itemsWithPrice.push({ ...item, priceAtOrder: po.price, sellerId });
     }
 
     const total = subtotal + PLATFORM_FEE;
@@ -52,33 +61,45 @@ export async function POST(req: Request) {
       receipt: `receipt_${Date.now()}`,
     });
 
-    // Store order as PENDING in DB immediately
-    const order = await prisma.order.create({
-      data: {
-        razorpayOrderId: rzpOrder.id,
-        buyerId: session.user.id,
-        subtotal,
-        platformFee: PLATFORM_FEE,
-        total,
-        status: "PENDING",
-        shippingAddress: shippingAddress || null,
-        shippingPhone: shippingPhone || null,
-        secondaryPhone: secondaryPhone || null,
-        deliveryOption,
-        items: {
-          create: itemsWithPrice.map((item) => ({
-            listingId: item.listingId,
-            priceOptionId: item.priceOptionId,
-            quantity: item.quantity,
-            priceAtOrder: item.priceAtOrder,
-          })),
-        },
-      },
-    });
+    // Group items by seller
+    const sellerGroups = new Map<string, typeof itemsWithPrice>();
+    for (const item of itemsWithPrice) {
+      if (!sellerGroups.has(item.sellerId)) sellerGroups.set(item.sellerId, []);
+      sellerGroups.get(item.sellerId)!.push(item);
+    }
+
+    // Create one order per seller — all share the same razorpayOrderId
+    const orders = await prisma.$transaction(
+      Array.from(sellerGroups.values()).map((sellerItems) => {
+        const sellerSubtotal = sellerItems.reduce((s, i) => s + i.priceAtOrder * i.quantity, 0);
+        return prisma.order.create({
+          data: {
+            razorpayOrderId: rzpOrder.id,
+            buyerId: session.user.id,
+            subtotal: sellerSubtotal,
+            platformFee: 0,
+            total: sellerSubtotal,
+            status: "PENDING",
+            shippingAddress: shippingAddress || null,
+            shippingPhone: shippingPhone || null,
+            secondaryPhone: secondaryPhone || null,
+            deliveryOption,
+            items: {
+              create: sellerItems.map((item) => ({
+                listingId: item.listingId,
+                priceOptionId: item.priceOptionId,
+                quantity: item.quantity,
+                priceAtOrder: item.priceAtOrder,
+              })),
+            },
+          },
+        });
+      })
+    );
 
     return NextResponse.json({
       razorpayOrderId: rzpOrder.id,
-      internalOrderId: order.id,
+      internalOrderId: orders[0].id,
       amount: rzpOrder.amount,
       currency: rzpOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
