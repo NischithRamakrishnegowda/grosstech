@@ -68,12 +68,16 @@ export async function POST(req: Request) {
       sellerGroups.get(item.sellerId)!.push(item);
     }
 
-    // Create one order per seller — all share the same razorpayOrderId
+    // One stable ID shared across all split orders for this checkout
+    const checkoutId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
+
+    // Create one order per seller — all share the same razorpayOrderId and checkoutId
     const orders = await prisma.$transaction(
       Array.from(sellerGroups.values()).map((sellerItems) => {
         const sellerSubtotal = sellerItems.reduce((s, i) => s + i.priceAtOrder * i.quantity, 0);
         return prisma.order.create({
           data: {
+            checkoutId,
             razorpayOrderId: rzpOrder.id,
             buyerId: session.user.id,
             subtotal: sellerSubtotal,

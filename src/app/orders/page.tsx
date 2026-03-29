@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Truck, Package, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import { PLATFORM_FEE } from "@/lib/constants";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -33,13 +34,22 @@ export default async function OrdersPage() {
     include: {
       items: {
         include: {
-          listing: { select: { name: true, brand: true } },
+          listing: { select: { name: true, brand: true, seller: { select: { name: true, businessName: true } } } },
           priceOption: { select: { weight: true } },
         },
       },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  // Group split orders (same checkout) by checkoutId, falling back to razorpayOrderId or order.id
+  const groupMap = new Map<string, typeof orders>();
+  for (const order of orders) {
+    const key = order.checkoutId ?? order.razorpayOrderId ?? order.id;
+    if (!groupMap.has(key)) groupMap.set(key, []);
+    groupMap.get(key)!.push(order);
+  }
+  const paymentGroups = Array.from(groupMap.values());
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -48,7 +58,7 @@ export default async function OrdersPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
 
-          {orders.length === 0 ? (
+          {paymentGroups.length === 0 ? (
             <div className="text-center py-16">
               <ShoppingBag className="w-12 h-12 text-gray-200 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">No orders yet</p>
@@ -59,59 +69,91 @@ export default async function OrdersPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {orders.map((order) => (
-                <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        Order #{order.id.slice(-8).toUpperCase()}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric", month: "long", year: "numeric",
-                        })}
-                      </p>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
-                      {STATUS_LABELS[order.status] || order.status.replace(/_/g, " ")}
-                    </span>
-                  </div>
+              {paymentGroups.map((group) => {
+                const primary = group[0];
+                const isMultiSeller = group.length > 1;
+                // For split orders (platformFee=0 on each), add fee once
+                const isSplit = group.every((o) => o.platformFee === 0);
+                const itemsTotal = group.reduce((s, o) => s + o.total, 0);
+                const platformFeeDisplay = isSplit ? PLATFORM_FEE : primary.platformFee;
+                const totalPaid = itemsTotal + (isSplit ? PLATFORM_FEE : 0);
 
-                  <div className="space-y-2 mb-3">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm">
-                        <span className="text-gray-600">
-                          {item.listing.name} ({item.priceOption.weight}) × {item.quantity}
-                        </span>
-                        <span className="text-gray-700 font-medium">
-                          ₹{item.priceAtOrder * item.quantity}
-                        </span>
+                return (
+                  <div key={primary.id} className="bg-white rounded-2xl border border-gray-100 p-5">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          Order #{primary.checkoutId ?? primary.id.slice(-8).toUpperCase()}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {new Date(primary.createdAt).toLocaleDateString("en-IN", {
+                            day: "numeric", month: "long", year: "numeric",
+                          })}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t pt-3 space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                      <div className="text-gray-500 text-xs">
-                        Subtotal ₹{order.subtotal} + Fee ₹{order.platformFee}
-                      </div>
-                      <div className="font-bold text-green-600">Total: ₹{order.total}</div>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[primary.status] || "bg-gray-100 text-gray-600"}`}>
+                        {STATUS_LABELS[primary.status] || primary.status.replace(/_/g, " ")}
+                      </span>
                     </div>
-                    {order.deliveryOption === "DELIVERY" ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">
-                        <Truck className="w-3 h-3" /> Delivery
-                        {order.deliveryCharge != null
-                          ? ` · ₹${order.deliveryCharge} (paid separately)`
-                          : " · Charge to be communicated"}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">
-                        <Package className="w-3 h-3" /> Self Pickup
-                      </span>
-                    )}
+
+                    {/* Items — grouped by seller if multi-seller */}
+                    <div className="space-y-3 mb-3">
+                      {isMultiSeller ? (
+                        group.map((sellerOrder) => {
+                          const sellerName = sellerOrder.items[0]?.listing?.seller?.businessName
+                            || sellerOrder.items[0]?.listing?.seller?.name
+                            || "Seller";
+                          return (
+                            <div key={sellerOrder.id} className="bg-gray-50 rounded-xl p-3">
+                              <p className="text-xs font-semibold text-gray-500 mb-2">{sellerName}</p>
+                              <div className="space-y-1.5">
+                                {sellerOrder.items.map((item) => (
+                                  <div key={item.id} className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                      {item.listing.name} ({item.priceOption.weight}) × {item.quantity}
+                                    </span>
+                                    <span className="text-gray-700 font-medium">₹{item.priceAtOrder * item.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        primary.items.map((item) => (
+                          <div key={item.id} className="flex justify-between text-sm">
+                            <span className="text-gray-600">
+                              {item.listing.name} ({item.priceOption.weight}) × {item.quantity}
+                            </span>
+                            <span className="text-gray-700 font-medium">₹{item.priceAtOrder * item.quantity}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="border-t pt-3 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
+                        <div className="text-gray-500 text-xs">
+                          Items ₹{itemsTotal} + Fee ₹{platformFeeDisplay}
+                        </div>
+                        <div className="font-bold text-green-600">Total: ₹{totalPaid}</div>
+                      </div>
+                      {primary.deliveryOption === "DELIVERY" ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">
+                          <Truck className="w-3 h-3" /> Delivery
+                          {primary.deliveryCharge != null
+                            ? ` · ₹${primary.deliveryCharge} (paid separately)`
+                            : " · Charge to be communicated"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">
+                          <Package className="w-3 h-3" /> Self Pickup
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
