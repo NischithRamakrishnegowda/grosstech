@@ -17,6 +17,8 @@ interface PriceOption {
   weight: string;
   price: number;
   stock: number;
+  minQty: number;
+  mode: string;
 }
 
 interface Listing {
@@ -74,7 +76,7 @@ function getImageSrc(slug: string, name: string): string | null {
 export default function ProductDetailClient({ listing }: { listing: Listing }) {
   const { data: session } = useSession();
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, items: cartItems } = useCart();
   const [selectedOption, setSelectedOption] = useState<PriceOption>(listing.priceOptions[0]);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -111,6 +113,7 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
       router.push(`/login?callbackUrl=/products/${listing.id}`);
       return;
     }
+    const alreadyInCart = cartItems.some((i) => i.priceOptionId === selectedOption.id);
     addItem({
       listingId: listing.id,
       priceOptionId: selectedOption.id,
@@ -120,7 +123,9 @@ export default function ProductDetailClient({ listing }: { listing: Listing }) {
       price: selectedOption.price,
       stock: selectedOption.stock,
       imageUrl: listing.imageUrl || undefined,
-      quantity: 1,
+      quantity: alreadyInCart ? 1 : (selectedOption.minQty > 1 ? selectedOption.minQty : 1),
+      minQty: selectedOption.minQty > 1 ? selectedOption.minQty : undefined,
+      mode: selectedOption.mode as "RETAIL" | "BULK",
     });
     toast.success(`${listing.name} (${selectedOption.weight}) added to cart`);
   }

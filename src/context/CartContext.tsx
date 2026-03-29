@@ -13,6 +13,7 @@ export interface CartItem {
   stock: number;
   imageUrl?: string;
   quantity: number;
+  minQty?: number;
   mode?: "RETAIL" | "BULK";
 }
 
@@ -43,7 +44,7 @@ function reducer(state: CartItem[], action: Action): CartItem[] {
     case "UPDATE_QTY":
       return state.map((i) =>
         i.priceOptionId === action.priceOptionId
-          ? { ...i, quantity: Math.min(Math.max(1, action.quantity), i.stock) }
+          ? { ...i, quantity: Math.min(Math.max(i.minQty ?? 1, action.quantity), i.stock) }
           : i
       );
     case "CLEAR":

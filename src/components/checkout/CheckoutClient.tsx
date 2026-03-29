@@ -219,7 +219,7 @@ export default function CheckoutClient() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => updateQty(item.priceOptionId, item.quantity - 1)}
-                    disabled={item.quantity <= 1}
+                    disabled={item.quantity <= (item.minQty ?? 1)}
                     aria-label="Decrease quantity"
                     className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-100 active:scale-90 transition-all disabled:opacity-40"
                   >
@@ -235,6 +235,9 @@ export default function CheckoutClient() {
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
+                {item.minQty && item.minQty > 1 && (
+                  <p className="text-xs text-blue-500">Min. {item.minQty}</p>
+                )}
                 <p className="text-sm font-bold text-gray-800">₹{item.price * item.quantity}</p>
               </div>
             </div>

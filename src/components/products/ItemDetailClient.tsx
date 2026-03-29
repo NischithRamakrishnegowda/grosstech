@@ -60,7 +60,7 @@ export default function ItemDetailClient({
 }) {
   const { data: session } = useSession();
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, items: cartItems } = useCart();
   const [activeMode, setActiveMode] = useState<"RETAIL" | "BULK">(initialMode);
   const [addedOptId, setAddedOptId] = useState<string | null>(null);
   const [selectedOpts, setSelectedOpts] = useState<Record<string, string>>({});
@@ -117,6 +117,7 @@ export default function ItemDetailClient({
       router.push(`/login?callbackUrl=/products/items/${item.slug}`);
       return;
     }
+    const alreadyInCart = cartItems.some((i) => i.priceOptionId === opt.id);
     addItem({
       listingId: listing.id,
       priceOptionId: opt.id,
@@ -126,7 +127,8 @@ export default function ItemDetailClient({
       price: opt.price,
       stock: opt.stock,
       imageUrl: item.imageUrl || undefined,
-      quantity: opt.minQty > 1 ? opt.minQty : 1,
+      quantity: alreadyInCart ? 1 : (opt.minQty > 1 ? opt.minQty : 1),
+      minQty: opt.minQty > 1 ? opt.minQty : undefined,
       mode: opt.mode as "RETAIL" | "BULK",
     });
     setAddedOptId(opt.id);
