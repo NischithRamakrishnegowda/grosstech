@@ -6,10 +6,14 @@ import { prisma } from "@/lib/prisma";
 
 export default async function ItemDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ mode?: string }>;
 }) {
   const { slug } = await params;
+  const { mode } = await searchParams;
+  const initialMode: "RETAIL" | "BULK" = mode === "RETAIL" ? "RETAIL" : "BULK";
 
   const item = await prisma.item.findUnique({
     where: { slug },
@@ -40,6 +44,7 @@ export default async function ItemDetailPage({
         <ItemDetailClient
           item={JSON.parse(JSON.stringify(item))}
           listings={JSON.parse(JSON.stringify(listings))}
+          initialMode={initialMode}
         />
       </main>
       <Footer />

@@ -18,7 +18,7 @@ interface SearchParams {
 
 async function getItems(params: SearchParams) {
   const { category, search, mode, minPrice, maxPrice } = params;
-  const priceMode = mode === "BULK" ? "BULK" : "RETAIL";
+  const priceMode = mode === "RETAIL" ? "RETAIL" : "BULK";
 
   // Build listing filter for price mode and price range
   const priceOptionFilter: Record<string, unknown> = { mode: priceMode };
@@ -117,7 +117,8 @@ export default async function ProductsPage({
   ]);
 
   const activeCategory = categories.find((c) => c.slug === params.category);
-  const mode = params.mode === "BULK" ? "Bulk" : "Retail";
+  const mode = params.mode === "RETAIL" ? "Retail" : "Bulk";
+  const priceMode = params.mode === "RETAIL" ? "RETAIL" : "BULK";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -151,7 +152,7 @@ export default async function ProductsPage({
               <h2 className="text-xl font-bold text-gray-700">No items found</h2>
               <p className="text-gray-400 mt-2">
                 {params.mode === "BULK"
-                  ? "No bulk listings available. Try switching to retail mode."
+                  ? "No retail listings available. Try switching to bulk mode."
                   : "Try a different category or search term."}
               </p>
               <a href="/products" className="mt-6 inline-block bg-green-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-700 transition-colors">
@@ -162,7 +163,7 @@ export default async function ProductsPage({
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
               {items.map((item, i) => (
                 <div key={item.id} className="animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
-                  <ItemCard item={item} />
+                  <ItemCard item={item} mode={priceMode} />
                 </div>
               ))}
             </div>

@@ -11,11 +11,13 @@ interface ItemCardProps {
     sellerCount: number;
     lowestPrice: number | null;
   };
+  mode?: string;
 }
 
-export default function ItemCard({ item }: ItemCardProps) {
+export default function ItemCard({ item, mode }: ItemCardProps) {
+  const href = `/products/items/${item.slug}${mode === "RETAIL" ? "?mode=RETAIL" : ""}`;
   return (
-    <Link href={`/products/items/${item.slug}`} className="block group">
+    <Link href={href} className="block group">
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-green-200 transition-all duration-300 hover:-translate-y-0.5">
         {/* Image */}
         <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">

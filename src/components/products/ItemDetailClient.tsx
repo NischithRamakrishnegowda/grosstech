@@ -52,14 +52,16 @@ interface SellerContact {
 export default function ItemDetailClient({
   item,
   listings,
+  initialMode = "BULK",
 }: {
   item: Item;
   listings: SellerListing[];
+  initialMode?: "RETAIL" | "BULK";
 }) {
   const { data: session } = useSession();
   const router = useRouter();
   const { addItem } = useCart();
-  const [activeMode, setActiveMode] = useState<"RETAIL" | "BULK">("RETAIL");
+  const [activeMode, setActiveMode] = useState<"RETAIL" | "BULK">(initialMode);
   const [addedOptId, setAddedOptId] = useState<string | null>(null);
   const [selectedOpts, setSelectedOpts] = useState<Record<string, string>>({});
 
@@ -323,7 +325,8 @@ export default function ItemDetailClient({
                         {/* Price option cards */}
                         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-3">
                           {listing.priceOptions.map((opt) => {
-                            const isSelected = getSelectedOpt(listing).id === opt.id;
+                            const isBuyer = session?.user.role === "BUYER";
+                            const isSelected = isBuyer && getSelectedOpt(listing).id === opt.id;
                             return (
                               <button
                                 key={opt.id}
@@ -422,7 +425,12 @@ export default function ItemDetailClient({
                             </div>
                           )
                         ) : (
-                          <p className="text-xs text-gray-400 italic">Sign in as a buyer to unlock seller contact details</p>
+                          <p className="text-xs text-gray-400 italic">
+                            <Link href={`/login?callbackUrl=/products/items/${item.slug}`} className="text-green-600 font-medium hover:underline">
+                              Sign in as a buyer
+                            </Link>
+                            {" "}to view and unlock seller contact details
+                          </p>
                         )}
                       </div>
                     </div>

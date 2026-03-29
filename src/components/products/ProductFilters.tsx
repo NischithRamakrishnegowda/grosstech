@@ -24,7 +24,7 @@ export default function ProductFilters({ categories }: { categories: Category[] 
   const [showPriceFilter, setShowPriceFilter] = useState(!!(searchParams.get("minPrice") || searchParams.get("maxPrice")));
 
   const currentCategory = searchParams.get("category") || "";
-  const currentMode = searchParams.get("mode") || "RETAIL";
+  const currentMode = searchParams.get("mode") || "BULK";
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -79,7 +79,7 @@ export default function ProductFilters({ categories }: { categories: Category[] 
     });
   }
 
-  const hasFilters = search || minPrice || maxPrice || currentCategory || currentMode !== "RETAIL";
+  const hasFilters = search || minPrice || maxPrice || currentCategory || currentMode !== "BULK";
 
   return (
     <div className="space-y-3">
@@ -112,7 +112,7 @@ export default function ProductFilters({ categories }: { categories: Category[] 
           {(["RETAIL", "BULK"] as const).map((mode) => (
             <button
               key={mode}
-              onClick={() => updateParams({ mode: mode === "RETAIL" ? null : mode })}
+              onClick={() => updateParams({ mode: mode === "BULK" ? null : mode })}
               aria-pressed={currentMode === mode}
               className={`px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
                 currentMode === mode
