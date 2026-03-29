@@ -17,6 +17,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  checkoutId: string | null;
   total: number;
   status: string;
   releaseScheduledAt: Date | null;
@@ -140,7 +141,10 @@ export default function PayoutManager({
                 <div key={order.id} className="bg-white rounded-2xl border-2 border-green-200 p-5 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-4">
                     <div>
-                      <p className="font-semibold text-gray-900">Order #{order.id.slice(-8).toUpperCase()}</p>
+                      <p className="font-semibold text-gray-900">
+                        Checkout #{order.checkoutId ?? order.id.slice(-8).toUpperCase()}
+                        <span className="ml-2 text-sm font-normal text-gray-500">→ {seller?.businessName || seller?.name || "Seller"}</span>
+                      </p>
                       <p className="text-xs text-gray-400">Buyer: {order.buyer.name} ({order.buyer.email})</p>
                     </div>
                     <p className="text-xs text-gray-400">
@@ -240,7 +244,7 @@ export default function PayoutManager({
                   <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="min-w-0">
-                        <p className="font-mono text-xs text-gray-500">#{order.id.slice(-8).toUpperCase()}</p>
+                        <p className="font-mono text-xs text-gray-500">#{order.checkoutId ?? order.id.slice(-8).toUpperCase()}</p>
                         <p className="font-semibold text-gray-900 mt-0.5">{order.buyer.name}</p>
                         {seller && (
                           <div className="mt-0.5">
@@ -321,7 +325,7 @@ export default function PayoutManager({
                       const seller = order.items[0]?.listing?.seller;
                       return (
                         <tr key={order.id} className="hover:bg-gray-50/50">
-                          <td className="px-4 py-3 font-mono text-xs text-gray-600">#{order.id.slice(-8).toUpperCase()}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-gray-600">#{order.checkoutId ?? order.id.slice(-8).toUpperCase()}</td>
                           <td className="px-4 py-3 text-gray-700">{order.buyer.name}</td>
                           <td className="px-4 py-3">
                             <p className="text-gray-700 text-xs font-medium">{seller?.businessName || seller?.name || "—"}</p>
@@ -396,7 +400,7 @@ export default function PayoutManager({
 
             <div className="space-y-3 mb-5">
               <p className="text-sm text-gray-600">
-                Order <span className="font-mono font-medium">#{confirmOrder.id.slice(-8).toUpperCase()}</span>
+                Checkout <span className="font-mono font-medium">#{confirmOrder.checkoutId ?? confirmOrder.id.slice(-8).toUpperCase()}</span>
               </p>
 
               {(() => {
