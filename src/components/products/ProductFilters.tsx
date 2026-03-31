@@ -109,7 +109,7 @@ export default function ProductFilters({ categories }: { categories: Category[] 
       <div className="flex flex-wrap items-center gap-2">
         {/* Mode toggle */}
         <div className="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          {(["RETAIL", "BULK"] as const).map((mode) => (
+          {(["BULK", "RETAIL"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => updateParams({ mode: mode === "BULK" ? null : mode })}
