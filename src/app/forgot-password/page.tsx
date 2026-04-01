@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Leaf, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
@@ -23,6 +23,19 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    timerRef.current = setInterval(() => {
+      setResendTimer((t) => {
+        if (t <= 1) { clearInterval(timerRef.current!); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current!);
+  }, [resendTimer]);
 
   function normalizePhone(val: string): string {
     if (val.includes("@")) return val;
@@ -50,6 +63,7 @@ export default function ForgotPasswordPage() {
       if (res.ok) {
         toast.success(`OTP sent to your ${detectedChannel === "EMAIL" ? "email" : "phone"}`);
         setStep("verify");
+        setResendTimer(30);
       } else {
         toast.error(j.error || "Failed to send OTP");
       }
@@ -128,16 +142,16 @@ export default function ForgotPasswordPage() {
 
         <div className="bg-white rounded-2xl shadow-lg p-8">
           {/* Step indicators */}
-          <div className="flex items-center gap-2 mb-8">
+          <div className="flex items-center mb-8">
             {(["request", "verify", "reset"] as const).map((s, i) => (
-              <div key={s} className="flex items-center gap-2 flex-1">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+              <>
+                <div key={s} className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                   step === s ? "bg-green-600 text-white" :
                   (["request", "verify", "reset", "done"].indexOf(step) > i) ? "bg-green-100 text-green-700" :
                   "bg-slate-100 text-slate-400"
                 }`}>{i + 1}</div>
-                {i < 2 && <div className={`flex-1 h-0.5 ${(["request", "verify", "reset", "done"].indexOf(step) > i) ? "bg-green-300" : "bg-slate-200"}`} />}
-              </div>
+                {i < 2 && <div key={`line-${i}`} className={`flex-1 h-0.5 mx-2 ${(["request", "verify", "reset", "done"].indexOf(step) > i) ? "bg-green-300" : "bg-slate-200"}`} />}
+              </>
             ))}
           </div>
 
@@ -183,12 +197,25 @@ export default function ForgotPasswordPage() {
                 {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 Verify OTP
               </Button>
-              <button
-                onClick={() => { setCode(""); setStep("request"); }}
-                className="w-full text-sm text-slate-400 hover:text-slate-600"
-              >
-                Use a different email / phone
-              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button
+                  onClick={() => { setCode(""); setStep("request"); }}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  Use a different email / phone
+                </button>
+                {resendTimer > 0 ? (
+                  <span className="text-slate-400">Resend in {resendTimer}s</span>
+                ) : (
+                  <button
+                    onClick={() => { setCode(""); handleSendOtp(); }}
+                    disabled={loading}
+                    className="text-green-600 font-medium hover:underline disabled:opacity-50"
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
