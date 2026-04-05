@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, Eye, AlertCircle } from "lucide-react";
+import { Pencil, Trash2, Eye, AlertCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, Fragment } from "react";
@@ -41,9 +41,12 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
   const router = useRouter();
   const [expandedRejection, setExpandedRejection] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function handleDelete(id: string) {
+    setDeletingId(id);
     const res = await fetch(`/api/listings/${id}`, { method: "DELETE" });
+    setDeletingId(null);
     setDeleteConfirmId(null);
     if (res.ok) {
       toast.success("Listing deactivated");
@@ -123,8 +126,15 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                     {deleteConfirmId === listing.id ? (
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">Deactivate?</span>
-                        <button onClick={() => handleDelete(listing.id)} className="text-xs text-red-600 font-semibold hover:underline">Yes</button>
-                        <button onClick={() => setDeleteConfirmId(null)} className="text-xs text-gray-400 hover:underline">No</button>
+                        <button
+                          onClick={() => handleDelete(listing.id)}
+                          disabled={deletingId === listing.id}
+                          className="text-xs text-red-600 font-semibold hover:underline disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {deletingId === listing.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                          Yes
+                        </button>
+                        <button onClick={() => setDeleteConfirmId(null)} disabled={!!deletingId} className="text-xs text-gray-400 hover:underline disabled:opacity-50">No</button>
                       </div>
                     ) : (
                       <button
@@ -213,8 +223,15 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                             deleteConfirmId === listing.id ? (
                               <div className="flex items-center gap-1.5 text-xs">
                                 <span className="text-gray-500 hidden lg:inline">Deactivate?</span>
-                                <button onClick={() => handleDelete(listing.id)} className="text-red-600 font-semibold hover:underline px-1">Yes</button>
-                                <button onClick={() => setDeleteConfirmId(null)} className="text-gray-400 hover:underline px-1">No</button>
+                                <button
+                                  onClick={() => handleDelete(listing.id)}
+                                  disabled={deletingId === listing.id}
+                                  className="text-red-600 font-semibold hover:underline px-1 disabled:opacity-50 flex items-center gap-1"
+                                >
+                                  {deletingId === listing.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                  Yes
+                                </button>
+                                <button onClick={() => setDeleteConfirmId(null)} disabled={!!deletingId} className="text-gray-400 hover:underline px-1 disabled:opacity-50">No</button>
                               </div>
                             ) : (
                               <button

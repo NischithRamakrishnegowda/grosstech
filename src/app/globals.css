@@ -183,6 +183,15 @@
   animation: blink 0.8s step-start infinite;
 }
 
+@keyframes nav-progress {
+  0%   { transform: translateX(-100%); width: 45%; }
+  50%  { transform: translateX(100%);  width: 45%; }
+  100% { transform: translateX(300%);  width: 45%; }
+}
+.animate-nav-progress {
+  animation: nav-progress 1.2s ease-in-out infinite;
+}
+
 /* Hide scrollbar for horizontal pill scrolling */
 .scrollbar-hide {
   -ms-overflow-style: none;
