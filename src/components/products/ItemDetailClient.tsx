@@ -233,17 +233,6 @@ export default function ItemDetailClient({
             <span className="text-sm font-medium text-gray-500 hidden sm:block">Mode:</span>
             <div className="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white">
               <button
-                onClick={() => setActiveMode("RETAIL")}
-                aria-pressed={activeMode === "RETAIL"}
-                className={`px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  activeMode === "RETAIL"
-                    ? "bg-green-600 text-white"
-                    : "text-gray-600 hover:bg-gray-50 active:bg-gray-100"
-                }`}
-              >
-                Retail
-              </button>
-              <button
                 onClick={() => setActiveMode("BULK")}
                 aria-pressed={activeMode === "BULK"}
                 className={`px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
@@ -253,6 +242,17 @@ export default function ItemDetailClient({
                 }`}
               >
                 Bulk
+              </button>
+              <button
+                onClick={() => setActiveMode("RETAIL")}
+                aria-pressed={activeMode === "RETAIL"}
+                className={`px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  activeMode === "RETAIL"
+                    ? "bg-green-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50 active:bg-gray-100"
+                }`}
+              >
+                Retail
               </button>
             </div>
             {activeMode === "BULK" && (
