@@ -17,7 +17,9 @@ export default async function BuyerRequestsPage() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Buy Requests</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Buyers post what they need — sellers can browse and reach out.
+              {session.user.role === "BUYER"
+                ? "Your purchase requests — sellers will reach out to you."
+                : "Buyers post what they need — browse and reach out to them."}
             </p>
           </div>
           <RequestList />

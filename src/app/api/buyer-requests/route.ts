@@ -16,7 +16,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isBuyer = session.user.role === "BUYER";
+
   const requests = await prisma.buyerRequest.findMany({
+    where: isBuyer ? { buyerId: session.user.id } : undefined,
     include: {
       buyer: { select: { id: true, name: true, businessName: true, city: true, state: true } },
       item: { select: { id: true, name: true, slug: true, category: { select: { name: true } } } },
