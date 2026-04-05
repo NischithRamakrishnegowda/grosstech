@@ -270,9 +270,9 @@ export default function ItemDetailClient({
       )}
 
       {/* Seller listings with smooth transitions */}
-      <div className="min-h-[200px]">
+      <div key={activeMode} className="min-h-[200px] animate-fade-in">
         {filteredListings.length === 0 ? (
-          <div className="text-center py-16 animate-fade-in">
+          <div className="text-center py-16">
             <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-600">No {activeMode.toLowerCase()} listings</h3>
             <p className="text-sm text-gray-400 mt-1">

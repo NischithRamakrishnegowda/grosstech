@@ -3,6 +3,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ItemCard from "@/components/products/ItemCard";
 import ProductFilters from "@/components/products/ProductFilters";
+import { ProductGridWrapper } from "@/components/products/ProductGridWrapper";
 import { prisma } from "@/lib/prisma";
 import { Search } from "lucide-react";
 
@@ -154,6 +155,7 @@ export default async function ProductsPage({
         </div>
       </div>
 
+      <ProductGridWrapper>
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {items.length === 0 ? (
@@ -182,6 +184,7 @@ export default async function ProductsPage({
           )}
         </div>
       </main>
+      </ProductGridWrapper>
       <Footer />
     </div>
   );

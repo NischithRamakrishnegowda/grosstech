@@ -36,6 +36,7 @@ export default function ProductFilters({ categories }: { categories: Category[] 
           params.set(key, value);
         }
       }
+      window.dispatchEvent(new CustomEvent("products-filter-change"));
       startTransition(() => {
         router.push(`/products?${params.toString()}`);
       });
