@@ -9,7 +9,7 @@ function Bar() {
   const [active, setActive] = useState(false);
   const [done, setDone] = useState(false);
   const prevRoute = useRef(`${pathname}${searchParams}`);
-  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
