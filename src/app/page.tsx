@@ -48,7 +48,15 @@ async function getFeaturedItems() {
 
 async function getCategories() {
   return prisma.category.findMany({
-    include: { _count: { select: { listings: { where: { isActive: true, status: "APPROVED" } } } } },
+    include: {
+      _count: {
+        select: {
+          items: {
+            where: { listings: { some: { isActive: true, status: "APPROVED" } } },
+          },
+        },
+      },
+    },
   });
 }
 

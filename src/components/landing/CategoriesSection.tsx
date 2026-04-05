@@ -14,7 +14,7 @@ interface Category {
   id: string;
   name: string;
   slug: string;
-  _count: { listings: number };
+  _count: { items: number };
 }
 
 export default function CategoriesSection({ categories }: { categories: Category[] }) {
@@ -42,7 +42,7 @@ export default function CategoriesSection({ categories }: { categories: Category
                 </div>
                 <div className="text-center">
                   <div className="font-semibold text-slate-800 text-xs">{cat.name}</div>
-                  <div className="text-slate-400 text-[10px] mt-0.5">{cat._count.listings} products</div>
+                  <div className="text-slate-400 text-[10px] mt-0.5">{cat._count.items} products</div>
                 </div>
               </Link>
             );

@@ -93,7 +93,11 @@ async function getCategories() {
     orderBy: { name: "asc" },
     include: {
       _count: {
-        select: { items: true },
+        select: {
+          items: {
+            where: { listings: { some: { isActive: true, status: "APPROVED" } } },
+          },
+        },
       },
     },
   });
