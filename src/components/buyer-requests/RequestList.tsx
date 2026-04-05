@@ -156,8 +156,10 @@ export default function RequestList() {
               <div key={req.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900">{req.buyer.businessName || req.buyer.name}</p>
-                    {(req.buyer.city || req.buyer.state) && (
+                    <p className="font-medium text-gray-900">
+                      {isBuyer ? "Your Request" : (req.buyer.businessName || req.buyer.name)}
+                    </p>
+                    {!isBuyer && (req.buyer.city || req.buyer.state) && (
                       <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3" />
                         {[req.buyer.city, req.buyer.state].filter(Boolean).join(", ")}
