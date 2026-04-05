@@ -88,14 +88,22 @@ async function getItems(params: SearchParams) {
   }));
 }
 
-async function getCategories() {
+async function getCategories(priceMode: "RETAIL" | "BULK") {
   const categories = await prisma.category.findMany({
     orderBy: { name: "asc" },
     include: {
       _count: {
         select: {
           items: {
-            where: { listings: { some: { isActive: true, status: "APPROVED" } } },
+            where: {
+              listings: {
+                some: {
+                  isActive: true,
+                  status: "APPROVED",
+                  priceOptions: { some: { mode: priceMode } },
+                },
+              },
+            },
           },
         },
       },
@@ -115,14 +123,14 @@ export default async function ProductsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const priceMode = params.mode === "RETAIL" ? "RETAIL" : "BULK";
   const [items, categories] = await Promise.all([
     getItems(params),
-    getCategories(),
+    getCategories(priceMode),
   ]);
 
   const activeCategory = categories.find((c) => c.slug === params.category);
   const mode = params.mode === "RETAIL" ? "Retail" : "Bulk";
-  const priceMode = params.mode === "RETAIL" ? "RETAIL" : "BULK";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
