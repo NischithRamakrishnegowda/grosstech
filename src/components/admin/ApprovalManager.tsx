@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Check, X, Loader2, Package, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,10 +92,9 @@ export default function ApprovalManager({ listings: initial }: { listings: Pendi
         <div key={listing.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Image */}
-            <div className="w-full sm:w-28 h-28 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-full sm:w-28 h-28 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 relative">
               {listing.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={listing.imageUrl} alt={listing.name} className="w-full h-full object-cover" />
+                <Image src={listing.imageUrl} alt={listing.name} fill className="object-cover" sizes="112px" />
               ) : (
                 <Package className="w-8 h-8 text-gray-300" />
               )}

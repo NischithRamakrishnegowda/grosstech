@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import NextImage from "next/image";
 import { Plus, Pencil, Trash2, Loader2, X, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -265,10 +266,9 @@ export default function ItemManager({ initialItems, categories }: Props) {
           <div className="sm:hidden space-y-2">
             {catItems.map((item) => (
               <div key={item.id} className="bg-white rounded-xl border border-gray-100 p-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
                   {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    <NextImage src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="40px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">No img</div>
                   )}
@@ -309,10 +309,9 @@ export default function ItemManager({ initialItems, categories }: Props) {
                 {catItems.map((item) => (
                   <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
                     <td className="px-4 py-2">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 relative">
                         {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                          <NextImage src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="40px" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">—</div>
                         )}

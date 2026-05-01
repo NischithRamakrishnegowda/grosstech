@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import NextImage from "next/image";
 import { Plus, Pencil, Trash2, Loader2, X, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -220,10 +221,9 @@ export default function CategoryManager({ initialCategories }: { initialCategori
         {categories.map((cat) => (
           <div key={cat.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
             {/* Image */}
-            <div className="aspect-[3/2] bg-gray-100 relative">
+            <div className="aspect-[3/2] bg-gray-100 relative overflow-hidden">
               {cat.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                <NextImage src={cat.imageUrl} alt={cat.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-300">
                   <ImagePlus className="w-10 h-10" />

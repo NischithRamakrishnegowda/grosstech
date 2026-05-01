@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Users, Tag } from "lucide-react";
 
 interface ItemCardProps {
@@ -22,12 +23,12 @@ export default function ItemCard({ item, mode }: ItemCardProps) {
         {/* Image */}
         <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
           {item.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={item.imageUrl}
               alt={item.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No image</div>

@@ -9,58 +9,59 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const orders = await prisma.order.findMany({
-    include: {
-      buyer: { select: { id: true, name: true, email: true } },
-      items: {
-        include: {
-          listing: { select: { name: true, sellerId: true, seller: { select: { name: true, businessName: true } } } },
-          priceOption: { select: { weight: true } },
+  const [totalOrders, revenueAgg, buyerGroups, recentOrders] = await Promise.all([
+    prisma.order.count(),
+    prisma.order.aggregate({ _sum: { total: true } }),
+    prisma.order.groupBy({
+      by: ["buyerId"],
+      _count: { id: true },
+      _sum: { total: true },
+    }),
+    prisma.order.findMany({
+      select: {
+        id: true,
+        buyerId: true,
+        total: true,
+        status: true,
+        createdAt: true,
+        buyer: { select: { id: true, name: true, email: true } },
+        items: {
+          select: {
+            listing: { select: { name: true } },
+            priceOption: { select: { weight: true } },
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
+    prisma.user.findMany({
+      where: { role: "BUYER" },
+      select: { id: true, name: true, email: true },
+    }),
+  ]);
 
-  const totalOrders = orders.length;
-  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
-  const uniqueBuyers = new Set(orders.map((o) => o.buyerId)).size;
-
-  // Per-buyer breakdown
-  const buyerMap: Record<
-    string,
-    { name: string; email: string; orderCount: number; totalSpent: number }
-  > = {};
-  for (const order of orders) {
-    if (!buyerMap[order.buyerId]) {
-      buyerMap[order.buyerId] = {
-        name: order.buyer.name,
-        email: order.buyer.email,
-        orderCount: 0,
-        totalSpent: 0,
-      };
+  const buyerIdMap: Record<string, { name: string; email: string }> = {};
+  for (const o of recentOrders) {
+    if (!buyerIdMap[o.buyerId]) {
+      buyerIdMap[o.buyerId] = { name: o.buyer.name, email: o.buyer.email };
     }
-    buyerMap[order.buyerId].orderCount += 1;
-    buyerMap[order.buyerId].totalSpent += order.total;
   }
 
-  const repeatCustomers = Object.values(buyerMap).filter(
-    (b) => b.orderCount >= 2
-  ).length;
+  const buyers = buyerGroups.map((g) => ({
+    id: g.buyerId,
+    name: buyerIdMap[g.buyerId]?.name ?? "",
+    email: buyerIdMap[g.buyerId]?.email ?? "",
+    orderCount: g._count.id,
+    totalSpent: g._sum.total ?? 0,
+  }));
 
   return NextResponse.json({
     totalOrders,
-    totalRevenue,
-    uniqueBuyers,
-    repeatCustomers,
-    buyers: Object.entries(buyerMap).map(([id, data]) => ({ id, ...data })),
-    orders: orders.map((o) => ({
-      id: o.id,
-      buyer: o.buyer,
-      total: o.total,
-      status: o.status,
-      createdAt: o.createdAt,
-      items: o.items,
-    })),
+    totalRevenue: revenueAgg._sum.total ?? 0,
+    uniqueBuyers: buyerGroups.length,
+    repeatCustomers: buyerGroups.filter((g) => g._count.id >= 2).length,
+    buyers,
+    orders: recentOrders,
   });
 }

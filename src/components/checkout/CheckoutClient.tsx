@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
@@ -190,10 +191,9 @@ export default function CheckoutClient() {
               className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 hover:shadow-md transition-all duration-200 animate-slide-right"
               style={{ animationDelay: `${idx * 60}ms` }}
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden relative">
                 {item.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+                  <Image src={item.imageUrl} alt={item.name} fill className="object-cover rounded-xl" sizes="64px" />
                 ) : (
                   <Package className="w-7 h-7 text-gray-300" />
                 )}

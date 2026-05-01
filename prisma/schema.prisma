@@ -63,6 +63,7 @@ model User {
   otpTokens              OtpToken[]
   buyerRequests          BuyerRequest[]
 
+  @@index([role])
   @@map("users")
 }
 
@@ -120,6 +121,10 @@ model Listing {
   priceOptions PriceOption[]
   orderItems   OrderItem[]
 
+  @@index([status, isActive])
+  @@index([categoryId])
+  @@index([sellerId])
+  @@index([itemId])
   @@map("listings")
 }
 
@@ -170,6 +175,8 @@ model Order {
 
   items OrderItem[]
 
+  @@index([buyerId])
+  @@index([status])
   @@map("orders")
 }
 
@@ -187,6 +194,8 @@ model OrderItem {
   priceOption   PriceOption @relation(fields: [priceOptionId], references: [id])
   priceOptionId String
 
+  @@index([orderId])
+  @@index([listingId])
   @@map("order_items")
 }
 
@@ -214,6 +223,8 @@ model OtpToken {
   usedAt         DateTime?
   createdAt      DateTime    @default(now())
 
+  @@index([userId])
+  @@index([verifiedToken])
   @@map("otp_tokens")
 }
 
@@ -234,6 +245,8 @@ model ContactUnlock {
   createdAt  DateTime  @default(now())
 
   @@unique([buyerId, sellerId])
+  @@index([buyerId])
+  @@index([sellerId])
   @@map("contact_unlocks")
 }
 
@@ -250,5 +263,7 @@ model BuyerRequest {
   item   Item?   @relation(fields: [itemId], references: [id])
   itemId String?
 
+  @@index([buyerId])
+  @@index([itemId])
   @@map("buyer_requests")
 }

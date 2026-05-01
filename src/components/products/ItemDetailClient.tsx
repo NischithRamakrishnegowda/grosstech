@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Script from "next/script";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -207,10 +208,9 @@ export default function ItemDetailClient({
 
       {/* Item header — responsive */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden shrink-0">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden shrink-0 relative">
           {item.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+            <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="96px" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No image</div>
           )}

@@ -52,7 +52,14 @@ export async function POST(req: Request) {
     if (channel === OtpChannel.EMAIL) {
       await sendOtpEmail(user.email, user.name, code, type);
     } else {
-      if (user.phone) await sendOtpSms(user.phone, code);
+      if (user.phone) {
+        try {
+          await sendOtpSms(user.phone, code);
+        } catch (smsErr) {
+          console.error("SMS OTP send failed:", smsErr);
+          return NextResponse.json({ error: "Failed to send SMS. Try email login instead." }, { status: 500 });
+        }
+      }
     }
 
     if (process.env.NODE_ENV !== "production") {
