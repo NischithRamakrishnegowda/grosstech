@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { DollarSign, ShoppingBag, Users, TrendingUp, ClipboardCheck, Store } from "lucide-react";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 export default async function AdminDashboardPage() {
   const [totalOrders, totalListings, totalBuyers, totalSellers, pendingApprovals] = await Promise.all([
@@ -34,6 +35,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={60000} />
       <h1 className="text-2xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">

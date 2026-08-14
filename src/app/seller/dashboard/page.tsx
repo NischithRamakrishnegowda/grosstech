@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { Package, Plus, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +25,7 @@ export default async function SellerDashboardPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={30000} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome back!</h1>

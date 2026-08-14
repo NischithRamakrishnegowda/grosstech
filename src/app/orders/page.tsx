@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Truck, Package, ShoppingBag } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import Link from "next/link";
 import { PLATFORM_FEE } from "@/lib/constants";
 
@@ -54,6 +55,7 @@ export default async function OrdersPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <AutoRefresh intervalMs={30000} />
       <Header />
       <main className="flex-1 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
