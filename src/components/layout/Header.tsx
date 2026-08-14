@@ -119,6 +119,9 @@ export default function Header() {
                       My Orders
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuItem onClick={() => router.push("/profile")} className="mx-1 my-0.5 rounded-lg">
+                    <User className="w-4 h-4 mr-2 text-gray-400" /> Edit Profile
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => signOut({ callbackUrl: "/" })}
