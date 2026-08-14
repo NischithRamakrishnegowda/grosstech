@@ -216,43 +216,33 @@ export default function ItemDetailClient({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <Badge variant="secondary">{item.category.name}</Badge>
-            <span className="text-xs text-gray-400">
-              {filteredListings.length} seller{filteredListings.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{item.name}</h1>
-
-          {/* Mode toggle — inline, segmented control style */}
-          {hasRetail && hasBulk && (
-            <div className="inline-flex bg-gray-100 rounded-xl p-1">
-              {(["BULK", "RETAIL"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setActiveMode(m)}
-                  aria-pressed={activeMode === m}
-                  className={`px-5 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
-                    activeMode === m
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {m === "BULK" ? "Bulk" : "Retail"}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Single mode badge */}
-          {!hasRetail && hasBulk && (
-            <span className="inline-block text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">Bulk only</span>
-          )}
-          {!hasBulk && hasRetail && (
-            <span className="inline-block text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">Retail only</span>
-          )}
+          <Badge variant="secondary" className="mb-2">{item.category.name}</Badge>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{item.name}</h1>
+          <p className="text-sm text-gray-400 mt-1">
+            {filteredListings.length} seller{filteredListings.length !== 1 ? "s" : ""} available
+          </p>
         </div>
       </div>
+
+      {/* Mode tabs — underline style, below header */}
+      {(hasRetail || hasBulk) && (
+        <div className="flex items-center border-b border-gray-100 mb-6">
+          {(["BULK", "RETAIL"] as const).filter((m) => m === "BULK" ? hasBulk : hasRetail).map((m) => (
+            <button
+              key={m}
+              onClick={() => setActiveMode(m)}
+              aria-pressed={activeMode === m}
+              className={`px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-all ${
+                activeMode === m
+                  ? "border-green-600 text-green-600"
+                  : "border-transparent text-gray-400 hover:text-gray-700"
+              }`}
+            >
+              {m === "BULK" ? "Bulk" : "Retail"}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Seller listings with smooth transitions */}
       <div key={activeMode} className="min-h-[200px] animate-fade-in">
