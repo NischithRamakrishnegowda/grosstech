@@ -17,11 +17,22 @@ export async function GET() {
   }
 
   const isBuyer = session.user.role === "BUYER";
+  const isAdmin = session.user.role === "ADMIN";
 
   const requests = await prisma.buyerRequest.findMany({
     where: isBuyer ? { buyerId: session.user.id } : undefined,
     include: {
-      buyer: { select: { id: true, name: true, businessName: true, city: true, state: true } },
+      buyer: {
+        select: {
+          id: true,
+          name: true,
+          businessName: true,
+          city: true,
+          state: true,
+          // Only expose contact details to admin
+          ...(isAdmin ? { phone: true, email: true } : {}),
+        },
+      },
       item: { select: { id: true, name: true, slug: true, category: { select: { name: true } } } },
     },
     orderBy: { createdAt: "desc" },

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import { Send, Loader2, Package, MapPin, Clock } from "lucide-react";
+import { Send, Loader2, Package, MapPin, Clock, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,15 @@ interface BuyerRequest {
   description: string;
   quantity: string | null;
   createdAt: string;
-  buyer: { id: string; name: string; businessName: string | null; city: string | null; state: string | null };
+  buyer: {
+    id: string;
+    name: string;
+    businessName: string | null;
+    city: string | null;
+    state: string | null;
+    phone?: string | null;
+    email?: string | null;
+  };
   item: { id: string; name: string; slug: string; category: { name: string } } | null;
 }
 
@@ -43,6 +51,7 @@ export default function RequestList() {
   const { data: requests, mutate } = useSWR<BuyerRequest[]>("/api/buyer-requests", fetcher);
   const { data: items = [] } = useSWR<ItemOption[]>("/api/items?all=true", fetcher);
   const isBuyer = session?.user.role === "BUYER";
+  const isAdmin = session?.user.role === "ADMIN";
 
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -164,6 +173,21 @@ export default function RequestList() {
                         <MapPin className="w-3 h-3" />
                         {[req.buyer.city, req.buyer.state].filter(Boolean).join(", ")}
                       </p>
+                    )}
+                    {/* Contact details — admin only */}
+                    {isAdmin && (
+                      <div className="flex flex-wrap gap-3 mt-1.5">
+                        {req.buyer.phone && (
+                          <a href={`tel:${req.buyer.phone}`} className="text-xs text-green-600 flex items-center gap-1 hover:underline">
+                            <Phone className="w-3 h-3" /> {req.buyer.phone}
+                          </a>
+                        )}
+                        {req.buyer.email && (
+                          <a href={`mailto:${req.buyer.email}`} className="text-xs text-green-600 flex items-center gap-1 hover:underline">
+                            <Mail className="w-3 h-3" /> {req.buyer.email}
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                   <span className="text-xs text-gray-400 flex items-center gap-1 shrink-0">
