@@ -110,52 +110,6 @@ function itemsTable(items: OrderItem[]): string {
     </table>`;
 }
 
-function contactSection(items: OrderItem[]): string {
-  // Collect unique SELLER-sourced sellers
-  const sellerMap = new Map<string, { name: string; email: string; phone: string | null }>();
-  for (const item of items) {
-    if (item.listing.source === "SELLER") {
-      const key = item.listing.seller.email;
-      if (!sellerMap.has(key)) {
-        sellerMap.set(key, {
-          name: item.listing.seller.name,
-          email: item.listing.seller.email,
-          phone: item.listing.seller.phone,
-        });
-      }
-    }
-  }
-
-  const sellerRows = Array.from(sellerMap.values())
-    .map(
-      (s) => `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${s.name}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${s.phone || "—"}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${s.email}</td>
-      </tr>`
-    )
-    .join("");
-
-  return `
-    <h3 style="color:#374151;margin:24px 0 8px">Contact Details</h3>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-      <thead>
-        <tr style="background:#f0fdf4">
-          <th style="padding:8px 12px;text-align:left;font-size:13px;color:#6b7280">Contact</th>
-          <th style="padding:8px 12px;text-align:left;font-size:13px;color:#6b7280">Phone</th>
-          <th style="padding:8px 12px;text-align:left;font-size:13px;color:#6b7280">Email</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${sellerRows}
-        <tr>
-          <td style="padding:8px 12px">GrossTech Admin</td>
-          <td style="padding:8px 12px">${ADMIN_PHONE || "—"}</td>
-          <td style="padding:8px 12px">${ADMIN_EMAIL}</td>
-        </tr>
-      </tbody>
-    </table>`;
-}
 
 export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, items: OrderItem[]) {
   const transporter = getTransporter();
