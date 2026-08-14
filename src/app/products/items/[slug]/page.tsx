@@ -21,10 +21,20 @@ export default async function ItemDetailPage({
 }) {
   const { slug } = await params;
   const { mode } = await searchParams;
-  const initialMode: "RETAIL" | "BULK" = mode === "RETAIL" ? "RETAIL" : "BULK";
 
   const data = await getCachedItemDetail(slug);
   if (!data) notFound();
+
+  // Auto-detect: if URL specifies a mode use it, otherwise default to whichever
+  // mode actually has listings — avoids landing on "not available" screen
+  const hasBulk   = data.listings.some((l) => l.priceOptions.some((o) => o.mode === "BULK"));
+  const hasRetail  = data.listings.some((l) => l.priceOptions.some((o) => o.mode === "RETAIL"));
+  const initialMode: "RETAIL" | "BULK" =
+    mode === "RETAIL" ? "RETAIL"
+    : mode === "BULK"  ? "BULK"
+    : hasBulk          ? "BULK"
+    : hasRetail        ? "RETAIL"
+    : "BULK";
 
   return (
     <div className="min-h-screen flex flex-col">
