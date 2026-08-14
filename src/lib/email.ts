@@ -24,9 +24,9 @@ function otpSubject(type: OtpType): string {
 }
 
 function otpPurpose(type: OtpType): string {
-  if (type === OtpType.EMAIL_VERIFY) return "verify your email address";
+  if (type === OtpType.EMAIL_VERIFY) return "confirm your email address";
   if (type === OtpType.PASSWORD_RESET) return "reset your password";
-  if (type === OtpType.LOGIN_OTP) return "log in to your account";
+  if (type === OtpType.LOGIN_OTP) return "sign in to your account";
   return "complete your action";
 }
 
@@ -41,11 +41,11 @@ export async function sendOtpEmail(to: string, name: string, code: string, type:
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff">
           <h2 style="color:#16a34a;margin:0 0 8px">GrossTech</h2>
-          <p style="color:#374151;margin:0 0 24px">Hi ${name}, use the OTP below to ${otpPurpose(type)}.</p>
+          <p style="color:#374151;margin:0 0 24px">Hi ${name}, use the code below to ${otpPurpose(type)}.</p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:24px;text-align:center;margin:0 0 24px">
             <span style="font-size:36px;font-weight:700;letter-spacing:8px;color:#15803d">${code}</span>
           </div>
-          <p style="color:#6b7280;font-size:13px;margin:0">Valid for 10 minutes. Do not share this OTP with anyone.</p>
+          <p style="color:#6b7280;font-size:13px;margin:0">This code is valid for 10 minutes. Do not share it with anyone.</p>
         </div>
       `,
     });
