@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import NextImage from "next/image";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Package } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -280,10 +281,7 @@ export default function ItemManager({ initialItems, categories }: Props) {
       ))}
 
       {items.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-lg font-medium">No items yet</p>
-          <p className="text-sm mt-1">Add predefined items that sellers can list under.</p>
-        </div>
+        <EmptyState icon={Package} title="No items yet" description="Add predefined items that sellers can list under." />
       )}
     </div>
   );

@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Truck, Package, ShoppingBag } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import Link from "next/link";
 import { PLATFORM_FEE } from "@/lib/constants";
 
@@ -59,14 +60,16 @@ export default async function OrdersPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
 
           {paymentGroups.length === 0 ? (
-            <div className="text-center py-16">
-              <ShoppingBag className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No orders yet</p>
-              <p className="text-gray-400 text-sm mt-1">Start shopping to see your orders here</p>
-              <Link href="/products" className="mt-5 inline-block bg-green-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-green-700 transition-colors text-sm">
-                Browse Products
-              </Link>
-            </div>
+            <EmptyState
+              icon={ShoppingBag}
+              title="No orders yet"
+              description="Start shopping to see your orders here"
+              action={
+                <Link href="/products" className="bg-green-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-green-700 transition-colors text-sm inline-block">
+                  Browse Products
+                </Link>
+              }
+            />
           ) : (
             <div className="space-y-4">
               {paymentGroups.map((group) => {

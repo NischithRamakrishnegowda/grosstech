@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, Eye, AlertCircle, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Eye, AlertCircle, Loader2, Package } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, Fragment } from "react";
@@ -63,8 +64,8 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
 
   if (listings.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
-        No listings yet. Add your first product!
+      <div className="bg-white rounded-2xl border border-gray-100">
+        <EmptyState icon={Package} title="No listings yet" description="Add your first product to start selling." />
       </div>
     );
   }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Check, X, Loader2, Package, User } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -75,13 +76,7 @@ export default function ApprovalManager({ listings: initial }: { listings: Pendi
   }
 
   if (listings.length === 0) {
-    return (
-      <div className="text-center py-16">
-        <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-gray-600">No pending listings</h3>
-        <p className="text-sm text-gray-400 mt-1">All seller listings have been reviewed</p>
-      </div>
-    );
+    return <EmptyState icon={Package} title="No pending listings" description="All seller listings have been reviewed" />;
   }
 
   return (

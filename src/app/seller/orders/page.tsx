@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Truck, Package, ShoppingBag } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -45,10 +46,8 @@ export default async function SellerOrdersPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Orders for My Products</h1>
 
       {orders.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-          <ShoppingBag className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">No orders yet</p>
-          <p className="text-gray-400 text-sm mt-1">Orders for your products will appear here</p>
+        <div className="bg-white rounded-2xl border border-gray-100">
+          <EmptyState icon={ShoppingBag} title="No orders yet" description="Orders for your products will appear here" />
         </div>
       ) : (
         <div className="space-y-4">

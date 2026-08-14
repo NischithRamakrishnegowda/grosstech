@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Loader2, Tag } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -132,10 +133,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
       {/* Table */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {categories.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <Tag className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No categories yet. Add one to get started.</p>
-          </div>
+          <EmptyState icon={Tag} title="No categories yet" description="Add one to get started." />
         ) : (
           <table className="w-full text-sm">
             <thead>
