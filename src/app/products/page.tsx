@@ -4,10 +4,8 @@ import Footer from "@/components/layout/Footer";
 import ItemCard from "@/components/products/ItemCard";
 import ProductFilters from "@/components/products/ProductFilters";
 import { ProductGridWrapper } from "@/components/products/ProductGridWrapper";
-import { prisma } from "@/lib/prisma";
+import { getCachedProductItems, getCachedProductCategories } from "@/lib/cache";
 import { Search } from "lucide-react";
-
-export const revalidate = 30;
 
 interface SearchParams {
   category?: string;
@@ -17,107 +15,6 @@ interface SearchParams {
   maxPrice?: string;
 }
 
-async function getItems(params: SearchParams) {
-  const { category, search, mode, minPrice, maxPrice } = params;
-  const priceMode = mode === "RETAIL" ? "RETAIL" : "BULK";
-
-  // Build listing filter for price mode and price range
-  const priceOptionFilter: Record<string, unknown> = { mode: priceMode };
-  if (minPrice) priceOptionFilter.price = { ...(priceOptionFilter.price as object || {}), gte: parseFloat(minPrice) };
-  if (maxPrice) priceOptionFilter.price = { ...(priceOptionFilter.price as object || {}), lte: parseFloat(maxPrice) };
-
-  const items = await prisma.item.findMany({
-    where: {
-      ...(category ? { category: { slug: category } } : {}),
-      ...(search
-        ? {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { category: { name: { contains: search, mode: "insensitive" } } },
-            ],
-          }
-        : {}),
-      // Only show items that have at least one approved listing with matching price options
-      listings: {
-        some: {
-          isActive: true,
-          status: "APPROVED",
-          priceOptions: { some: priceOptionFilter },
-        },
-      },
-    },
-    include: {
-      category: true,
-      _count: {
-        select: {
-          listings: {
-            where: {
-              isActive: true,
-              status: "APPROVED",
-              priceOptions: { some: priceOptionFilter },
-            },
-          },
-        },
-      },
-      listings: {
-        where: {
-          isActive: true,
-          status: "APPROVED",
-          priceOptions: { some: priceOptionFilter },
-        },
-        include: {
-          priceOptions: {
-            where: priceOptionFilter,
-            orderBy: { price: "asc" },
-            take: 1,
-          },
-        },
-        take: 1,
-      },
-    },
-    orderBy: { name: "asc" },
-  });
-
-  return items.map((item) => ({
-    id: item.id,
-    name: item.name,
-    slug: item.slug,
-    imageUrl: item.imageUrl,
-    category: item.category,
-    sellerCount: item._count.listings,
-    lowestPrice: item.listings[0]?.priceOptions[0]?.price ?? null,
-  }));
-}
-
-async function getCategories(priceMode: "RETAIL" | "BULK") {
-  const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      _count: {
-        select: {
-          items: {
-            where: {
-              listings: {
-                some: {
-                  isActive: true,
-                  status: "APPROVED",
-                  priceOptions: { some: { mode: priceMode } },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-  return categories.map((c) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    itemCount: c._count.items,
-  }));
-}
-
 export default async function ProductsPage({
   searchParams,
 }: {
@@ -125,10 +22,11 @@ export default async function ProductsPage({
 }) {
   const params = await searchParams;
   const priceMode = params.mode === "RETAIL" ? "RETAIL" : "BULK";
-  const [items, categories] = await Promise.all([
-    getItems(params),
-    getCategories(priceMode),
+  const [items, rawCategories] = await Promise.all([
+    getCachedProductItems(params),
+    getCachedProductCategories(priceMode),
   ]);
+  const categories = rawCategories.map((c) => ({ ...c, itemCount: c._count.items }));
 
   const activeCategory = categories.find((c) => c.slug === params.category);
   const mode = params.mode === "RETAIL" ? "Retail" : "Bulk";

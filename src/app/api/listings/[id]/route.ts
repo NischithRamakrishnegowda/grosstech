@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { CACHE_TAGS, invalidateTag } from "@/lib/cache";
 
 const priceOptionSchema = z.object({
   id: z.string().optional(),
@@ -65,6 +67,7 @@ export async function PUT(
       include: { priceOptions: true, category: true },
     });
 
+    invalidateTag(CACHE_TAGS.items);
     return NextResponse.json(updated);
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -89,5 +92,6 @@ export async function DELETE(
   }
 
   await prisma.listing.update({ where: { id }, data: { isActive: false } });
+  invalidateTag(CACHE_TAGS.items);
   return NextResponse.json({ success: true });
 }

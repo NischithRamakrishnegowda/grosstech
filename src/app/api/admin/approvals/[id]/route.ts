@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { sendListingApprovedEmail, sendListingRejectedEmail } from "@/lib/email";
+import { CACHE_TAGS, invalidateTag } from "@/lib/cache";
 
 const schema = z.object({
   action: z.enum(["approve", "reject"]),
@@ -48,6 +50,7 @@ export async function PUT(
         console.error("Failed to send approval email:", e)
       );
 
+      invalidateTag(CACHE_TAGS.items);
       return NextResponse.json({ success: true, status: "APPROVED" });
     } else {
       if (!data.reason?.trim()) {
@@ -64,6 +67,7 @@ export async function PUT(
         console.error("Failed to send rejection email:", e)
       );
 
+      invalidateTag(CACHE_TAGS.items);
       return NextResponse.json({ success: true, status: "REJECTED" });
     }
   } catch (err) {

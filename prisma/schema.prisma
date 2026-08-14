@@ -224,6 +224,7 @@ model OtpToken {
   channel        OtpChannel
   expiresAt      DateTime
   usedAt         DateTime?
+  failedAttempts Int         @default(0)
   createdAt      DateTime    @default(now())
 
   @@index([userId])

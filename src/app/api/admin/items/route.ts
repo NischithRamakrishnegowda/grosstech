@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { CACHE_TAGS, invalidateTag } from "@/lib/cache";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -48,6 +50,7 @@ export async function POST(req: Request) {
       include: { category: true },
     });
 
+    invalidateTag(CACHE_TAGS.items);
     return NextResponse.json(item, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {

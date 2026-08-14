@@ -41,20 +41,34 @@ export async function verifyOtpCode(
 
   if (!user) return { success: false, error: "User not found" };
 
-  // Find valid OTP
-  const token = await prisma.otpToken.findFirst({
-    where: {
-      userId: user.id,
-      code,
-      type,
-      channel,
-      usedAt: null,
-      expiresAt: { gt: new Date() },
-    },
+  // Find the latest valid (unused, unexpired) OTP for this user
+  const activeToken = await prisma.otpToken.findFirst({
+    where: { userId: user.id, type, channel, usedAt: null, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: "desc" },
   });
 
-  if (!token) return { success: false, error: "Invalid or expired OTP" };
+  if (!activeToken) return { success: false, error: "Invalid or expired OTP" };
+
+  // Brute force protection: lock after 5 failed attempts
+  const MAX_ATTEMPTS = 5;
+  if (activeToken.failedAttempts >= MAX_ATTEMPTS) {
+    await prisma.otpToken.update({ where: { id: activeToken.id }, data: { usedAt: new Date() } });
+    return { success: false, error: "Too many failed attempts. Please request a new OTP." };
+  }
+
+  if (activeToken.code !== code) {
+    await prisma.otpToken.update({
+      where: { id: activeToken.id },
+      data: { failedAttempts: { increment: 1 } },
+    });
+    const remaining = MAX_ATTEMPTS - activeToken.failedAttempts - 1;
+    return {
+      success: false,
+      error: remaining > 0 ? `Invalid OTP. ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining.` : "Too many failed attempts. Please request a new OTP.",
+    };
+  }
+
+  const token = activeToken;
 
   // Mark as used
   let verifiedToken: string | undefined;
