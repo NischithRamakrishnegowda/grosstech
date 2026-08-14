@@ -78,7 +78,7 @@ export default function ProductForm({
       imageUrl: "",
       categoryId: "",
       itemId: "",
-      priceOptions: [{ weight: "", price: "" as unknown as number, stock: "" as unknown as number, mode: "RETAIL", minQty: 1 }],
+      priceOptions: [{ weight: "", price: "" as unknown as number, stock: "" as unknown as number, mode: "BULK", minQty: 1 }],
       ...defaultValues,
     },
   });
