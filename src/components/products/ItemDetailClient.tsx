@@ -67,11 +67,11 @@ export default function ItemDetailClient({
   const [selectedOpts, setSelectedOpts] = useState<Record<string, string>>({});
 
   // Contact unlock state per seller
-  const [unlockedSellers, setUnlockedSellers] = useState<Record<string, SellerContact>>({});
+  const [unlockedSellers, setUnlockedSellers] = useState<Record<string, { contact: SellerContact; reason: string }>>({});
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [contactLoading, setContactLoading] = useState(true);
 
-  // Check which sellers are already unlocked
+  // Check which sellers are already unlocked (paid or via purchase)
   useEffect(() => {
     if (session?.user.role !== "BUYER") { setContactLoading(false); return; }
     const sellerIds = [...new Set(listings.map((l) => l.seller.id))];
@@ -81,7 +81,7 @@ export default function ItemDetailClient({
         .then((r) => r.json())
         .then((data) => {
           if (!data.locked) {
-            setUnlockedSellers((prev) => ({ ...prev, [sellerId]: data.seller }));
+            setUnlockedSellers((prev) => ({ ...prev, [sellerId]: { contact: data.seller, reason: data.reason } }));
           }
         })
         .catch(() => {})
@@ -148,7 +148,7 @@ export default function ItemDetailClient({
         const contactRes = await fetch(`/api/seller/contact/${sellerId}`);
         const contactData = await contactRes.json();
         if (!contactData.locked) {
-          setUnlockedSellers((prev) => ({ ...prev, [sellerId]: contactData.seller }));
+          setUnlockedSellers((prev) => ({ ...prev, [sellerId]: { contact: contactData.seller, reason: "unlocked" } }));
           toast.success("Seller contact unlocked!");
         }
       } else {
@@ -271,7 +271,8 @@ export default function ItemDetailClient({
         ) : (
           <div className="space-y-4">
             {filteredListings.map((listing, i) => {
-              const contact = unlockedSellers[listing.seller.id];
+              const unlocked = unlockedSellers[listing.seller.id];
+              const contact = unlocked?.contact;
               return (
                 <div
                   key={listing.id}
@@ -388,7 +389,8 @@ export default function ItemDetailClient({
                           contact ? (
                             <div className="space-y-2.5 text-sm animate-fade-in">
                               <p className="text-xs font-semibold text-green-600 uppercase tracking-wider flex items-center gap-1">
-                                <Check className="w-3 h-3" /> Contact Unlocked
+                                <Check className="w-3 h-3" />
+                                {unlocked?.reason === "purchased" ? "Previous Purchase" : "Contact Unlocked"}
                               </p>
                               {contact.phone && (
                                 <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors">

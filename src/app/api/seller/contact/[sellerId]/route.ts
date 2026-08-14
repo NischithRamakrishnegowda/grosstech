@@ -12,11 +12,21 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role !== "BUYER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  // Check 1: paid contact unlock
   const unlock = await prisma.contactUnlock.findUnique({
     where: { buyerId_sellerId: { buyerId: session.user.id, sellerId } },
   });
 
-  if (!unlock?.isPaid) {
+  // Check 2: buyer has an existing completed order with this seller
+  const existingOrder = !unlock?.isPaid ? await prisma.order.findFirst({
+    where: {
+      buyerId: session.user.id,
+      status: { in: ["PAYMENT_HELD", "RELEASED_TO_SELLER"] },
+      items: { some: { listing: { sellerId } } },
+    },
+  }) : null;
+
+  if (!unlock?.isPaid && !existingOrder) {
     return NextResponse.json({ locked: true });
   }
 
@@ -25,5 +35,9 @@ export async function GET(
     select: { name: true, phone: true, email: true, street: true, city: true, state: true, pincode: true, businessName: true },
   });
 
-  return NextResponse.json({ locked: false, seller });
+  return NextResponse.json({
+    locked: false,
+    seller,
+    reason: existingOrder ? "purchased" : "unlocked",
+  });
 }

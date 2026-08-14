@@ -150,8 +150,30 @@ export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, ite
                 : "Self Pickup — Please collect your order from the seller"}
             </span>
           </div>
+          ${(() => {
+            const sellerMap = new Map<string, { name: string; email: string; phone: string | null }>();
+            for (const i of items) {
+              if (i.listing.source === "SELLER") {
+                const key = i.listing.seller.email;
+                if (!sellerMap.has(key)) sellerMap.set(key, i.listing.seller);
+              }
+            }
+            const sellers = Array.from(sellerMap.values());
+            if (sellers.length === 0) return "";
+            return `
+              <h3 style="color:#374151;margin:24px 0 8px;font-size:15px">Seller Contact${sellers.length > 1 ? "s" : ""}</h3>
+              <p style="color:#6b7280;font-size:12px;margin:0 0 10px">You can contact your seller${sellers.length > 1 ? "s" : ""} directly for pickup or delivery coordination.</p>
+              ${sellers.map((s) => `
+                <div style="background:#f0fdf4;border-radius:8px;padding:12px;margin-bottom:8px">
+                  <p style="margin:0 0 4px;font-weight:600;color:#111827">${s.name}</p>
+                  ${s.phone ? `<p style="margin:0 0 2px;color:#374151;font-size:13px">📞 ${s.phone}</p>` : ""}
+                  <p style="margin:0;color:#374151;font-size:13px">✉ ${s.email}</p>
+                </div>
+              `).join("")}
+            `;
+          })()}
           <div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:8px;font-size:13px;color:#6b7280">
-            For any queries, contact us at <a href="mailto:${ADMIN_EMAIL}" style="color:#16a34a">${ADMIN_EMAIL}</a>${ADMIN_PHONE ? ` or call ${ADMIN_PHONE}` : ""}.
+            For platform support, contact us at <a href="mailto:${ADMIN_EMAIL}" style="color:#16a34a">${ADMIN_EMAIL}</a>${ADMIN_PHONE ? ` or call ${ADMIN_PHONE}` : ""}.
           </div>
         </div>
       `,
