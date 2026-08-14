@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import NextImage from "next/image";
-import { Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { Modal } from "@/components/ui/Modal";
 import { toast } from "sonner";
 
 interface Category {
@@ -39,14 +40,6 @@ export default function ItemManager({ initialItems, categories }: Props) {
   const [slug, setSlug] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const formRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (showForm && formRef.current) {
-      const top = formRef.current.getBoundingClientRect().top + window.scrollY - 80;
-      setTimeout(() => window.scrollTo({ top, behavior: "smooth" }), 50);
-    }
-  }, [showForm]);
 
   function resetForm() {
     setName(""); setSlug(""); setCategoryId("");
@@ -146,36 +139,37 @@ export default function ItemManager({ initialItems, categories }: Props) {
         </Button>
       </div>
 
-      {/* Create/Edit form */}
-      {showForm && (
-        <div ref={formRef} className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm scroll-mt-20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">{editingId ? "Edit Item" : "New Item"}</h2>
-            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <ImageUpload value={imageUrl} onChange={setImageUrl} className="w-full sm:w-24 shrink-0" />
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1.5">
-                <Label>Name *</Label>
-                <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Basmati Rice" />
+      {/* Modal */}
+      <Modal
+        open={showForm}
+        onClose={resetForm}
+        title={editingId ? "Edit Item" : "New Item"}
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div className="flex gap-4">
+            <ImageUpload value={imageUrl} onChange={setImageUrl} className="w-20 shrink-0" />
+            <div className="flex-1 space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Name *</Label>
+                <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Basmati Rice" className="h-9" autoFocus />
               </div>
-              <div className="space-y-1.5">
-                <Label>Slug {editingId ? "(read-only)" : "*"}</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">Slug {editingId ? "(read-only)" : "*"}</Label>
                 <Input
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="e.g. basmati-rice"
                   disabled={!!editingId}
-                  className="disabled:opacity-50 font-mono text-sm"
+                  className="h-9 disabled:opacity-50 font-mono text-xs"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label>Category *</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">Category *</Label>
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="">Select category</option>
                   {categories.map((c) => (
@@ -185,14 +179,15 @@ export default function ItemManager({ initialItems, categories }: Props) {
               </div>
             </div>
           </div>
-          <div className="mt-4 flex justify-end">
-            <Button onClick={handleSave} disabled={saving} className="bg-green-600 hover:bg-green-700">
-              {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" size="sm" onClick={resetForm}>Cancel</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="bg-green-600 hover:bg-green-700">
+              {saving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
               {editingId ? "Update" : "Create"}
             </Button>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Items grouped by category */}
       {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([catName, catItems]) => (

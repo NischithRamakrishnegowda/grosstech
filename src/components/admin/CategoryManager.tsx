@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Plus, Pencil, Trash2, Loader2, X, Tag } from "lucide-react";
+import { useState } from "react";
+import { Plus, Pencil, Trash2, Loader2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Modal } from "@/components/ui/Modal";
 import { toast } from "sonner";
 
 interface Category {
@@ -16,32 +17,24 @@ interface Category {
 
 export default function CategoryManager({ initialCategories }: { initialCategories: Category[] }) {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const formRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (showForm && formRef.current) {
-      const top = formRef.current.getBoundingClientRect().top + window.scrollY - 80;
-      setTimeout(() => window.scrollTo({ top, behavior: "smooth" }), 50);
-    }
-  }, [showForm]);
 
   function resetForm() {
     setName(""); setSlug("");
-    setShowForm(false); setEditingId(null);
+    setShowModal(false); setEditingId(null);
   }
 
-  function openCreate() { resetForm(); setShowForm(true); }
+  function openCreate() { resetForm(); setShowModal(true); }
 
   function openEdit(cat: Category) {
     setName(cat.name); setSlug(cat.slug);
-    setEditingId(cat.id); setShowForm(true);
+    setEditingId(cat.id); setShowModal(true);
   }
 
   function autoSlug(value: string) {
@@ -53,11 +46,10 @@ export default function CategoryManager({ initialCategories }: { initialCategori
     if (!name.trim()) { toast.error("Name is required"); return; }
     setSaving(true);
     try {
-      const payload = { name };
       if (editingId) {
         const res = await fetch(`/api/admin/categories/${editingId}`, {
           method: "PUT", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ name }),
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Failed"); }
         const updated = await res.json();
@@ -67,7 +59,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
         if (!slug.trim()) { toast.error("Slug is required"); setSaving(false); return; }
         const res = await fetch("/api/admin/categories", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, slug }),
+          body: JSON.stringify({ name, slug }),
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Failed"); }
         const created = await res.json();
@@ -105,24 +97,29 @@ export default function CategoryManager({ initialCategories }: { initialCategori
         </Button>
       </div>
 
-      {showForm && (
-        <div ref={formRef} className="bg-white rounded-2xl border border-gray-100 p-5 mb-4 shadow-sm scroll-mt-20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 text-sm">{editingId ? "Edit Category" : "New Category"}</h2>
-            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+      {/* Modal */}
+      <Modal
+        open={showModal}
+        onClose={resetForm}
+        title={editingId ? "Edit Category" : "New Category"}
+      >
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Name *</Label>
+            <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Grains" className="h-9" autoFocus />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Name *</Label>
-              <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Grains" className="h-9" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Slug {editingId ? "(read-only)" : "*"}</Label>
-              <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="e.g. grains"
-                disabled={!!editingId} className="h-9 disabled:opacity-50 font-mono text-xs" />
-            </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Slug {editingId ? "(read-only)" : "*"}</Label>
+            <Input
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="e.g. grains"
+              disabled={!!editingId}
+              className="h-9 disabled:opacity-50 font-mono text-xs"
+            />
+            {!editingId && <p className="text-xs text-gray-400">Auto-generated from name. Used in URL.</p>}
           </div>
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={resetForm}>Cancel</Button>
             <Button size="sm" onClick={handleSave} disabled={saving} className="bg-green-600 hover:bg-green-700">
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
@@ -130,8 +127,9 @@ export default function CategoryManager({ initialCategories }: { initialCategori
             </Button>
           </div>
         </div>
-      )}
+      </Modal>
 
+      {/* Table */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {categories.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
