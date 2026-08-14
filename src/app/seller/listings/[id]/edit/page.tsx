@@ -21,7 +21,7 @@ export default function EditListingPage() {
   useEffect(() => {
     Promise.all([
       fetch("/api/categories").then((r) => r.json()),
-      fetch(`/api/products/${params.id}`).then((r) => r.json()),
+      fetch(`/api/listings/${params.id}`).then((r) => r.json()),
     ]).then(([cats, data]) => {
       if (data?.error) { toast.error("Listing not found"); router.push("/seller/listings"); return; }
       setCategories(cats);

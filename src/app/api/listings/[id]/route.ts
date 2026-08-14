@@ -6,6 +6,33 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { CACHE_TAGS, invalidateTag } from "@/lib/cache";
 
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const listing = await prisma.listing.findUnique({
+    where: { id },
+    include: {
+      category: true,
+      priceOptions: { orderBy: { price: "asc" } },
+      seller: { select: { id: true, name: true, businessName: true } },
+    },
+  });
+
+  if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Sellers can only fetch their own listings; admins can fetch any
+  if (session.user.role === "SELLER" && listing.sellerId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return NextResponse.json(listing);
+}
+
 const priceOptionSchema = z.object({
   id: z.string().optional(),
   weight: z.string().min(1),

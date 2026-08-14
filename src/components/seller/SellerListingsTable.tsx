@@ -116,9 +116,11 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                 ))}
               </div>
               <div className="flex items-center gap-3 pt-2 border-t border-gray-50">
-                <Link href={`/products/${listing.id}`} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-500 transition-colors">
-                  <Eye className="w-3.5 h-3.5" /> View
-                </Link>
+                {listing.status === "APPROVED" && listing.isActive && (
+                  <Link href={`/products/${listing.id}`} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-500 transition-colors">
+                    <Eye className="w-3.5 h-3.5" /> View
+                  </Link>
+                )}
                 <Link href={`/seller/listings/${listing.id}/edit`} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-600 transition-colors">
                   <Pencil className="w-3.5 h-3.5" /> {listing.status === "REJECTED" ? "Edit & Resubmit" : "Edit"}
                 </Link>
@@ -214,9 +216,11 @@ export default function SellerListingsTable({ listings }: { listings: Listing[] 
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end items-center gap-2">
-                          <Link href={`/products/${listing.id}`} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors">
-                            <Eye className="w-4 h-4" />
-                          </Link>
+                          {listing.status === "APPROVED" && listing.isActive && (
+                            <Link href={`/products/${listing.id}`} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors" title="View public listing">
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          )}
                           <Link href={`/seller/listings/${listing.id}/edit`} className="p-1.5 text-gray-400 hover:text-green-600 transition-colors" title={listing.status === "REJECTED" ? "Edit & Resubmit" : "Edit"}>
                             <Pencil className="w-4 h-4" />
                           </Link>
