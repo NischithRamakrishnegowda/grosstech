@@ -1,127 +1,100 @@
-# Gross Tech Marketplace
+# GrossTech Marketplace
 
-A full-stack B2B marketplace for daily essential goods — rice, sugar, oil, pulses, spices. Connects buyers and sellers with Razorpay payments, a platform fee, and a full admin dashboard.
+A production B2B wholesale marketplace for daily essential goods (rice, sugar, oil, pulses, spices). Connects businesses buying in bulk with verified sellers, with escrow payments and full admin control.
+
+---
+
+## What This App Does
+
+**Three user roles:**
+- **Buyer** — browses products, adds to cart, pays via Razorpay, unlocks seller contact for ₹10
+- **Seller** — registers with PAN/bank details, creates listings (pending admin approval), receives payouts after 3-day hold
+- **Admin** — approves/rejects listings, releases payouts, views analytics, manages categories and items
+
+**Core flows:**
+1. Seller creates listing → Admin approves → Buyer sees it → Buyer pays → Payment held 3 days → Admin releases to seller
+2. Buyer pays ₹10 → Seller phone/email revealed → Buyer contacts seller directly
+3. OTP login via email or phone (2Factor.in API)
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16 (App Router) + TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
-| Database | PostgreSQL on [Neon](https://neon.tech) + Prisma ORM v7 |
-| Auth | NextAuth.js v4 — JWT, credentials (password + OTP) |
-| Payments | Razorpay |
+| Framework | Next.js 16.1.7 — App Router, Server Components, TypeScript |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| Database | PostgreSQL via [Neon](https://neon.tech) (serverless), Prisma ORM v7 |
+| Auth | NextAuth.js v4 — JWT strategy, CredentialsProvider (password + OTP) |
+| Payments | Razorpay (orders, webhooks, contact unlock) |
 | SMS OTP | [2Factor.in](https://2factor.in) |
 | Email | Nodemailer (Gmail SMTP) |
-| Deployment | Vercel (frontend + API) |
+| Image Storage | Vercel Blob (Cloudflare CDN) |
+| Caching | Next.js `unstable_cache` with tag-based invalidation |
+| Deployment | Vercel (auto-deploy on push to `main`) |
 
 ---
 
-## Fresh Setup (after OS reinstall)
+## Local Setup
 
-### 1. Install prerequisites
+### Prerequisites
+- Node.js 20+
+- Git
 
-- **Node.js 20+** — download from https://nodejs.org (use the LTS version)
-- **Git** — `sudo apt install git` on Ubuntu/Debian
-
-Verify:
-```bash
-node -v   # should print v20.x.x or higher
-git -v
-```
-
----
-
-### 2. Clone the repo
+### Steps
 
 ```bash
 git clone https://github.com/nischithramakrishnegowda/grosstech.git
 cd grosstech
-```
-
----
-
-### 3. Install dependencies
-
-```bash
 npm install
-```
-
----
-
-### 4. Set up environment variables
-
-Create a `.env.local` file in the project root. Copy every value from your **Vercel dashboard → Settings → Environment Variables**:
-
-```env
-# ─── Database (Neon) ──────────────────────────────────────────────
-# Copy from: Vercel dashboard → Environment Variables → DATABASE_URL
-DATABASE_URL="postgresql://..."
-
-# ─── NextAuth ─────────────────────────────────────────────────────
-# Copy from: Vercel dashboard → NEXTAUTH_SECRET
-NEXTAUTH_SECRET="..."
-# For local dev, always this value:
-NEXTAUTH_URL="http://localhost:3000"
-
-# ─── Razorpay ─────────────────────────────────────────────────────
-# Copy from: Vercel dashboard → RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET
-RAZORPAY_KEY_ID="rzp_live_..."
-RAZORPAY_KEY_SECRET="..."
-# Set to "live" for real payments, "test" for test mode, "mock" to skip Razorpay entirely
-RAZORPAY_MODE="live"
-# Webhook secret (from Razorpay Dashboard → Webhooks) — optional for local dev
-RAZORPAY_WEBHOOK_SECRET=""
-
-# ─── Email (Gmail SMTP) ───────────────────────────────────────────
-# Copy from: Vercel dashboard → SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_USER="your@gmail.com"
-SMTP_PASSWORD="your_gmail_app_password"
-SMTP_FROM="GrossTech <your@gmail.com>"
-
-# ─── Admin contact ────────────────────────────────────────────────
-# Copy from: Vercel dashboard → ADMIN_EMAIL, ADMIN_PHONE
-ADMIN_EMAIL="admin@..."
-ADMIN_PHONE="+91XXXXXXXXXX"
-
-# ─── SMS OTP (2Factor.in) ─────────────────────────────────────────
-# Copy from: Vercel dashboard → TWOFACTOR_API_KEY
-TWOFACTOR_API_KEY="..."
-```
-
-> **Note on `NEXTAUTH_URL`**: In Vercel it's set to your production URL (e.g. `https://grosstech.vercel.app`). For local dev, always override it to `http://localhost:3000` in `.env.local`.
-
-> **Note on Gmail SMTP**: `SMTP_PASSWORD` is a Gmail **App Password**, not your regular Gmail password. If you lost it: Google Account → Security → 2-Step Verification → App Passwords → create a new one named "Grosstech".
-
----
-
-### 5. Generate the Prisma client
-
-The database schema is already migrated on Neon. You only need to generate the local Prisma client:
-
-```bash
 npx prisma generate
-```
-
-> You do **not** need to run `prisma migrate dev` — that's only for schema changes. The production DB on Neon is already up to date.
-
----
-
-### 6. Run the dev server
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open http://localhost:3000
+
+### Environment Variables
+
+Create `.env.local` — copy all values from Vercel Dashboard → Settings → Environment Variables:
+
+```env
+# Database (Neon)
+DATABASE_URL="postgresql://..."
+
+# NextAuth
+NEXTAUTH_SECRET="..."
+NEXTAUTH_URL="http://localhost:3000"   # always this for local dev
+
+# Razorpay
+RAZORPAY_KEY_ID="rzp_live_..."
+RAZORPAY_KEY_SECRET="..."
+RAZORPAY_WEBHOOK_SECRET="..."
+
+# Email (Gmail SMTP)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your@gmail.com"
+SMTP_PASSWORD="your_gmail_app_password"    # Gmail App Password, not regular password
+SMTP_FROM="GrossTech <your@gmail.com>"
+
+# SMS OTP
+TWOFACTOR_API_KEY="..."
+
+# Image uploads (Vercel Blob)
+BLOB_READ_WRITE_TOKEN="..."              # Vercel Dashboard → Storage → Blob
+
+# Admin contact (shown in emails and footer)
+ADMIN_EMAIL="admin@grosstech.in"
+ADMIN_PHONE="+91XXXXXXXXXX"
+```
+
+**Getting Gmail App Password:** Google Account → Security → 2-Step Verification → App Passwords → create one named "GrossTech"
+
+**Getting BLOB_READ_WRITE_TOKEN:** Vercel Dashboard → Storage tab → Create a Blob Store → copy the token
 
 ---
 
 ## Demo Accounts
-
-These accounts are seeded in the database:
 
 | Role | Email | Password |
 |---|---|---|
@@ -131,79 +104,120 @@ These accounts are seeded in the database:
 
 ---
 
-## Deploying to Vercel
-
-The project is already connected to Vercel. To redeploy:
-
-```bash
-git push origin main   # Vercel auto-deploys on push to main
-```
-
-If you need to run schema migrations on the production DB:
-```bash
-npx prisma migrate deploy
-```
-
----
-
-## Making schema changes (Prisma)
-
-If you modify `prisma/schema.prisma`:
-
-```bash
-# Create and apply a new migration locally + on Neon
-npx prisma migrate dev --name describe-your-change
-
-# Regenerate the Prisma client after any schema change
-npx prisma generate
-```
-
----
-
 ## Project Structure
 
 ```
 grosstech/
 ├── prisma/
-│   ├── schema.prisma          # Database models
-│   ├── migrations/            # Migration history
-│   └── seed.ts                # Demo data (admin/seller/buyer accounts)
+│   └── schema.prisma              # All DB models — single source of truth
+│
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx           # Landing page (server component)
-│   │   ├── layout.tsx         # Root layout (font, providers)
-│   │   ├── login/             # Login page (password + OTP)
-│   │   ├── signup/            # Signup + email/phone verification
-│   │   ├── products/          # Browse items, item detail page
-│   │   ├── checkout/          # Cart checkout + Razorpay payment
-│   │   ├── orders/            # Buyer order history
-│   │   ├── seller/            # Seller dashboard (listings, orders)
-│   │   ├── admin/             # Admin dashboard (approvals, payouts, analytics)
-│   │   └── api/               # All API routes
-│   │       ├── auth/          # register, send-otp, verify-otp, reset-password
-│   │       ├── listings/      # CRUD for seller listings
-│   │       ├── payments/      # Razorpay create-order, verify, contact-unlock
-│   │       ├── admin/         # approvals, payouts, analytics, orders
-│   │       └── seller/        # contact reveal after unlock
+│   │   ├── page.tsx               # Landing page (server component, cached)
+│   │   ├── layout.tsx             # Root layout — font, Providers, NavigationProgress
+│   │   ├── globals.css            # Tailwind + custom animations + brand color tokens
+│   │   │
+│   │   ├── login/                 # Password login + OTP login
+│   │   ├── signup/                # Multi-field registration (PAN/bank for sellers)
+│   │   ├── verify/                # Email + phone OTP verification after signup
+│   │   ├── forgot-password/       # Password reset via OTP
+│   │   │
+│   │   ├── products/
+│   │   │   ├── page.tsx           # Product listing (cached, search + filter + mode)
+│   │   │   └── items/[slug]/      # Item detail — all seller listings for one item
+│   │   │
+│   │   ├── checkout/              # Cart + Razorpay payment + delivery address
+│   │   ├── orders/                # Buyer order history
+│   │   ├── buyer-requests/        # Post a buy request (visible to sellers/admin)
+│   │   │
+│   │   ├── seller/
+│   │   │   ├── dashboard/         # Stats + recent listings
+│   │   │   ├── listings/          # CRUD for seller's own listings
+│   │   │   └── orders/            # Seller's incoming orders
+│   │   │
+│   │   ├── admin/
+│   │   │   ├── dashboard/         # Revenue, order counts, pending alerts
+│   │   │   ├── approvals/         # Review pending seller listings
+│   │   │   ├── orders/            # All orders + set delivery charge
+│   │   │   ├── analytics/         # Revenue breakdown, buyer stats
+│   │   │   ├── items/             # Manage predefined item catalog
+│   │   │   ├── inventory/         # Admin-sourced listings
+│   │   │   ├── buyer-requests/    # View all buyer requests
+│   │   │   └── contact-revenue/   # Revenue from contact unlocks
+│   │   │
+│   │   └── api/
+│   │       ├── auth/              # register, send-otp, verify-otp, reset-password
+│   │       ├── listings/          # Seller listing CRUD
+│   │       ├── items/             # Item catalog (public read)
+│   │       ├── products/          # Public product listing endpoint
+│   │       ├── orders/            # Buyer order history
+│   │       ├── buyer-requests/    # Create/list buy requests
+│   │       ├── upload/            # Image upload → Vercel Blob → returns URL
+│   │       ├── user/address/      # Prefill checkout address from profile
+│   │       ├── seller/contact/    # Reveal seller contact after paid unlock
+│   │       ├── payments/
+│   │       │   ├── create-order/  # Create Razorpay order + internal DB records
+│   │       │   ├── verify/        # Verify HMAC signature, mark PAYMENT_HELD
+│   │       │   ├── webhook/       # Razorpay webhook (backup payment confirmation)
+│   │       │   ├── update-status/ # Mark order FAILED/CANCELLED
+│   │       │   └── contact-unlock/# Razorpay flow for contact reveal payment
+│   │       └── admin/
+│   │           ├── approvals/     # Approve or reject seller listings
+│   │           ├── payouts/       # Release held payments to sellers
+│   │           ├── analytics/     # Aggregated revenue/buyer stats
+│   │           ├── orders/        # Set delivery charges
+│   │           ├── categories/    # Manage categories
+│   │           └── items/         # Manage predefined items
+│   │
 │   ├── components/
-│   │   ├── landing/           # HeroSection, CategoriesSection, FeaturedProducts
-│   │   ├── layout/            # Header, Footer
-│   │   ├── products/          # ItemCard, ItemDetailClient, ProductFilters
-│   │   ├── checkout/          # CheckoutClient (cart + Razorpay flow)
-│   │   ├── seller/            # SellerSidebar, SellerListingsTable
-│   │   ├── admin/             # PayoutManager, ApprovalManager, AdminSidebar
-│   │   └── ui/                # shadcn/ui base components
+│   │   ├── landing/               # HeroSection, CategoriesSection, FeaturedProducts,
+│   │   │                          # HowItWorks, AboutSection
+│   │   ├── layout/                # Header (search + auth), Footer
+│   │   ├── products/              # ItemCard, ItemDetailClient, ProductFilters,
+│   │   │                          # ProductGridWrapper, ProductForm
+│   │   ├── checkout/              # CheckoutClient — cart UI + Razorpay integration
+│   │   ├── seller/                # SellerSidebar, SellerListingsTable
+│   │   ├── admin/                 # AdminSidebar, ApprovalManager, PayoutManager,
+│   │   │                          # CategoryManager, ItemManager
+│   │   ├── buyer-requests/        # RequestList
+│   │   ├── NavigationProgress.tsx # Thin green bar during page navigation
+│   │   └── ui/                    # shadcn/ui base components + ImageUpload
+│   │
 │   ├── context/
-│   │   └── CartContext.tsx    # Cart state — useReducer + localStorage per user
-│   ├── lib/
-│   │   ├── auth.ts            # NextAuth config (JWT, credentials, OTP)
-│   │   ├── prisma.ts          # Prisma client singleton
-│   │   ├── email.ts           # Nodemailer email helpers
-│   │   └── constants.ts       # PLATFORM_FEE=20, CONTACT_UNLOCK_FEE=10
-│   └── types/
-│       └── index.ts           # NextAuth session type augmentation (adds role, phone)
-├── .env.example               # Template — copy to .env.local and fill in values
-└── package.json
+│   │   └── CartContext.tsx        # Cart state — useReducer + localStorage, scoped per user
+│   │
+│   └── lib/
+│       ├── auth.ts                # NextAuth options — JWT callbacks, OTP + password auth
+│       ├── prisma.ts              # Prisma singleton with PrismaPg adapter for Neon
+│       ├── cache.ts               # unstable_cache wrappers for all public DB queries
+│       │                          # + invalidateTag() helper + CACHE_TAGS constants
+│       ├── otp.ts                 # Generate/verify OTP codes, brute-force protection
+│       ├── email.ts               # All transactional emails (order confirm, approval, etc.)
+│       ├── sms.ts                 # sendOtpSms via 2Factor.in
+│       ├── brand.ts               # Brand name, tagline, contact — change to rebrand
+│       ├── razorpay.ts            # Razorpay client singleton
+│       └── constants.ts           # PLATFORM_FEE=20, CONTACT_UNLOCK_FEE=10, PAYMENT_HOLD_DAYS=3
+```
+
+---
+
+## Database Schema (Key Models)
+
+```
+User           — id, name, email, phone, role (BUYER/SELLER/ADMIN), address fields,
+                 panNumber, gstNumber, accountNumber, ifscCode, upiId, declaration
+Category       — id, name, slug, imageUrl
+Item           — id, name, slug, imageUrl, categoryId  (predefined product catalog)
+Listing        — id, name, brand, description, imageUrl, sellerId, itemId, categoryId,
+                 status (PENDING_APPROVAL/APPROVED/REJECTED), isActive, source (ADMIN/SELLER)
+PriceOption    — id, weight, price, stock, mode (RETAIL/BULK), minQty, listingId
+Order          — id, buyerId, checkoutId, razorpayOrderId, status (PENDING/PAYMENT_HELD/
+                 RELEASED_TO_SELLER/FAILED/CANCELLED), subtotal, platformFee, total,
+                 shippingAddress, deliveryOption
+OrderItem      — id, orderId, listingId, priceOptionId, quantity, priceAtOrder
+OtpToken       — id, userId, code, type, channel, expiresAt, failedAttempts
+ContactUnlock  — id, buyerId, sellerId, isPaid, razorpayOrderId
+BuyerRequest   — id, buyerId, itemId, description, quantity
 ```
 
 ---
@@ -212,10 +226,54 @@ grosstech/
 
 | Feature | How it works |
 |---|---|
-| **Order splitting** | One Razorpay payment → one DB `Order` per seller, all sharing a `checkoutId` |
-| **Payment hold** | Orders sit in `PAYMENT_HELD` for 3 days before admin can release to seller |
-| **Platform fee** | Flat ₹20 added to every checkout (stored on the order) |
-| **Contact unlock** | Buyer pays ₹10 via Razorpay to reveal a seller's phone/email |
-| **Listing approval** | All seller listings start as `PENDING_APPROVAL` — admin must approve before going live |
-| **BULK default** | Product browsing defaults to BULK (wholesale) mode; `?mode=RETAIL` switches to retail |
-| **minQty** | Bulk listings can have a minimum order quantity enforced in cart |
+| **Order splitting** | One Razorpay payment creates one DB `Order` per seller (all share `checkoutId`) |
+| **Payment hold** | Orders sit in `PAYMENT_HELD` for 3 days (PAYMENT_HOLD_DAYS) before admin can release |
+| **Platform fee** | Flat ₹20 per checkout. Charged to buyer, recorded on the order record |
+| **Contact unlock** | Buyer pays ₹10 via Razorpay → `ContactUnlock.isPaid=true` → seller phone/email revealed |
+| **Listing approval** | Seller creates listing → `PENDING_APPROVAL` → Admin approves → `APPROVED` + `isActive=true` |
+| **Re-review on edit** | If seller edits an approved listing, it goes back to `PENDING_APPROVAL` automatically |
+| **Bulk vs Retail** | Each `PriceOption` has a `mode` (BULK/RETAIL). Products page defaults to BULK (`?mode=RETAIL` switches) |
+| **Stock check** | Server validates `stock >= quantity` and `quantity >= minQty` before creating order |
+| **Image uploads** | Client compresses to 800px JPEG → POST /api/upload → Vercel Blob → URL stored in DB |
+| **OTP brute force** | 5 wrong attempts locks the OTP token and forces a resend |
+| **Caching** | Public pages (home, products, item detail) use `unstable_cache` with 30-60s TTL. Cache invalidated via tags on every mutation |
+
+---
+
+## Important Patterns
+
+**Server components fetch directly from Prisma** — public pages don't go through API routes. API routes are only for client-side mutations.
+
+**Cache invalidation** — whenever a listing/item/category is created, edited, or approved, `invalidateTag(CACHE_TAGS.items)` is called so cached pages refresh immediately.
+
+**Image storage** — `imageUrl` in the DB is always a short CDN URL (Vercel Blob). Never a base64 string. The `/api/upload` endpoint handles the upload and returns the URL.
+
+**Auth flow** — NextAuth JWT stores `id`, `role`, `phone` in the token. Role is checked in middleware (`src/middleware.ts`) for route protection. API routes re-check `getServerSession` for security.
+
+**Multi-seller checkout** — if a cart has items from 3 sellers, one Razorpay order is created and 3 DB Orders are created sharing the same `razorpayOrderId` and `checkoutId`.
+
+---
+
+## Deployment
+
+Push to `main` → Vercel auto-deploys.
+
+```bash
+git push origin main
+```
+
+After a schema change:
+```bash
+export $(grep -v '^#' .env | xargs) && npx prisma db push
+# then push to git to trigger redeploy
+```
+
+---
+
+## Planned / Not Yet Built
+
+- Mobile app (React Native + Expo) — same backend API, new frontend
+- AWS migration: Amplify (hosting) + RDS PostgreSQL (replaces Neon) + SES (replaces Gmail SMTP)
+- Farmer seller type + individual buyer type (B2C expansion)
+- Comprehensive agricultural product catalog with varieties
+- S3 bucket for image uploads (replacing Vercel Blob when migrating to AWS)
