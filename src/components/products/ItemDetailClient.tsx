@@ -283,18 +283,32 @@ export default function ItemDetailClient({
                     <div className="flex flex-col lg:flex-row gap-4">
                       {/* Seller info + price options */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 text-base">
-                              {listing.seller.businessName || listing.seller.name}
-                            </h3>
-                            {listing.brand && (
-                              <p className="text-sm text-gray-500">Brand: {listing.brand}</p>
+                        <div className="flex items-start gap-3 mb-3">
+                          {/* Listing image */}
+                          <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0 relative">
+                            {listing.imageUrl ? (
+                              <Image src={listing.imageUrl} alt={listing.name} fill className="object-cover" sizes="64px" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="w-6 h-6 text-gray-200" />
+                              </div>
                             )}
                           </div>
-                          {activeMode === "BULK" && (
-                            <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 shrink-0">Bulk</Badge>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h3 className="font-semibold text-gray-900 text-base">
+                                  {listing.seller.businessName || listing.seller.name}
+                                </h3>
+                                {listing.brand && (
+                                  <p className="text-sm text-gray-500">Brand: {listing.brand}</p>
+                                )}
+                              </div>
+                              {activeMode === "BULK" && (
+                                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 shrink-0">Bulk</Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
                         {listing.description && (
