@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Users, Package } from "lucide-react";
+import { Users, ChevronRight, Package } from "lucide-react";
 
 interface ItemCardProps {
   item: {
@@ -17,14 +17,13 @@ interface ItemCardProps {
 
 export default function ItemCard({ item, mode }: ItemCardProps) {
   const href = `/products/items/${item.slug}${mode === "RETAIL" ? "?mode=RETAIL" : ""}`;
-  const isBulk = mode !== "RETAIL";
 
   return (
     <Link href={href} className="block group">
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5">
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-primary-100 transition-all duration-200">
 
         {/* Image */}
-        <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
+        <div className="aspect-square relative bg-gray-50 overflow-hidden">
           {item.imageUrl ? (
             <Image
               src={item.imageUrl}
@@ -34,46 +33,42 @@ export default function ItemCard({ item, mode }: ItemCardProps) {
               sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-200">
-              <Package className="w-10 h-10" />
+            <div className="w-full h-full flex items-center justify-center">
+              <Package className="w-12 h-12 text-gray-200" />
             </div>
           )}
-
-          {/* Category badge */}
-          <span className="absolute top-2 left-2 text-[10px] font-semibold bg-white/90 backdrop-blur-sm text-gray-600 px-2 py-0.5 rounded-full shadow-sm border border-gray-100">
-            {item.category.name}
-          </span>
-
-          {/* Mode badge */}
-          <span className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-            isBulk
-              ? "bg-blue-600/90 backdrop-blur-sm text-white"
-              : "bg-green-600/90 backdrop-blur-sm text-white"
-          }`}>
-            {isBulk ? "Bulk" : "Retail"}
-          </span>
         </div>
 
         {/* Info */}
         <div className="p-3">
-          <h3 className="font-bold text-gray-900 text-sm leading-snug group-hover:text-green-700 transition-colors line-clamp-2 min-h-[2.5rem]">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
+            {item.category.name}
+          </p>
+          <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2 min-h-[2.5rem] group-hover:text-primary-700 transition-colors">
             {item.name}
           </h3>
 
-          <div className="flex items-center justify-between mt-2 gap-1">
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              <Users className="w-3 h-3 shrink-0" />
-              <span>{item.sellerCount} seller{item.sellerCount !== 1 ? "s" : ""}</span>
+          <div className="flex items-end justify-between mt-2.5">
+            <div>
+              {item.lowestPrice !== null ? (
+                <>
+                  <p className="text-[10px] text-gray-400 leading-none mb-0.5">from</p>
+                  <p className="text-base font-black text-gray-900 leading-none">₹{item.lowestPrice}</p>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400">No listing</p>
+              )}
             </div>
 
-            {item.lowestPrice !== null ? (
-              <div className="flex items-baseline gap-0.5 shrink-0">
-                <span className="text-[10px] text-gray-400">from</span>
-                <span className="text-sm font-black text-green-600">₹{item.lowestPrice}</span>
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                <Users className="w-3 h-3" />
+                <span>{item.sellerCount} seller{item.sellerCount !== 1 ? "s" : ""}</span>
               </div>
-            ) : (
-              <span className="text-xs text-gray-400">—</span>
-            )}
+              <div className="w-7 h-7 rounded-lg bg-primary-600 group-hover:bg-primary-700 transition-colors flex items-center justify-center">
+                <ChevronRight className="w-4 h-4 text-white" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,60 +1,36 @@
-import { UserPlus, Search, CreditCard, Package } from "lucide-react";
+import { UserPlus, Search, ShieldCheck, Package } from "lucide-react";
 
 const STEPS = [
-  {
-    icon: UserPlus,
-    number: "01",
-    title: "Create Account",
-    description: "Sign up as a buyer or seller in under a minute.",
-    color: "bg-blue-50 text-blue-600 border-blue-100",
-  },
-  {
-    icon: Search,
-    number: "02",
-    title: "Browse Products",
-    description: "Explore wholesale essentials at the best market prices.",
-    color: "bg-purple-50 text-purple-600 border-purple-100",
-  },
-  {
-    icon: CreditCard,
-    number: "03",
-    title: "Pay Securely",
-    description: "Razorpay escrow holds your funds until delivery is confirmed.",
-    color: "bg-amber-50 text-amber-600 border-amber-100",
-  },
-  {
-    icon: Package,
-    number: "04",
-    title: "Receive & Done",
-    description: "Get your order. Seller receives payment after 3-day window.",
-    color: "bg-green-50 text-green-600 border-green-100",
-  },
+  { icon: UserPlus,    title: "Create Account",  desc: "Sign up in under a minute as buyer or seller."         },
+  { icon: Search,      title: "Browse Products", desc: "Find rice, sugar, oil and more at wholesale prices."    },
+  { icon: ShieldCheck, title: "Pay Securely",    desc: "Razorpay escrow — funds held until delivery confirmed." },
+  { icon: Package,     title: "Receive Order",   desc: "Seller paid after 3-day buyer protection window."       },
 ];
 
 export default function HowItWorks() {
   return (
-    <section className="py-14 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <p className="text-xs font-bold text-green-600 uppercase tracking-widest mb-2">Process</p>
-          <h2 className="text-2xl sm:text-3xl font-black text-gray-900">How It Works</h2>
-          <p className="text-gray-500 mt-2 text-sm">Simple steps to get started</p>
+    <section className="py-10 bg-white border-t border-gray-100">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <h2 className="text-lg font-black text-gray-900">How It Works</h2>
+          <p className="text-sm text-gray-500 mt-1">Get started in 4 simple steps</p>
         </div>
 
-        <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Connecting line — desktop only */}
-          <div className="hidden lg:block absolute top-10 left-[calc(12.5%+20px)] right-[calc(12.5%+20px)] h-px bg-gray-200 z-0" />
-
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {STEPS.map((step, i) => (
-            <div key={step.title} className="relative z-10 flex flex-col items-center text-center">
-              {/* Number circle */}
-              <div className={`w-20 h-20 rounded-2xl border-2 flex flex-col items-center justify-center mb-4 bg-white shadow-sm ${step.color}`}>
-                <step.icon className="w-7 h-7" />
-                <span className="text-[10px] font-bold mt-1 opacity-60">{step.number}</span>
+            <div key={step.title} className="flex flex-col items-center text-center gap-3">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center">
+                  <step.icon className="w-6 h-6 text-primary-600" strokeWidth={1.75} />
+                </div>
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary-600 text-white text-[10px] font-black flex items-center justify-center">
+                  {i + 1}
+                </span>
               </div>
-
-              <h3 className="font-bold text-gray-900 mb-1.5">{step.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed max-w-[180px]">{step.description}</p>
+              <div>
+                <p className="text-sm font-bold text-gray-900">{step.title}</p>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{step.desc}</p>
+              </div>
             </div>
           ))}
         </div>
