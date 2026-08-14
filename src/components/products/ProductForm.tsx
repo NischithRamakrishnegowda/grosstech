@@ -7,6 +7,7 @@ import { Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 import { useEffect } from "react";
 
 const priceOptionSchema = z.object({
@@ -160,6 +161,17 @@ export default function ProductForm({
           placeholder="Describe your product..."
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Product Image <span className="text-gray-400 font-normal">(optional)</span></Label>
+        <ImageUpload
+          value={watch("imageUrl") || null}
+          onChange={(url) => setValue("imageUrl", url ?? "")}
+          aspectRatio="4/3"
+          className="max-w-[200px]"
+        />
+        <p className="text-xs text-gray-400">Helps buyers identify your product. JPG, PNG or WebP.</p>
       </div>
 
       {/* Price options with mode */}

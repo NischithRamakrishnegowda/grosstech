@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import NextImage from "next/image";
-import { Plus, Pencil, Trash2, Loader2, X, ImagePlus } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 import { toast } from "sonner";
 
 interface Category {
@@ -27,28 +28,6 @@ interface Props {
   categories: Category[];
 }
 
-function compressImage(file: File, maxDim = 600): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      let { width, height } = img;
-      if (width > maxDim || height > maxDim) {
-        if (width > height) { height = Math.round((height * maxDim) / width); width = maxDim; }
-        else { width = Math.round((width * maxDim) / height); height = maxDim; }
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed")); };
-    img.src = url;
-  });
-}
-
 export default function ItemManager({ initialItems, categories }: Props) {
   const [items, setItems] = useState<Item[]>(initialItems);
   const [showForm, setShowForm] = useState(false);
@@ -56,19 +35,15 @@ export default function ItemManager({ initialItems, categories }: Props) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Form state
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   function resetForm() {
     setName(""); setSlug(""); setCategoryId("");
-    setImagePreview(null); setImageBase64(null);
+    setImageUrl(null);
     setShowForm(false); setEditingId(null);
-    if (fileRef.current) fileRef.current.value = "";
   }
 
   function openCreate() { resetForm(); setShowForm(true); }
@@ -77,8 +52,7 @@ export default function ItemManager({ initialItems, categories }: Props) {
     setName(item.name);
     setSlug(item.slug);
     setCategoryId(item.category.id);
-    setImagePreview(item.imageUrl);
-    setImageBase64(null); // only set if user uploads new
+    setImageUrl(item.imageUrl);
     setEditingId(item.id);
     setShowForm(true);
   }
@@ -90,27 +64,13 @@ export default function ItemManager({ initialItems, categories }: Props) {
     }
   }
 
-  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5 MB"); return; }
-    try {
-      const base64 = await compressImage(file);
-      setImagePreview(base64);
-      setImageBase64(base64);
-    } catch {
-      toast.error("Failed to process image");
-    }
-  }
-
   async function handleSave() {
     if (!name.trim() || !categoryId) {
       toast.error("Name and category are required"); return;
     }
     setSaving(true);
     try {
-      const payload: Record<string, string | undefined> = { name, categoryId };
-      if (imageBase64) payload.imageUrl = imageBase64;
+      const payload: Record<string, string | null | undefined> = { name, categoryId, imageUrl };
 
       if (editingId) {
         const res = await fetch(`/api/admin/items/${editingId}`, {
@@ -185,66 +145,35 @@ export default function ItemManager({ initialItems, categories }: Props) {
             <h2 className="font-semibold text-gray-900">{editingId ? "Edit Item" : "New Item"}</h2>
             <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <Label>Name *</Label>
-              <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Basmati Rice" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Slug {editingId ? "(read-only)" : "*"}</Label>
-              <Input
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="e.g. basmati-rice"
-                disabled={!!editingId}
-                className="disabled:opacity-50"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Category *</Label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">Select category</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Image</Label>
-              <div className="flex items-center gap-2">
-                {imagePreview ? (
-                  <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-200 shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => { setImagePreview(null); setImageBase64(""); if (fileRef.current) fileRef.current.value = ""; }}
-                      className="absolute -top-1 -right-1 bg-white rounded-full shadow-sm p-0.5"
-                    >
-                      <X className="w-3 h-3 text-gray-500" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 hover:border-green-300 hover:text-green-500 transition-colors shrink-0"
-                  >
-                    <ImagePlus className="w-5 h-5" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="text-xs text-green-600 hover:underline"
+          <div className="flex flex-col sm:flex-row gap-4">
+            <ImageUpload value={imageUrl} onChange={setImageUrl} className="w-full sm:w-24 shrink-0" />
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label>Name *</Label>
+                <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Basmati Rice" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Slug {editingId ? "(read-only)" : "*"}</Label>
+                <Input
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="e.g. basmati-rice"
+                  disabled={!!editingId}
+                  className="disabled:opacity-50 font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Category *</Label>
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  {imagePreview ? "Change" : "Upload"}
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                  <option value="">Select category</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
