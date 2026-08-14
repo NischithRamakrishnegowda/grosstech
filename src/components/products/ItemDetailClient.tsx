@@ -206,8 +206,8 @@ export default function ItemDetailClient({
         <ArrowLeft className="w-4 h-4" /> Back to Products
       </Link>
 
-      {/* Item header — responsive */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+      {/* Item header */}
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden shrink-0 relative">
           {item.imageUrl ? (
             <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="96px" />
@@ -215,59 +215,44 @@ export default function ItemDetailClient({
             <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No image</div>
           )}
         </div>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{item.name}</h1>
-          <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <Badge variant="secondary">{item.category.name}</Badge>
-            <span className="text-sm text-gray-500">
-              {filteredListings.length} seller{filteredListings.length !== 1 ? "s" : ""} offering {activeMode.toLowerCase()}
+            <span className="text-xs text-gray-400">
+              {filteredListings.length} seller{filteredListings.length !== 1 ? "s" : ""}
             </span>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{item.name}</h1>
+
+          {/* Mode toggle — inline, segmented control style */}
+          {hasRetail && hasBulk && (
+            <div className="inline-flex bg-gray-100 rounded-xl p-1">
+              {(["BULK", "RETAIL"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setActiveMode(m)}
+                  aria-pressed={activeMode === m}
+                  className={`px-5 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                    activeMode === m
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {m === "BULK" ? "Bulk" : "Retail"}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Single mode badge */}
+          {!hasRetail && hasBulk && (
+            <span className="inline-block text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">Bulk only</span>
+          )}
+          {!hasBulk && hasRetail && (
+            <span className="inline-block text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">Retail only</span>
+          )}
         </div>
       </div>
-
-      {/* Mode toggle — sticky on mobile */}
-      {hasRetail && hasBulk && (
-        <div className="sticky top-[64px] z-10 bg-gray-50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-3 mb-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-500 hidden sm:block">Mode:</span>
-            <div className="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white">
-              <button
-                onClick={() => setActiveMode("BULK")}
-                aria-pressed={activeMode === "BULK"}
-                className={`px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  activeMode === "BULK"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-50 active:bg-gray-100"
-                }`}
-              >
-                Bulk
-              </button>
-              <button
-                onClick={() => setActiveMode("RETAIL")}
-                aria-pressed={activeMode === "RETAIL"}
-                className={`px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  activeMode === "RETAIL"
-                    ? "bg-green-600 text-white"
-                    : "text-gray-600 hover:bg-gray-50 active:bg-gray-100"
-                }`}
-              >
-                Retail
-              </button>
-            </div>
-            {activeMode === "BULK" && (
-              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg font-medium animate-fade-in">
-                Wholesale pricing
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Only one mode available — just show a badge */}
-      {(hasRetail !== hasBulk) && hasBulk && (
-        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 mb-4">Bulk Only</Badge>
-      )}
 
       {/* Seller listings with smooth transitions */}
       <div key={activeMode} className="min-h-[200px] animate-fade-in">

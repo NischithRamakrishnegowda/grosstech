@@ -109,16 +109,16 @@ export default function ProductFilters({ categories }: { categories: Category[] 
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Mode toggle */}
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="inline-flex bg-gray-100 rounded-xl p-1">
           {(["BULK", "RETAIL"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => updateParams({ mode: mode === "BULK" ? null : mode })}
               aria-pressed={currentMode === mode}
-              className={`px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
                 currentMode === mode
-                  ? "bg-green-600 text-white shadow-inner"
-                  : "bg-white text-gray-600 hover:bg-gray-50 active:bg-gray-100"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {mode === "RETAIL" ? "Retail" : "Bulk"}
@@ -191,13 +191,13 @@ export default function ProductFilters({ categories }: { categories: Category[] 
       )}
 
       {/* Category pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         <button
           onClick={() => updateParams({ category: null })}
-          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all duration-150 ${
             !currentCategory
-              ? "bg-green-600 text-white shadow-sm shadow-green-200"
-              : "bg-white border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600"
+              ? "bg-gray-900 text-white"
+              : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
           }`}
         >
           All
@@ -206,14 +206,14 @@ export default function ProductFilters({ categories }: { categories: Category[] 
           <button
             key={cat.id}
             onClick={() => updateParams({ category: cat.slug })}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all duration-150 ${
               currentCategory === cat.slug
-                ? "bg-green-600 text-white shadow-sm shadow-green-200"
-                : "bg-white border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600"
+                ? "bg-gray-900 text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
             }`}
           >
             {cat.name}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${currentCategory === cat.slug ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+            <span className={`text-[10px] font-bold ${currentCategory === cat.slug ? "text-gray-300" : "text-gray-400"}`}>
               {cat.itemCount}
             </span>
           </button>
