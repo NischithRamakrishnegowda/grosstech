@@ -76,11 +76,7 @@ export default function ApprovalManager({ listings: initial }: { listings: Pendi
   }
 
   if (listings.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl border border-gray-100">
-        <EmptyState icon={Package} title="No pending listings" description="All seller listings have been reviewed" />
-      </div>
-    );
+    return <EmptyState icon={Package} title="No pending listings" description="All seller listings have been reviewed" />;
   }
 
   return (
