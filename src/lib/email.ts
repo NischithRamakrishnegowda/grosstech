@@ -369,17 +369,17 @@ export async function sendListingRemovedEmail(
     await transporter.sendMail({
       from: FROM,
       to: seller.email,
-      subject: `Your listing "${listingName}" has been removed — GrossTech`,
+      subject: `Update regarding your listing "${listingName}" — GrossTech`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff">
           <h2 style="color:#16a34a;margin:0 0 8px">GrossTech</h2>
           <p style="color:#374151">Hi ${seller.name},</p>
-          <p style="color:#374151">Your listing <strong>"${listingName}"</strong> has been <span style="color:#dc2626;font-weight:bold">removed</span> from the marketplace by the GrossTech admin team.</p>
-          <div style="margin-top:16px;padding:16px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca">
-            <p style="margin:0 0 4px;font-size:13px;color:#991b1b;font-weight:600">Reason:</p>
+          <p style="color:#374151">Your listing <strong>"${listingName}"</strong> has been taken down from the marketplace by our team.</p>
+          <div style="margin-top:16px;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+            <p style="margin:0 0 4px;font-size:13px;color:#374151;font-weight:600">Reason:</p>
             <p style="margin:0;color:#374151">${reason}</p>
           </div>
-          <p style="color:#374151;margin-top:16px">You can create a new listing from your seller dashboard addressing the concern above, and it will be reviewed by our team.</p>
+          <p style="color:#374151;margin-top:16px">You can create a new listing from your seller dashboard addressing the concern above, and it will go through our review process.</p>
           <p style="color:#6b7280;font-size:13px;margin-top:24px">If you have questions, contact us at ${ADMIN_EMAIL}.</p>
           <p style="color:#6b7280;font-size:13px">— The GrossTech Team</p>
         </div>
