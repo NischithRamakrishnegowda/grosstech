@@ -1,325 +1,184 @@
-import "dotenv/config";
-import { PrismaClient, Role, ListingSource } from "@prisma/client";
+/**
+ * Seed script — categories and items catalog only.
+ * Images are NOT seeded — admin uploads them via the admin panel → Vercel Blob.
+ * Run: export $(grep -v '^#' .env | xargs) && npx tsx prisma/seed.ts
+ */
+
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcryptjs";
-import fs from "fs";
-import path from "path";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
-// Convert a local image file to a base64 data URL
-function imageToBase64(filePath: string): string | null {
-  try {
-    const abs = path.resolve(filePath);
-    if (!fs.existsSync(abs)) return null;
-    const buf = fs.readFileSync(abs);
-    const ext = path.extname(abs).toLowerCase();
-    const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
-    return `data:${mime};base64,${buf.toString("base64")}`;
-  } catch { return null; }
-}
+const CATALOG: {
+  category: { name: string; slug: string };
+  items: { name: string; slug: string }[];
+}[] = [
+  {
+    category: { name: "Grains", slug: "grains" },
+    items: [
+      { name: "Wheat (Lokwan)", slug: "wheat-lokwan" },
+      { name: "Wheat (Sharbati)", slug: "wheat-sharbati" },
+      { name: "Ragi (Finger Millet)", slug: "ragi" },
+      { name: "Ragi GPU-28", slug: "ragi-gpu-28" },
+      { name: "Ragi MR-6", slug: "ragi-mr-6" },
+      { name: "Maize (Yellow Corn)", slug: "maize-yellow" },
+      { name: "Jowar (Sorghum)", slug: "jowar" },
+      { name: "Bajra (Pearl Millet)", slug: "bajra" },
+      { name: "Barley", slug: "barley" },
+    ],
+  },
+  {
+    category: { name: "Rice", slug: "rice" },
+    items: [
+      { name: "Basmati Rice", slug: "basmati-rice" },
+      { name: "Sona Masuri Rice", slug: "sona-masuri-rice" },
+      { name: "Ponni Rice", slug: "ponni-rice" },
+      { name: "Kolam Rice", slug: "kolam-rice" },
+      { name: "Red Rice", slug: "red-rice" },
+      { name: "Brown Rice", slug: "brown-rice" },
+      { name: "Idli Rice (Boiled)", slug: "idli-rice" },
+      { name: "Raw Rice", slug: "raw-rice" },
+    ],
+  },
+  {
+    category: { name: "Millets", slug: "millets" },
+    items: [
+      { name: "Foxtail Millet (Navane)", slug: "foxtail-millet" },
+      { name: "Kodo Millet (Harka)", slug: "kodo-millet" },
+      { name: "Little Millet (Saame)", slug: "little-millet" },
+      { name: "Barnyard Millet (Oodalu)", slug: "barnyard-millet" },
+      { name: "Proso Millet (Baragu)", slug: "proso-millet" },
+      { name: "Browntop Millet", slug: "browntop-millet" },
+    ],
+  },
+  {
+    category: { name: "Pulses & Dal", slug: "pulses" },
+    items: [
+      { name: "Toor Dal (Arhar)", slug: "toor-dal" },
+      { name: "Moong Dal (Yellow Split)", slug: "moong-dal-yellow" },
+      { name: "Moong Dal (Green Whole)", slug: "moong-dal-green" },
+      { name: "Chana Dal", slug: "chana-dal" },
+      { name: "Urad Dal (Black Whole)", slug: "urad-dal-black" },
+      { name: "Urad Dal (White Split)", slug: "urad-dal-white" },
+      { name: "Masoor Dal (Red)", slug: "masoor-dal-red" },
+      { name: "Masoor Dal (Whole)", slug: "masoor-dal-whole" },
+      { name: "Rajma (Kidney Beans)", slug: "rajma" },
+      { name: "Kabuli Chana (Chickpeas)", slug: "kabuli-chana" },
+      { name: "Moth Dal", slug: "moth-dal" },
+      { name: "Val Dal (Field Beans)", slug: "val-dal" },
+    ],
+  },
+  {
+    category: { name: "Oils", slug: "oil" },
+    items: [
+      { name: "Groundnut Oil (Cold Pressed)", slug: "groundnut-oil-cold-pressed" },
+      { name: "Groundnut Oil (Refined)", slug: "groundnut-oil-refined" },
+      { name: "Coconut Oil (Cold Pressed)", slug: "coconut-oil-cold-pressed" },
+      { name: "Coconut Oil (Refined)", slug: "coconut-oil-refined" },
+      { name: "Sunflower Oil (Refined)", slug: "sunflower-oil-refined" },
+      { name: "Mustard Oil", slug: "mustard-oil" },
+      { name: "Sesame Oil (Gingelly)", slug: "sesame-oil" },
+      { name: "Palm Oil (Refined)", slug: "palm-oil-refined" },
+    ],
+  },
+  {
+    category: { name: "Sugar & Jaggery", slug: "sugar" },
+    items: [
+      { name: "White Sugar (S30)", slug: "white-sugar-s30" },
+      { name: "White Sugar (M30)", slug: "white-sugar-m30" },
+      { name: "Jaggery Block (Bella)", slug: "jaggery-block" },
+      { name: "Jaggery Powder", slug: "jaggery-powder" },
+      { name: "Palm Jaggery", slug: "palm-jaggery" },
+      { name: "Coconut Sugar", slug: "coconut-sugar" },
+    ],
+  },
+  {
+    category: { name: "Spices", slug: "spices" },
+    items: [
+      { name: "Turmeric Powder", slug: "turmeric-powder" },
+      { name: "Turmeric Whole", slug: "turmeric-whole" },
+      { name: "Red Chilli Powder", slug: "red-chilli-powder" },
+      { name: "Red Chilli Whole", slug: "red-chilli-whole" },
+      { name: "Coriander Powder", slug: "coriander-powder" },
+      { name: "Coriander Seeds", slug: "coriander-seeds" },
+      { name: "Cumin Seeds (Jeera)", slug: "cumin-seeds" },
+      { name: "Black Pepper (Whole)", slug: "black-pepper-whole" },
+      { name: "Cardamom (Green)", slug: "cardamom-green" },
+      { name: "Cloves (Lavang)", slug: "cloves" },
+      { name: "Cinnamon (Dalchini)", slug: "cinnamon" },
+      { name: "Mustard Seeds", slug: "mustard-seeds" },
+      { name: "Fenugreek Seeds (Methi)", slug: "fenugreek-seeds" },
+      { name: "Asafoetida (Hing)", slug: "asafoetida" },
+      { name: "Garam Masala", slug: "garam-masala" },
+      { name: "Sambar Powder", slug: "sambar-powder" },
+      { name: "Rasam Powder", slug: "rasam-powder" },
+    ],
+  },
+  {
+    category: { name: "Flours", slug: "flours" },
+    items: [
+      { name: "Wheat Flour (Atta)", slug: "wheat-flour-atta" },
+      { name: "Maida (Refined Flour)", slug: "maida" },
+      { name: "Besan (Chickpea Flour)", slug: "besan" },
+      { name: "Rice Flour", slug: "rice-flour" },
+      { name: "Ragi Flour", slug: "ragi-flour" },
+      { name: "Jowar Flour", slug: "jowar-flour" },
+      { name: "Bajra Flour", slug: "bajra-flour" },
+      { name: "Corn Flour", slug: "corn-flour" },
+      { name: "Sooji (Semolina Coarse)", slug: "sooji-coarse" },
+      { name: "Rava (Semolina Fine)", slug: "rava-fine" },
+    ],
+  },
+  {
+    category: { name: "Dry Fruits & Nuts", slug: "dry-fruits" },
+    items: [
+      { name: "Cashews (W180)", slug: "cashews-w180" },
+      { name: "Cashews (W240)", slug: "cashews-w240" },
+      { name: "Almonds", slug: "almonds" },
+      { name: "Groundnuts (Raw)", slug: "groundnuts-raw" },
+      { name: "Groundnuts (Roasted)", slug: "groundnuts-roasted" },
+      { name: "Raisins (Kishmish)", slug: "raisins" },
+      { name: "Dates (Khajoor)", slug: "dates" },
+      { name: "Sesame Seeds (White)", slug: "sesame-seeds-white" },
+      { name: "Sesame Seeds (Black)", slug: "sesame-seeds-black" },
+      { name: "Desiccated Coconut", slug: "desiccated-coconut" },
+    ],
+  },
+];
 
 async function main() {
-  // Create admin user
-  const adminPassword = await bcrypt.hash("admin123", 10);
-  const admin = await prisma.user.upsert({
-    where: { email: "grosstechbengaluru@gmail.com" },
-    update: { phone: "+919008578425", role: Role.ADMIN },
-    create: {
-      name: "Gross Tech Admin",
-      email: "grosstechbengaluru@gmail.com",
-      password: adminPassword,
-      role: Role.ADMIN,
-      phone: "+919008578425",
-      street: "42 MG Road, Indiranagar",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560038",
-      emailVerified: true,
-      phoneVerified: true,
-    },
-  });
+  console.log("Seeding catalog — categories and items (no images, no users)...\n");
 
-  // Create sample seller
-  const sellerPassword = await bcrypt.hash("seller123", 10);
-  const seller = await prisma.user.upsert({
-    where: { email: "seller@grosstech.com" },
-    update: {},
-    create: {
-      name: "Fresh Farms",
-      email: "seller@grosstech.com",
-      password: sellerPassword,
-      role: Role.SELLER,
-      businessName: "Fresh Farms Pvt Ltd",
-      phone: "9111111111",
-      street: "123 Market St, Jayanagar",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560041",
-      upiId: "freshfarms@upi",
-    },
-  });
+  let createdCats = 0, skippedCats = 0, createdItems = 0, skippedItems = 0;
 
-  // Create sample buyer
-  const buyerPassword = await bcrypt.hash("buyer123", 10);
-  await prisma.user.upsert({
-    where: { email: "buyer@grosstech.com" },
-    update: {},
-    create: {
-      name: "Ravi Kumar",
-      email: "buyer@grosstech.com",
-      password: buyerPassword,
-      role: Role.BUYER,
-      phone: "9222222222",
-      street: "56 Residency Road, Shantinagar",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560025",
-    },
-  });
-
-  // Create categories with images
-  // Images are in ~/Downloads — adjust path as needed
-  const dlDir = path.join(process.env.HOME || "/home/nischith-gowda", "Downloads");
-
-  const categories = [
-    { name: "Grains", slug: "grains", imgFile: "grains.jpg" },
-    { name: "Sugar", slug: "sugar", imgFile: "refinedsugar.jpg" },
-    { name: "Oil", slug: "oil", imgFile: "oil.jpg" },
-    { name: "Pulses", slug: "pulses", imgFile: "pulses.jpg" },
-    { name: "Spices", slug: "spices", imgFile: "spices.jpg" },
-  ];
-
-  const createdCategories: Record<string, string> = {};
-  for (const cat of categories) {
-    const imageUrl = imageToBase64(path.join(dlDir, cat.imgFile));
-    const created = await prisma.category.upsert({
-      where: { slug: cat.slug },
-      update: { name: cat.name, ...(imageUrl ? { imageUrl } : {}) },
-      create: { name: cat.name, slug: cat.slug, ...(imageUrl ? { imageUrl } : {}) },
+  for (const { category, items } of CATALOG) {
+    const cat = await prisma.category.upsert({
+      where: { slug: category.slug },
+      update: { name: category.name },
+      create: { name: category.name, slug: category.slug },
     });
-    createdCategories[cat.slug] = created.id;
-  }
 
-  // Create predefined items under categories
-  // Map item slugs to their image filenames in ~/Downloads
-  const itemImageFiles: Record<string, string> = {
-    "rice": "rice.jpg", "wheat": "wheat.jpg", "ragi": "ragi.jpg", "corn": "corn.jpg",
-    "jowar": "jowar.jpg", "bajra": "bajra.jpg",
-    "refined-sugar": "refinedsugar.jpg", "jaggery": "jaggery.jpg", "brown-sugar": "brownsugar.jpg",
-    "sunflower-oil": "sunfloweroil.jpg", "groundnut-oil": "groundnutoil.jpg",
-    "coconut-oil": "coconutoil.jpg", "mustard-oil": "mustardoil.jpg",
-    "toor-dal": "toordal.jpg", "moong-dal": "moongdal.jpg", "chana-dal": "chanadal.jpg",
-    "urad-dal": "uraddal.jpg", "masoor-dal": "masoordal.jpg",
-    "turmeric-powder": "turmeric.jpg", "red-chilli-powder": "redchillipowder.jpg",
-    "cumin": "cumin.jpg", "coriander-powder": "corianderpowder.jpg", "garam-masala": "garammasala.jpg",
-  };
+    const isNew = !(await prisma.category.findFirst({ where: { slug: category.slug, createdAt: { lt: new Date() } } }));
+    if (isNew) { createdCats++; console.log(`[+] ${category.name}`); }
+    else { skippedCats++; console.log(`[=] ${category.name}`); }
 
-  const itemsByCategory: Record<string, { name: string; slug: string }[]> = {
-    grains: [
-      { name: "Rice", slug: "rice" },
-      { name: "Wheat", slug: "wheat" },
-      { name: "Ragi", slug: "ragi" },
-      { name: "Corn", slug: "corn" },
-      { name: "Jowar", slug: "jowar" },
-      { name: "Bajra", slug: "bajra" },
-    ],
-    sugar: [
-      { name: "Refined Sugar", slug: "refined-sugar" },
-      { name: "Jaggery", slug: "jaggery" },
-      { name: "Brown Sugar", slug: "brown-sugar" },
-    ],
-    oil: [
-      { name: "Sunflower Oil", slug: "sunflower-oil" },
-      { name: "Groundnut Oil", slug: "groundnut-oil" },
-      { name: "Coconut Oil", slug: "coconut-oil" },
-      { name: "Mustard Oil", slug: "mustard-oil" },
-    ],
-    pulses: [
-      { name: "Toor Dal", slug: "toor-dal" },
-      { name: "Moong Dal", slug: "moong-dal" },
-      { name: "Chana Dal", slug: "chana-dal" },
-      { name: "Urad Dal", slug: "urad-dal" },
-      { name: "Masoor Dal", slug: "masoor-dal" },
-    ],
-    spices: [
-      { name: "Turmeric Powder", slug: "turmeric-powder" },
-      { name: "Red Chilli Powder", slug: "red-chilli-powder" },
-      { name: "Cumin", slug: "cumin" },
-      { name: "Coriander Powder", slug: "coriander-powder" },
-      { name: "Garam Masala", slug: "garam-masala" },
-    ],
-  };
-
-  const createdItems: Record<string, string> = {};
-  for (const [categorySlug, items] of Object.entries(itemsByCategory)) {
     for (const item of items) {
-      const imgFile = itemImageFiles[item.slug];
-      const imageUrl = imgFile ? imageToBase64(path.join(dlDir, imgFile)) : null;
-      const created = await prisma.item.upsert({
-        where: { slug: item.slug },
-        update: { name: item.name, ...(imageUrl ? { imageUrl } : {}) },
-        create: {
-          name: item.name,
-          slug: item.slug,
-          ...(imageUrl ? { imageUrl } : {}),
-          categoryId: createdCategories[categorySlug],
-        },
-      });
-      createdItems[item.slug] = created.id;
+      const existing = await prisma.item.findUnique({ where: { slug: item.slug } });
+      if (existing) {
+        skippedItems++;
+      } else {
+        await prisma.item.create({ data: { name: item.name, slug: item.slug, categoryId: cat.id } });
+        createdItems++;
+        process.stdout.write("  + " + item.name + "\n");
+      }
     }
   }
 
-  // Listings linked to predefined items
-  const listings = [
-    {
-      name: "Basmati Rice",
-      brand: "India Gate",
-      description: "Premium long-grain basmati rice with aromatic fragrance. Aged 2 years for superior taste.",
-      source: ListingSource.ADMIN,
-      categoryId: createdCategories["grains"],
-      sellerId: admin.id,
-      itemId: createdItems["rice"],
-      priceOptions: [
-        { weight: "500g", price: 65, stock: 100 },
-        { weight: "1kg", price: 120, stock: 200 },
-        { weight: "5kg", price: 550, stock: 50 },
-        { weight: "25kg", price: 2500, stock: 20 },
-      ],
-    },
-    {
-      name: "Wheat",
-      brand: "Aashirvaad",
-      description: "Whole wheat grains, freshly milled. Rich in fiber and perfect for making rotis and bread.",
-      source: ListingSource.ADMIN,
-      categoryId: createdCategories["grains"],
-      sellerId: admin.id,
-      itemId: createdItems["wheat"],
-      priceOptions: [
-        { weight: "1kg", price: 45, stock: 300 },
-        { weight: "5kg", price: 210, stock: 100 },
-        { weight: "25kg", price: 950, stock: 30 },
-      ],
-    },
-    {
-      name: "Ragi",
-      brand: "Organic India",
-      description: "Finger millet (ragi) — high in calcium and iron. Ideal for porridge, rotis, and health drinks.",
-      source: ListingSource.ADMIN,
-      categoryId: createdCategories["grains"],
-      sellerId: admin.id,
-      itemId: createdItems["ragi"],
-      priceOptions: [
-        { weight: "500g", price: 55, stock: 150 },
-        { weight: "1kg", price: 100, stock: 200 },
-        { weight: "5kg", price: 480, stock: 50 },
-      ],
-    },
-    {
-      name: "Corn",
-      brand: null,
-      description: "Dried corn kernels, great for popcorn, corn flour, and animal feed. Sourced from local farms.",
-      source: ListingSource.ADMIN,
-      categoryId: createdCategories["grains"],
-      sellerId: admin.id,
-      itemId: createdItems["corn"],
-      priceOptions: [
-        { weight: "1kg", price: 40, stock: 200 },
-        { weight: "5kg", price: 185, stock: 80 },
-        { weight: "25kg", price: 850, stock: 25 },
-      ],
-    },
-    {
-      name: "Refined Sugar",
-      brand: "Uttam",
-      description: "Pure white refined sugar, ideal for daily use. FSSAI certified, no additives.",
-      source: ListingSource.ADMIN,
-      categoryId: createdCategories["sugar"],
-      sellerId: admin.id,
-      itemId: createdItems["refined-sugar"],
-      priceOptions: [
-        { weight: "500g", price: 30, stock: 200 },
-        { weight: "1kg", price: 55, stock: 300 },
-        { weight: "5kg", price: 260, stock: 100 },
-        { weight: "25kg", price: 1200, stock: 40 },
-      ],
-    },
-    {
-      name: "Sunflower Oil",
-      brand: "Fortune",
-      description: "Light and healthy sunflower oil, rich in Vitamin E. Double refined for purity.",
-      source: ListingSource.SELLER,
-      categoryId: createdCategories["oil"],
-      sellerId: seller.id,
-      itemId: createdItems["sunflower-oil"],
-      priceOptions: [
-        { weight: "500ml", price: 75, stock: 150 },
-        { weight: "1L", price: 140, stock: 200 },
-        { weight: "5L", price: 680, stock: 60 },
-      ],
-    },
-    {
-      name: "Toor Dal",
-      brand: "Organic India",
-      description: "Premium quality toor dal, protein-rich and easy to cook. Sourced directly from farms.",
-      source: ListingSource.SELLER,
-      categoryId: createdCategories["pulses"],
-      sellerId: seller.id,
-      itemId: createdItems["toor-dal"],
-      priceOptions: [
-        { weight: "500g", price: 75, stock: 100 },
-        { weight: "1kg", price: 145, stock: 150 },
-        { weight: "5kg", price: 700, stock: 40 },
-      ],
-    },
-    {
-      name: "Turmeric Powder",
-      brand: "MDH",
-      description: "Pure turmeric powder with natural curcumin, no additives. Rich golden color and aroma.",
-      source: ListingSource.ADMIN,
-      categoryId: createdCategories["spices"],
-      sellerId: admin.id,
-      itemId: createdItems["turmeric-powder"],
-      priceOptions: [
-        { weight: "100g", price: 35, stock: 300 },
-        { weight: "250g", price: 80, stock: 200 },
-        { weight: "500g", price: 150, stock: 100 },
-      ],
-    },
-  ];
-
-  for (const listing of listings) {
-    const { priceOptions, ...listingData } = listing;
-    const existing = await prisma.listing.findFirst({
-      where: { name: listing.name, sellerId: listing.sellerId },
-    });
-    if (existing) {
-      await prisma.listing.update({
-        where: { id: existing.id },
-        data: {
-          imageUrl: null,
-          description: listing.description,
-          categoryId: listingData.categoryId,
-          itemId: listingData.itemId,
-        },
-      });
-    } else {
-      await prisma.listing.create({
-        data: {
-          ...listingData,
-          imageUrl: null,
-          priceOptions: { create: priceOptions },
-        },
-      });
-    }
-  }
-
-  console.log("Seed complete!");
-  console.log("Admin:  grosstechbengaluru@gmail.com / admin123");
-  console.log("Seller: seller@grosstech.com / seller123");
-  console.log("Buyer:  buyer@grosstech.com / buyer123");
-  console.log(`Seeded ${Object.keys(createdItems).length} predefined items across ${Object.keys(createdCategories).length} categories`);
+  console.log(`\n✓ Done`);
+  console.log(`  Categories: ${createdCats} created, ${skippedCats} already existed`);
+  console.log(`  Items:      ${createdItems} created, ${skippedItems} already existed`);
+  console.log(`\n  Images: upload via Admin → Categories / Items panel`);
 }
 
 main()

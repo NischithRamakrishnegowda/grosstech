@@ -29,31 +29,20 @@ export default function CategoryManager({ initialCategories }: { initialCategori
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   function resetForm() {
-    setName("");
-    setSlug("");
-    setImageUrl(null);
-    setShowForm(false);
-    setEditingId(null);
+    setName(""); setSlug(""); setImageUrl(null);
+    setShowForm(false); setEditingId(null);
   }
 
-  function openCreate() {
-    resetForm();
-    setShowForm(true);
-  }
+  function openCreate() { resetForm(); setShowForm(true); }
 
   function openEdit(cat: Category) {
-    setName(cat.name);
-    setSlug(cat.slug);
-    setImageUrl(cat.imageUrl);
-    setEditingId(cat.id);
-    setShowForm(true);
+    setName(cat.name); setSlug(cat.slug); setImageUrl(cat.imageUrl);
+    setEditingId(cat.id); setShowForm(true);
   }
 
   function autoSlug(value: string) {
     setName(value);
-    if (!editingId) {
-      setSlug(value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
-    }
+    if (!editingId) setSlug(value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
   }
 
   async function handleSave() {
@@ -61,11 +50,9 @@ export default function CategoryManager({ initialCategories }: { initialCategori
     setSaving(true);
     try {
       const payload = { name, imageUrl };
-
       if (editingId) {
         const res = await fetch(`/api/admin/categories/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Failed"); }
@@ -75,8 +62,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
       } else {
         if (!slug.trim()) { toast.error("Slug is required"); setSaving(false); return; }
         const res = await fetch("/api/admin/categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...payload, slug }),
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Failed"); }
@@ -87,9 +73,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
       resetForm();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }
 
   async function handleDelete(id: string) {
@@ -102,57 +86,45 @@ export default function CategoryManager({ initialCategories }: { initialCategori
       toast.success("Category deleted");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
-    } finally {
-      setDeletingId(null);
-    }
+    } finally { setDeletingId(null); }
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-          <p className="text-sm text-gray-500 mt-1">{categories.length} categories</p>
+          <h1 className="text-xl font-bold text-gray-900">Categories</h1>
+          <p className="text-sm text-gray-500">{categories.length} categories</p>
         </div>
-        <Button onClick={openCreate} className="bg-green-600 hover:bg-green-700">
-          <Plus className="w-4 h-4 mr-1" /> Add Category
+        <Button onClick={openCreate} size="sm" className="bg-green-600 hover:bg-green-700">
+          <Plus className="w-4 h-4 mr-1" /> Add
         </Button>
       </div>
 
+      {/* Create / Edit form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">{editingId ? "Edit Category" : "New Category"}</h2>
-            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </button>
+            <h2 className="font-semibold text-gray-900 text-sm">{editingId ? "Edit Category" : "New Category"}</h2>
+            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <ImageUpload
-              value={imageUrl}
-              onChange={setImageUrl}
-              aspectRatio="3/2"
-              className="w-full sm:w-40 shrink-0"
-            />
+          <div className="flex gap-4">
+            <ImageUpload value={imageUrl} onChange={setImageUrl} aspectRatio="square" className="w-20 shrink-0" />
             <div className="flex-1 space-y-3">
-              <div className="space-y-1.5">
-                <Label>Name *</Label>
-                <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Grains" />
+              <div className="space-y-1">
+                <Label className="text-xs">Name *</Label>
+                <Input value={name} onChange={(e) => autoSlug(e.target.value)} placeholder="e.g. Grains" className="h-9" />
               </div>
-              <div className="space-y-1.5">
-                <Label>Slug {editingId ? "(read-only)" : "*"}</Label>
-                <Input
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="e.g. grains"
-                  disabled={!!editingId}
-                  className="disabled:opacity-50 font-mono text-sm"
-                />
+              <div className="space-y-1">
+                <Label className="text-xs">Slug {editingId ? "(read-only)" : "*"}</Label>
+                <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="e.g. grains"
+                  disabled={!!editingId} className="h-9 disabled:opacity-50 font-mono text-xs" />
               </div>
-              <div className="flex justify-end">
-                <Button onClick={handleSave} disabled={saving} className="bg-green-600 hover:bg-green-700">
-                  {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={resetForm}>Cancel</Button>
+                <Button size="sm" onClick={handleSave} disabled={saving} className="bg-green-600 hover:bg-green-700">
+                  {saving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
                   {editingId ? "Update" : "Create"}
                 </Button>
               </div>
@@ -161,59 +133,46 @@ export default function CategoryManager({ initialCategories }: { initialCategori
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((cat) => (
-          <div key={cat.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <div className="aspect-[3/2] bg-gray-100 relative overflow-hidden">
-              {cat.imageUrl ? (
-                <NextImage
-                  src={cat.imageUrl}
-                  alt={cat.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-200">
-                  <ImagePlus className="w-10 h-10" />
+      {/* Compact card grid — more columns, smaller cards */}
+      {categories.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 bg-white rounded-2xl border border-gray-100">
+          <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">No categories yet. Add one to get started.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {categories.map((cat) => (
+            <div key={cat.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-sm transition-shadow group">
+              {/* Image */}
+              <div className="aspect-square bg-gray-50 relative overflow-hidden">
+                {cat.imageUrl ? (
+                  <NextImage src={cat.imageUrl} alt={cat.name} fill className="object-cover" sizes="200px" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-200">
+                    <ImagePlus className="w-6 h-6" />
+                  </div>
+                )}
+                {/* Actions overlay */}
+                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => openEdit(cat)}
+                    className="bg-white/90 backdrop-blur-sm rounded-md p-1 text-gray-600 hover:text-blue-600 shadow-sm transition-colors">
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => handleDelete(cat.id)}
+                    disabled={deletingId === cat.id || cat._count.items > 0}
+                    title={cat._count.items > 0 ? "Cannot delete: has items" : "Delete"}
+                    className="bg-white/90 backdrop-blur-sm rounded-md p-1 text-gray-600 hover:text-red-600 disabled:opacity-30 shadow-sm transition-colors">
+                    {deletingId === cat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  </button>
                 </div>
-              )}
-              <div className="absolute top-2 right-2 flex gap-1">
-                <button
-                  onClick={() => openEdit(cat)}
-                  className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-gray-600 hover:text-blue-600 shadow-sm transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(cat.id)}
-                  disabled={deletingId === cat.id || cat._count.items > 0}
-                  title={cat._count.items > 0 ? "Cannot delete: has items" : "Delete"}
-                  className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-gray-600 hover:text-red-600 disabled:opacity-30 shadow-sm transition-colors"
-                >
-                  {deletingId === cat.id
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : <Trash2 className="w-3.5 h-3.5" />}
-                </button>
+              </div>
+              {/* Info */}
+              <div className="p-2.5">
+                <p className="font-semibold text-gray-900 text-xs truncate">{cat.name}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{cat._count.items} items</p>
               </div>
             </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900">{cat.name}</h3>
-              <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                <span>{cat._count.items} item{cat._count.items !== 1 ? "s" : ""}</span>
-                <span>·</span>
-                <span>{cat._count.listings} listing{cat._count.listings !== 1 ? "s" : ""}</span>
-              </div>
-              <p className="text-xs text-gray-400 font-mono mt-1">{cat.slug}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {categories.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-lg font-medium">No categories yet</p>
-          <p className="text-sm mt-1">Create categories to organize your items.</p>
+          ))}
         </div>
       )}
     </div>
