@@ -12,6 +12,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json({ error: "Image storage not configured. Add BLOB_READ_WRITE_TOKEN to Vercel environment variables." }, { status: 500 });
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
