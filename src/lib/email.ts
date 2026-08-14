@@ -188,12 +188,12 @@ export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, ite
               <span>Total Paid</span><span style="color:#16a34a">${formatCurrency(order.total)}</span>
             </div>
           </div>
-          ${order.shippingAddress ? `<div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:8px"><p style="margin:0 0 4px;font-size:13px;color:#6b7280">Delivery Address</p><p style="margin:0;color:#374151">${order.shippingAddress}</p></div>` : ""}
+          ${order.deliveryOption === "DELIVERY" && order.shippingAddress ? `<div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:8px"><p style="margin:0 0 4px;font-size:13px;color:#6b7280">Delivery Address</p><p style="margin:0;color:#374151">${order.shippingAddress}</p></div>` : ""}
           <div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:${order.deliveryOption === "DELIVERY" ? "#eff6ff" : "#f3f4f6"};display:inline-block">
             <span style="font-size:13px;color:${order.deliveryOption === "DELIVERY" ? "#1d4ed8" : "#6b7280"}">
               ${order.deliveryOption === "DELIVERY"
-                ? `🚚 Delivery${order.deliveryCharge != null ? ` — Charge: ₹${order.deliveryCharge} (paid separately)` : " — Delivery charge will be communicated by admin/seller"}`
-                : "📦 Self Pickup"}
+                ? `Delivery${order.deliveryCharge != null ? ` — Charge: ₹${order.deliveryCharge} (paid separately)` : " — Delivery charge will be communicated by admin/seller"}`
+                : "Self Pickup — Please collect your order from the seller"}
             </span>
           </div>
           ${contactSection(items)}
