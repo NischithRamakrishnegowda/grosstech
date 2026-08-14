@@ -1,13 +1,18 @@
 import React from "react";
 import Link from "next/link";
-import { Wheat, Candy, Droplets, Bean, Flame } from "lucide-react";
+import { Wheat, Candy, Droplets, Bean, Flame, Sprout, Cookie, Cherry, Nut, Tag } from "lucide-react";
 
 const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; accent: string; light: string }> = {
-  grains: { icon: Wheat,    accent: "text-amber-600",  light: "bg-amber-50 group-hover:bg-amber-100" },
-  sugar:  { icon: Candy,    accent: "text-sky-600",    light: "bg-sky-50 group-hover:bg-sky-100" },
-  oil:    { icon: Droplets, accent: "text-yellow-600", light: "bg-yellow-50 group-hover:bg-yellow-100" },
-  pulses: { icon: Bean,     accent: "text-orange-600", light: "bg-orange-50 group-hover:bg-orange-100" },
-  spices: { icon: Flame,    accent: "text-red-600",    light: "bg-red-50 group-hover:bg-red-100" },
+  grains:     { icon: Wheat,    accent: "text-amber-600",   light: "bg-amber-50 group-hover:bg-amber-100"   },
+  rice:       { icon: Sprout,   accent: "text-lime-600",    light: "bg-lime-50 group-hover:bg-lime-100"     },
+  millets:    { icon: Wheat,    accent: "text-yellow-700",  light: "bg-yellow-50 group-hover:bg-yellow-100" },
+  pulses:     { icon: Bean,     accent: "text-orange-600",  light: "bg-orange-50 group-hover:bg-orange-100" },
+  oil:        { icon: Droplets, accent: "text-yellow-600",  light: "bg-yellow-50 group-hover:bg-yellow-100" },
+  sugar:      { icon: Candy,    accent: "text-sky-600",     light: "bg-sky-50 group-hover:bg-sky-100"       },
+  spices:     { icon: Flame,    accent: "text-red-600",     light: "bg-red-50 group-hover:bg-red-100"       },
+  flours:     { icon: Cookie,   accent: "text-stone-600",   light: "bg-stone-50 group-hover:bg-stone-100"   },
+  "dry-fruits": { icon: Nut,   accent: "text-brown-600",   light: "bg-orange-50 group-hover:bg-orange-100" },
+  default:    { icon: Tag,      accent: "text-gray-500",    light: "bg-gray-50 group-hover:bg-gray-100"     },
 };
 
 interface Category {
