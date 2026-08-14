@@ -258,6 +258,8 @@ model BuyerRequest {
   id          String   @id @default(cuid())
   description String
   quantity    String?
+  isResolved  Boolean  @default(false)
+  resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

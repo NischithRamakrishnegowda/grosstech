@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import { Send, Loader2, Package, MapPin, Clock, Phone, Mail } from "lucide-react";
+import { Send, Loader2, Package, MapPin, Clock, Phone, Mail, CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ interface BuyerRequest {
   id: string;
   description: string;
   quantity: string | null;
+  isResolved: boolean;
   createdAt: string;
   buyer: {
     id: string;
@@ -52,6 +53,22 @@ export default function RequestList() {
   const { data: items = [] } = useSWR<ItemOption[]>("/api/items?all=true", fetcher);
   const isBuyer = session?.user.role === "BUYER";
   const isAdmin = session?.user.role === "ADMIN";
+  const canResolve = isAdmin || session?.user.role === "SELLER";
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+
+  async function toggleResolve(req: BuyerRequest) {
+    setResolvingId(req.id);
+    try {
+      const res = await fetch(`/api/buyer-requests/${req.id}/resolve`, { method: "PUT" });
+      if (!res.ok) { toast.error("Failed to update"); return; }
+      const { isResolved } = await res.json();
+      mutate(
+        (prev) => prev?.map((r) => r.id === req.id ? { ...r, isResolved } : r),
+        false
+      );
+    } catch { toast.error("Something went wrong"); }
+    finally { setResolvingId(null); }
+  }
 
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -162,7 +179,7 @@ export default function RequestList() {
         ) : (
           <div className="space-y-3">
             {requests.map((req) => (
-              <div key={req.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div key={req.id} className={`bg-white rounded-2xl border p-5 shadow-sm transition-shadow ${req.isResolved ? "border-gray-100 opacity-60" : "border-gray-200 hover:shadow-md"}`}>
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
                     <p className="font-medium text-gray-900">
@@ -190,29 +207,65 @@ export default function RequestList() {
                       </div>
                     )}
                   </div>
-                  <span className="text-xs text-gray-400 flex items-center gap-1 shrink-0">
-                    <Clock className="w-3 h-3" />
-                    {timeAgo(req.createdAt)}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {timeAgo(req.createdAt)}
+                    </span>
+                    {/* Resolved badge */}
+                    {req.isResolved ? (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Resolved
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                        <Circle className="w-3 h-3" /> Open
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-sm text-gray-700 leading-relaxed mb-3">{req.description}</p>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {req.item && (
-                    <span className="text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full font-medium">
-                      {req.item.name}
-                    </span>
-                  )}
-                  {req.item?.category && (
-                    <span className="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">
-                      {req.item.category.name}
-                    </span>
-                  )}
-                  {req.quantity && (
-                    <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-medium">
-                      Qty: {req.quantity}
-                    </span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {req.item && (
+                      <span className="text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full font-medium">
+                        {req.item.name}
+                      </span>
+                    )}
+                    {req.item?.category && (
+                      <span className="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">
+                        {req.item.category.name}
+                      </span>
+                    )}
+                    {req.quantity && (
+                      <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-medium">
+                        Qty: {req.quantity}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Resolve toggle — admin and seller only */}
+                  {canResolve && (
+                    <button
+                      onClick={() => toggleResolve(req)}
+                      disabled={resolvingId === req.id}
+                      className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                        req.isResolved
+                          ? "bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                          : "bg-green-50 text-green-700 hover:bg-green-100"
+                      }`}
+                    >
+                      {resolvingId === req.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : req.isResolved ? (
+                        <Circle className="w-3 h-3" />
+                      ) : (
+                        <CheckCircle2 className="w-3 h-3" />
+                      )}
+                      {req.isResolved ? "Mark Open" : "Mark Resolved"}
+                    </button>
                   )}
                 </div>
               </div>

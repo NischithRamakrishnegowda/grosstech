@@ -35,7 +35,7 @@ export async function GET() {
       },
       item: { select: { id: true, name: true, slug: true, category: { select: { name: true } } } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ isResolved: "asc" }, { createdAt: "desc" }],
     take: 100,
   });
 
