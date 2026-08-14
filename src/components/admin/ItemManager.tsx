@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import NextImage from "next/image";
 import { Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,11 @@ export default function ItemManager({ initialItems, categories }: Props) {
   const [slug, setSlug] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showForm) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [showForm]);
 
   function resetForm() {
     setName(""); setSlug(""); setCategoryId("");
@@ -140,7 +145,7 @@ export default function ItemManager({ initialItems, categories }: Props) {
 
       {/* Create/Edit form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm">
+        <div ref={formRef} className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm scroll-mt-20">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">{editingId ? "Edit Item" : "New Item"}</h2>
             <button onClick={resetForm} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
