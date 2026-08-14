@@ -17,10 +17,10 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "";
 
 function otpSubject(type: OtpType): string {
-  if (type === OtpType.EMAIL_VERIFY) return "Verify your GrossTech email";
-  if (type === OtpType.PASSWORD_RESET) return "Reset your GrossTech password";
-  if (type === OtpType.LOGIN_OTP) return "Your GrossTech login OTP";
-  return "Your GrossTech OTP";
+  if (type === OtpType.EMAIL_VERIFY) return "GrossTech — Please verify your email address";
+  if (type === OtpType.PASSWORD_RESET) return "GrossTech — Your password reset code";
+  if (type === OtpType.LOGIN_OTP) return "GrossTech — Your sign-in code";
+  return "GrossTech — Your verification code";
 }
 
 function otpPurpose(type: OtpType): string {
