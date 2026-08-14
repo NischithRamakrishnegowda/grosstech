@@ -152,10 +152,10 @@ export function ImageUpload({ value, onChange, className = "", aspectRatio = "sq
               </>
             ) : (
               <>
-                <ImagePlus className="w-8 h-8 text-gray-300" />
-                <div className="text-center px-3">
-                  <p className="text-xs font-medium text-gray-500">Click or drag image here</p>
-                  <p className="text-xs text-gray-300 mt-0.5">JPG, PNG, WebP</p>
+                <ImagePlus className="w-6 h-6 text-gray-300" />
+                <div className="text-center px-2">
+                  <p className="text-[10px] font-medium text-gray-400 leading-tight">Click to upload</p>
+                  <p className="text-[10px] text-gray-300 mt-0.5">JPG, PNG, WebP</p>
                 </div>
               </>
             )}
