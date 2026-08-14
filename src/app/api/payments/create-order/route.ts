@@ -49,6 +49,12 @@ export async function POST(req: Request) {
       if (!po) return NextResponse.json({ error: "Invalid price option" }, { status: 400 });
       const sellerId = listingSellerMap.get(item.listingId);
       if (!sellerId) return NextResponse.json({ error: "Invalid listing" }, { status: 400 });
+      if (po.stock < item.quantity) {
+        return NextResponse.json({ error: `Insufficient stock. Only ${po.stock} units available.` }, { status: 400 });
+      }
+      if (item.quantity < po.minQty) {
+        return NextResponse.json({ error: `Minimum order quantity is ${po.minQty} for this item.` }, { status: 400 });
+      }
       subtotal += po.price * item.quantity;
       itemsWithPrice.push({ ...item, priceAtOrder: po.price, sellerId });
     }
@@ -81,8 +87,8 @@ export async function POST(req: Request) {
             razorpayOrderId: rzpOrder.id,
             buyerId: session.user.id,
             subtotal: sellerSubtotal,
-            platformFee: 0,
-            total: sellerSubtotal,
+            platformFee: sellerGroups.size === 1 ? PLATFORM_FEE : 0,
+            total: sellerSubtotal + (sellerGroups.size === 1 ? PLATFORM_FEE : 0),
             status: "PENDING",
             shippingAddress: shippingAddress || null,
             shippingPhone: shippingPhone || null,

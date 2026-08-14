@@ -39,27 +39,20 @@ export async function POST(req: Request) {
 
   try {
     if (event.event === "payment.captured") {
-      // Secondary confirmation: update PENDING → PAYMENT_HELD if client verification failed
-      const order = await prisma.order.findFirst({ where: { razorpayOrderId } });
-      if (order && order.status === "PENDING") {
-        const now = new Date();
-        await prisma.order.update({
-          where: { id: order.id },
-          data: {
-            status: "PAYMENT_HELD",
-            razorpayPaymentId,
-            paymentCapturedAt: now,
-          },
-        });
-      }
+      // Update ALL seller orders for this payment (one per seller in the cart)
+      await prisma.order.updateMany({
+        where: { razorpayOrderId, status: "PENDING" },
+        data: {
+          status: "PAYMENT_HELD",
+          razorpayPaymentId,
+          paymentCapturedAt: new Date(),
+        },
+      });
     } else if (event.event === "payment.failed") {
-      const order = await prisma.order.findFirst({ where: { razorpayOrderId } });
-      if (order && order.status === "PENDING") {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: "FAILED" },
-        });
-      }
+      await prisma.order.updateMany({
+        where: { razorpayOrderId, status: "PENDING" },
+        data: { status: "FAILED" },
+      });
     }
   } catch (e) {
     console.error("Webhook processing error:", e);

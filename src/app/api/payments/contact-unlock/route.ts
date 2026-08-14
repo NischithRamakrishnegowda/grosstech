@@ -15,6 +15,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { sellerId } = schema.parse(body);
 
+    if (sellerId === session.user.id) {
+      return NextResponse.json({ error: "Cannot unlock your own contact" }, { status: 400 });
+    }
+
+    // Prevent double payment — check if already unlocked
+    const { prisma } = await import("@/lib/prisma");
+    const existing = await prisma.contactUnlock.findUnique({
+      where: { buyerId_sellerId: { buyerId: session.user.id, sellerId } },
+    });
+    if (existing?.isPaid) {
+      return NextResponse.json({ error: "Already unlocked" }, { status: 400 });
+    }
+
     const order = await razorpay.orders.create({
       amount: CONTACT_UNLOCK_FEE * 100,
       currency: "INR",

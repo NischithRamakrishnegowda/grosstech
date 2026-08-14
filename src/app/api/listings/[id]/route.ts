@@ -41,15 +41,19 @@ export async function PUT(
   try {
     const body = await req.json();
     const data = schema.parse(body);
-    const { priceOptions, ...rest } = data;
+    const { priceOptions, isActive, ...rest } = data;
 
-    // If a seller edits a rejected listing, resubmit for approval
-    const resubmit = session.user.role === "SELLER" && listing.status === "REJECTED";
+    // Sellers editing any non-admin listing triggers re-review
+    // Admins can update freely including isActive
+    const isSeller = session.user.role === "SELLER";
+    const resubmit = isSeller && (listing.status === "REJECTED" || listing.status === "APPROVED");
 
     const updated = await prisma.listing.update({
       where: { id },
       data: {
         ...rest,
+        // Only allow admin to directly set isActive; sellers can't bypass approval
+        ...(session.user.role === "ADMIN" && isActive !== undefined && { isActive }),
         ...(resubmit && { status: "PENDING_APPROVAL", isActive: false, rejectionReason: null }),
         ...(priceOptions && {
           priceOptions: {
