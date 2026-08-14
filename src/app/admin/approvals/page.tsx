@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ApprovalManager from "@/components/admin/ApprovalManager";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 export default async function ApprovalsPage() {
   const session = await getServerSession(authOptions);
@@ -22,6 +23,7 @@ export default async function ApprovalsPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
+      <AutoRefresh intervalMs={20000} />
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Pending Approvals</h1>
       <ApprovalManager listings={JSON.parse(JSON.stringify(listings))} />
     </div>

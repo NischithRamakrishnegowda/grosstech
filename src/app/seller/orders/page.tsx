@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Truck, Package, ShoppingBag } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -43,6 +44,7 @@ export default async function SellerOrdersPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={20000} />
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Orders for My Products</h1>
 
       {orders.length === 0 ? (

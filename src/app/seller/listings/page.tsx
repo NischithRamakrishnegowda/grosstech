@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SellerListingsTable from "@/components/seller/SellerListingsTable";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 export default async function SellerListingsPage() {
   const session = await getServerSession(authOptions);
@@ -22,6 +23,7 @@ export default async function SellerListingsPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={20000} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
         <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto" asChild>

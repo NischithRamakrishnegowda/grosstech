@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import PayoutManager from "@/components/admin/PayoutManager";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 export default async function AdminOrdersPage() {
   const now = new Date();
@@ -36,6 +37,7 @@ export default async function AdminOrdersPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={30000} />
       <h1 className="text-2xl font-bold text-gray-900 mb-8">Payouts & Orders</h1>
       <PayoutManager readyOrders={readyOrders} allOrders={allOrders} />
     </div>
