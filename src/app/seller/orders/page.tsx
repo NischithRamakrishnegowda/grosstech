@@ -92,7 +92,12 @@ export default async function SellerOrdersPage() {
 
               {order.status === "PAYMENT_HELD" && order.releaseScheduledAt && (
                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
-                  Payment releases on {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN")}
+                  Expected payout by {new Date(order.releaseScheduledAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              )}
+              {order.status === "RELEASED_TO_SELLER" && order.releasedAt && (
+                <p className="text-xs text-green-600 bg-green-50 px-3 py-1.5 rounded-lg">
+                  Payment released on {new Date(order.releasedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                 </p>
               )}
             </div>
