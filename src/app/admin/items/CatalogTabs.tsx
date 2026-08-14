@@ -18,23 +18,18 @@ export default function CatalogTabs({ items, categories }: Props) {
   return (
     <div>
       {/* Tabs */}
-      <div className="flex rounded-xl border border-gray-200 overflow-hidden w-fit mb-6">
-        <button
-          onClick={() => setTab("categories")}
-          className={`px-5 py-2.5 text-sm font-semibold transition-colors ${
-            tab === "categories" ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          Categories
-        </button>
-        <button
-          onClick={() => setTab("items")}
-          className={`px-5 py-2.5 text-sm font-semibold transition-colors ${
-            tab === "items" ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          Items
-        </button>
+      <div className="flex bg-gray-100 rounded-lg p-0.5 w-fit mb-6">
+        {(["categories", "items"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-5 py-1.5 rounded-md text-sm font-semibold transition-all duration-150 capitalize ${
+              tab === t ? "bg-green-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       {tab === "categories" ? (
