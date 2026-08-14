@@ -336,24 +336,25 @@ export async function sendListingRejectedEmail(
     await transporter.sendMail({
       from: FROM,
       to: seller.email,
-      subject: `Your listing "${listingName}" was not approved — GrossTech`,
+      subject: `Action needed: Your listing "${listingName}" — GrossTech`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff">
           <h2 style="color:#16a34a;margin:0 0 8px">GrossTech</h2>
           <p style="color:#374151">Hi ${seller.name},</p>
-          <p style="color:#374151">Unfortunately, your listing <strong>"${listingName}"</strong> was <span style="color:#dc2626;font-weight:bold">not approved</span> by the GrossTech team.</p>
-          <div style="margin-top:16px;padding:16px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca">
-            <p style="margin:0 0 4px;font-size:13px;color:#991b1b;font-weight:600">Reason for rejection:</p>
+          <p style="color:#374151">Our team has reviewed your listing <strong>"${listingName}"</strong> and it requires some changes before it can go live.</p>
+          <div style="margin-top:16px;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+            <p style="margin:0 0 4px;font-size:13px;color:#374151;font-weight:600">Review feedback:</p>
             <p style="margin:0;color:#374151">${reason}</p>
           </div>
-          <p style="color:#374151;margin-top:16px">You can edit your listing and resubmit it for review from your seller dashboard.</p>
-          <p style="color:#6b7280;font-size:13px;margin-top:24px">If you have questions, contact us at ${ADMIN_EMAIL}.</p>
+          <p style="color:#374151;margin-top:16px">Please update your listing based on the feedback above and resubmit it from your seller dashboard. We will review it again promptly.</p>
+          <p style="color:#6b7280;font-size:13px;margin-top:24px">Questions? Contact us at <a href="mailto:${ADMIN_EMAIL}" style="color:#16a34a">${ADMIN_EMAIL}</a>.</p>
           <p style="color:#6b7280;font-size:13px">— The GrossTech Team</p>
         </div>
       `,
     });
   } catch (e) {
     console.error("sendListingRejectedEmail error:", e);
+    throw e; // re-throw so caller knows it failed
   }
 }
 

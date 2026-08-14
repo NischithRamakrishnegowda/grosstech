@@ -63,9 +63,11 @@ export async function PUT(
       });
 
       // Send rejection email
-      await sendListingRejectedEmail(listing.seller, listing.name, data.reason.trim()).catch((e) =>
-        console.error("Failed to send rejection email:", e)
-      );
+      try {
+        await sendListingRejectedEmail(listing.seller, listing.name, data.reason.trim());
+      } catch (e) {
+        console.error("Rejection email failed to send:", e);
+      }
 
       invalidateTag(CACHE_TAGS.items);
       return NextResponse.json({ success: true, status: "REJECTED" });
