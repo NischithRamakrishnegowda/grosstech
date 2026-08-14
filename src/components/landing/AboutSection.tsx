@@ -1,49 +1,79 @@
 import Link from "next/link";
-import { ShieldCheck, IndianRupee, BadgeCheck, Users } from "lucide-react";
+import { ShieldCheck, Users, TrendingUp, BadgeCheck, ArrowRight } from "lucide-react";
 
-const VALUES = [
-  { icon: ShieldCheck,   label: "Escrow protected",   desc: "Your payment is safe until delivery"   },
-  { icon: IndianRupee,   label: "₹20 flat fee",       desc: "No hidden charges ever"                },
-  { icon: BadgeCheck,    label: "Verified sellers",   desc: "Every seller manually reviewed"        },
-  { icon: Users,         label: "1000+ buyers",       desc: "Active community of businesses"        },
+const values = [
+  {
+    icon: ShieldCheck,
+    title: "Secure & Transparent",
+    description: "Funds held in escrow for 3 days post-delivery. Every transaction is protected.",
+  },
+  {
+    icon: Users,
+    title: "Community First",
+    description: "We connect local sellers with buyers, supporting small businesses across India.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Best Prices",
+    description: "Direct seller-to-buyer model. Only ₹20 flat platform fee per order.",
+  },
+  {
+    icon: BadgeCheck,
+    title: "Verified Sellers",
+    description: "All sellers are manually verified. Products are exactly as described.",
+  },
 ];
 
 export default function AboutSection() {
   return (
-    <section id="about" className="py-12 bg-gray-50 border-t border-gray-100">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+    <section id="about" className="py-16 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
-          <div>
-            <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3">About</p>
-            <h2 className="text-2xl font-black text-gray-900 leading-tight mb-4">
-              Built for India&apos;s<br />Wholesale Businesses
+          {/* Left copy */}
+          <div className="animate-fade-up">
+            <p className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-3">About Us</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+              A Trusted B2B Marketplace<br />for Daily Essentials
             </h2>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              GrossTech connects buyers directly with verified sellers of daily essentials — rice, sugar, oil, dal and more.
-              No middlemen. Transparent pricing. Secure escrow payments that protect both sides.
+            <p className="mt-4 text-slate-500 leading-relaxed">
+              Gross Tech was built to simplify how businesses buy daily essentials like rice, sugar,
+              and oil in bulk. We eliminate middlemen, connect buyers directly with verified local sellers,
+              and ensure every transaction is safe and transparent.
             </p>
-            <div className="flex gap-3">
-              <Link href="/products" className="h-10 px-5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm transition-colors flex items-center">
-                Browse Products
+            <p className="mt-3 text-slate-500 leading-relaxed text-sm">
+              Whether you&apos;re stocking up your kirana store or buying wholesale for your business,
+              Gross Tech gives you access to the best prices with the security of our escrow payment system.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
+              >
+                Browse Products <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/signup?role=SELLER" className="h-10 px-5 rounded-xl border border-gray-200 text-gray-700 hover:border-primary-300 font-semibold text-sm transition-all flex items-center">
-                Sell on GrossTech
+              <Link
+                href="/signup?role=SELLER"
+                className="inline-flex items-center gap-2 border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
+              >
+                Become a Seller
               </Link>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {VALUES.map((v) => (
-              <div key={v.label} className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-2">
-                <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
-                  <v.icon className="w-4.5 h-4.5 text-primary-600" />
+          {/* Right values grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-up [animation-delay:150ms]">
+            {values.map((val) => (
+              <div key={val.title} className="bg-white border border-slate-100 rounded-2xl p-5 hover:border-slate-200 hover:shadow-sm transition-all duration-200">
+                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-3">
+                  <val.icon className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-sm font-bold text-gray-900">{v.label}</p>
-                <p className="text-xs text-gray-500">{v.desc}</p>
+                <h3 className="font-semibold text-slate-900 text-sm">{val.title}</h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{val.description}</p>
               </div>
             ))}
           </div>
+
         </div>
       </div>
     </section>

@@ -6,83 +6,60 @@ export default function Footer() {
   const adminPhone = process.env.ADMIN_PHONE || "";
 
   return (
-    <footer className="bg-gray-900 text-gray-400">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pb-8 border-b border-gray-800">
-
-          <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-white" />
+    <footer className="bg-slate-100 border-t border-slate-200 text-slate-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Brand */}
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
+                <Leaf className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="font-black text-white">Gross<span className="text-primary-400">Tech</span></span>
+              <span className="font-black text-lg text-slate-900 tracking-tight">
+                Gross<span className="text-green-600">Tech</span>
+              </span>
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed max-w-[200px]">
-              India&apos;s wholesale marketplace for daily essentials.
+            <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
+              Your trusted marketplace for daily essential goods — rice, sugar, oil and more.
+              Connecting buyers and sellers across India.
             </p>
           </div>
 
+          {/* Quick Links */}
           <div>
-            <p className="text-xs font-bold text-gray-300 uppercase tracking-widest mb-4">Platform</p>
-            <ul className="space-y-2.5 text-sm">
-              {[
-                { href: "/products",           label: "Browse Products"  },
-                { href: "/signup?role=BUYER",  label: "Register as Buyer"},
-                { href: "/signup?role=SELLER", label: "Become a Seller"  },
-                { href: "/login",              label: "Sign In"          },
-              ].map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="hover:text-primary-400 transition-colors text-xs">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
+            <h3 className="text-slate-700 font-semibold mb-3 text-xs uppercase tracking-widest">Quick Links</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/#about" className="hover:text-green-600 transition-colors">About Us</Link></li>
+              <li><Link href="/products" className="hover:text-green-600 transition-colors">Products</Link></li>
+              <li><Link href="/#contact" className="hover:text-green-600 transition-colors">Contact</Link></li>
+              <li><Link href="/login" className="hover:text-green-600 transition-colors">Login</Link></li>
             </ul>
           </div>
 
-          <div>
-            <p className="text-xs font-bold text-gray-300 uppercase tracking-widest mb-4">Company</p>
-            <ul className="space-y-2.5 text-sm">
-              {[
-                { href: "/#about",   label: "About Us"    },
-                { href: "/#contact", label: "Contact"     },
-              ].map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="hover:text-primary-400 transition-colors text-xs">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
+          {/* Contact */}
           <div id="contact">
-            <p className="text-xs font-bold text-gray-300 uppercase tracking-widest mb-4">Contact</p>
-            <ul className="space-y-3 text-xs">
-              <li>
-                <a href={`mailto:${adminEmail}`} className="flex items-start gap-2 hover:text-primary-400 transition-colors">
-                  <Mail className="w-3.5 h-3.5 text-primary-500 shrink-0 mt-0.5" />
-                  <span className="break-all">{adminEmail}</span>
-                </a>
+            <h3 className="text-slate-700 font-semibold mb-3 text-xs uppercase tracking-widest">Contact</h3>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-green-600 shrink-0" />
+                <span>{adminEmail}</span>
               </li>
               {adminPhone && (
-                <li>
-                  <a href={`tel:${adminPhone}`} className="flex items-center gap-2 hover:text-primary-400 transition-colors">
-                    <Phone className="w-3.5 h-3.5 text-primary-500 shrink-0" />
-                    {adminPhone}
-                  </a>
+                <li className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-green-600 shrink-0" />
+                  <span>{adminPhone}</span>
                 </li>
               )}
               <li className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-primary-500 shrink-0 mt-0.5" />
-                Bangalore, Karnataka
+                <MapPin className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                <span>Bangalore, Karnataka, India</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="pt-5 text-center text-xs text-gray-600">
-          © {new Date().getFullYear()} Gross Tech — All rights reserved.
+        <div className="border-t border-slate-200/70 mt-8 pt-6 text-center text-xs text-slate-400">
+          <p>&copy; {new Date().getFullYear()} Gross Tech. All rights reserved.</p>
         </div>
       </div>
     </footer>

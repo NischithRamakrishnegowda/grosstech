@@ -1,92 +1,147 @@
-import Link from "next/link";
-import { ShieldCheck, BadgeCheck, IndianRupee } from "lucide-react";
+"use client";
 
-const FEATURES = [
-  { icon: ShieldCheck,  text: "Escrow Payments"     },
-  { icon: BadgeCheck,   text: "Verified Sellers"    },
-  { icon: IndianRupee,  text: "₹20 Flat Fee"        },
+import Link from "next/link";
+import { ArrowRight, Check, ShieldCheck, Clock, BadgeCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const STATS = [
+  { value: "500+",   label: "Products Listed" },
+  { value: "1,000+", label: "Registered Buyers" },
+  { value: "50+",    label: "Verified Sellers" },
 ];
 
+const BENTO = [
+  { src: "/hero/hero1.jpg", span: "row-span-2" },
+  { src: "/hero/hero2.jpg", span: "" },
+  { src: "/hero/hero3.jpg", span: "" },
+];
+
+const CYCLING_WORDS = ["Quality.", "Price.", "Support."];
+
 export default function HeroSection() {
+  const [displayed, setDisplayed] = useState("");
+  const [wordIndex, setWordIndex] = useState(0);
+  const [typing, setTyping] = useState(true);
+
+  useEffect(() => {
+    const word = CYCLING_WORDS[wordIndex];
+
+    if (typing) {
+      if (displayed.length < word.length) {
+        const t = setTimeout(() => setDisplayed(word.slice(0, displayed.length + 1)), 80);
+        return () => clearTimeout(t);
+      } else {
+        // finished typing — pause then start deleting
+        const t = setTimeout(() => setTyping(false), 1800);
+        return () => clearTimeout(t);
+      }
+    } else {
+      if (displayed.length > 0) {
+        const t = setTimeout(() => setDisplayed(displayed.slice(0, -1)), 45);
+        return () => clearTimeout(t);
+      } else {
+        // finished deleting — move to next word
+        setWordIndex((i) => (i + 1) % CYCLING_WORDS.length);
+        setTyping(true);
+      }
+    }
+  }, [displayed, typing, wordIndex]);
+
   return (
-    <section className="bg-white border-b border-gray-100">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
+    <section className="bg-white">
+      {/* ── Main panel ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-24">
+        <div className="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
 
-        {/* Eyebrow */}
-        <div className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-bold px-4 py-1.5 rounded-full mb-5 border border-primary-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse" />
-          India&apos;s B2B Wholesale Marketplace
-        </div>
+          {/* ── Left copy (3/5) ── */}
+          <div className="lg:col-span-3 space-y-7">
+            {/* Eyebrow */}
+            <div className="animate-fade-up inline-flex items-center gap-2 bg-green-50 border border-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full">
+              🌿 Wholesale Marketplace
+            </div>
 
-        {/* Headline */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 leading-tight tracking-tight mb-4">
-          Buy Daily Essentials
-          <br />
-          <span className="text-primary-600">at Wholesale Prices</span>
-        </h1>
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
+              <span className="block animate-fade-up [animation-delay:100ms]">Fresh Essentials,</span>
+              <span className="block animate-fade-up [animation-delay:220ms]">
+                Best{" "}
+                <span className="text-green-600 inline-block">
+                  {displayed}
+                  <span className="inline-block w-[3px] h-[0.85em] bg-green-500 ml-0.5 align-middle animate-blink" />
+                </span>
+              </span>
+            </h1>
 
-        <p className="text-gray-500 text-base sm:text-lg max-w-xl mx-auto mb-8 leading-relaxed">
-          Rice, sugar, oil, dal and more — direct from verified sellers.
-          Secure payments, transparent pricing.
-        </p>
+            {/* Body */}
+            <p className="text-lg text-slate-500 max-w-xl leading-relaxed animate-fade-up [animation-delay:340ms]">
+              Buy rice, sugar, oil and daily staples{" "}
+              <span className="font-semibold text-slate-700">directly from verified sellers</span>.
+              Secure payments, transparent fees, doorstep delivery.
+            </p>
 
-        {/* Search */}
-        <form action="/products" method="GET" className="max-w-2xl mx-auto mb-6">
-          <div className="flex gap-0 rounded-2xl border-2 border-primary-600 overflow-hidden bg-white shadow-md shadow-primary-100">
-            <input
-              name="search"
-              type="text"
-              placeholder="Search for rice, dal, sugar, oil…"
-              className="flex-1 h-14 px-5 text-sm text-gray-800 placeholder:text-gray-400 bg-white focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="h-14 px-8 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm transition-colors shrink-0"
-            >
-              Search
-            </button>
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-3 pt-1 animate-fade-up [animation-delay:460ms]">
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-2 bg-green-600 text-white font-bold px-7 py-3.5 rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-100 text-base group"
+              >
+                Shop Now
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link
+                href="/signup?role=SELLER"
+                className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-700 font-semibold px-7 py-3.5 rounded-xl hover:border-slate-300 hover:bg-slate-50 transition-all text-base"
+              >
+                Sell with Us
+              </Link>
+            </div>
+
+            {/* Trust checklist */}
+            <div className="flex flex-col sm:flex-row gap-x-8 gap-y-2.5 pt-1 animate-fade-up [animation-delay:560ms]">
+              {[
+                { icon: ShieldCheck, text: "Secure Escrow Payments" },
+                { icon: Clock,       text: "3-Day Hold Protection" },
+                { icon: BadgeCheck,  text: "Verified Sellers Only" },
+              ].map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-2 text-sm text-slate-600">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-green-600" />
+                  </div>
+                  <span>{text}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </form>
 
-        {/* Feature pills */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-          {FEATURES.map(({ icon: Icon, text }) => (
-            <span key={text} className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
-              <Icon className="w-3.5 h-3.5 text-primary-500 shrink-0" />
-              {text}
-            </span>
-          ))}
-        </div>
-
-        {/* CTAs */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/products"
-            className="h-11 px-7 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm transition-colors"
-          >
-            Browse Products
-          </Link>
-          <Link
-            href="/signup?role=SELLER"
-            className="h-11 px-7 rounded-xl border-2 border-gray-200 text-gray-700 hover:border-primary-300 hover:text-primary-700 font-bold text-sm transition-all"
-          >
-            Start Selling
-          </Link>
+          {/* ── Right bento grid (2/5) ── */}
+          <div className="hidden lg:block lg:col-span-2 animate-fade-in [animation-delay:300ms]">
+            <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[460px]">
+              {BENTO.map((item, i) => (
+                <div
+                  key={i}
+                  className={`relative rounded-2xl overflow-hidden shadow-sm ${item.span}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.src}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Stats strip */}
-      <div className="border-t border-gray-100 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-3 divide-x divide-gray-200 py-4">
-            {[
-              { value: "500+",  label: "Products"    },
-              { value: "50+",   label: "Sellers"     },
-              { value: "1000+", label: "Buyers"      },
-            ].map((s) => (
-              <div key={s.label} className="text-center py-1">
-                <div className="text-xl font-black text-gray-900">{s.value}</div>
-                <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+      {/* ── Stats strip ── */}
+      <div className="border-t border-slate-100 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="grid grid-cols-3 gap-4 divide-x divide-slate-200">
+            {STATS.map((s) => (
+              <div key={s.label} className="text-center px-4 first:pl-0 last:pr-0">
+                <div className="text-2xl font-black text-slate-900">{s.value}</div>
+                <div className="text-xs text-slate-500 mt-0.5 font-medium">{s.label}</div>
               </div>
             ))}
           </div>
