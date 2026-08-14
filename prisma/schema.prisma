@@ -48,10 +48,11 @@ model User {
   city          String?
   state         String?
   pincode       String?
-  upiId         String?
-  accountNumber String?
-  ifscCode      String?
-  panNumber     String?
+  profileImageUrl String?
+  upiId           String?
+  accountNumber   String?
+  ifscCode        String?
+  panNumber       String?
   gstNumber     String?
   declaration   Boolean  @default(false)
   emailVerified Boolean  @default(false)

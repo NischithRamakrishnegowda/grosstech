@@ -12,6 +12,7 @@ export async function GET() {
     where: { id: session.user.id },
     select: {
       id: true, name: true, email: true, phone: true, role: true,
+      profileImageUrl: true,
       businessName: true, street: true, city: true, state: true, pincode: true,
       upiId: true, accountNumber: true, ifscCode: true, panNumber: true, gstNumber: true,
     },
@@ -21,9 +22,10 @@ export async function GET() {
 }
 
 const schema = z.object({
-  name:          z.string().min(2).optional(),
-  phone:         z.string().regex(/^(\+91|91)?[6-9]\d{9}$/).optional(),
-  businessName:  z.string().optional(),
+  name:             z.string().min(2).optional(),
+  phone:            z.string().regex(/^(\+91|91)?[6-9]\d{9}$/).optional(),
+  profileImageUrl:  z.string().optional().nullable(),
+  businessName:     z.string().optional(),
   street:        z.string().min(3).optional(),
   city:          z.string().min(2).optional(),
   state:         z.string().min(1).optional(),

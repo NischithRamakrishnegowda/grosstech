@@ -5,7 +5,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { Loader2, Eye, EyeOff, MapPin, CreditCard, User, Lock } from "lucide-react";
+import { Loader2, Eye, EyeOff, MapPin, CreditCard, User, Lock, Camera } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import Image from "next/image";
 import { toast } from "sonner";
 
 const INDIAN_STATES = [
@@ -55,6 +57,7 @@ export default function ProfilePage() {
   const [pincodeLoading, setPincodeLoading] = useState(false);
 
   // Profile fields
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -82,6 +85,7 @@ export default function ProfilePage() {
     fetch("/api/user/profile")
       .then((r) => r.json())
       .then((data) => {
+        setProfileImageUrl(data.profileImageUrl || null);
         setName(data.name || "");
         setPhone(data.phone?.replace(/^\+91/, "") || "");
         setBusinessName(data.businessName || "");
@@ -123,6 +127,7 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
+          profileImageUrl,
           phone: phone ? `+91${phone.replace(/\D/g, "")}` : undefined,
           businessName: businessName || undefined,
           street: street || undefined,
@@ -182,9 +187,40 @@ export default function ProfilePage() {
       <Header />
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-8 space-y-5">
 
-        <div>
-          <h1 className="text-xl font-black text-gray-900">My Profile</h1>
-          <p className="text-sm text-gray-500 mt-0.5 capitalize">{role?.toLowerCase()} account · {session?.user.email}</p>
+        {/* Profile photo + name header */}
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            {profileImageUrl ? (
+              <div className="w-16 h-16 rounded-2xl overflow-hidden relative border border-gray-100">
+                <Image src={profileImageUrl} alt="Profile" fill className="object-cover" sizes="64px" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center border border-gray-100">
+                <User className="w-7 h-7 text-gray-300" />
+              </div>
+            )}
+            <label className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-green-600 rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-green-700 transition-colors">
+              <Camera className="w-3 h-3 text-white" />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const formData = new FormData();
+                  formData.append("file", file);
+                  const res = await fetch("/api/upload", { method: "POST", body: formData });
+                  if (res.ok) { const { url } = await res.json(); setProfileImageUrl(url); }
+                }}
+              />
+            </label>
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-gray-900">{name || "My Profile"}</h1>
+            <p className="text-sm text-gray-500 mt-0.5 capitalize">{role?.toLowerCase()} · {session?.user.email}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Tap the camera icon to update photo</p>
+          </div>
         </div>
 
         {/* Basic Info */}
