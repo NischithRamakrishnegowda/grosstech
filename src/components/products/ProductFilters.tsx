@@ -118,24 +118,25 @@ export default function ProductFilters({ categories }: { categories: Category[] 
         </div>
       )}
 
-      {/* Row 2 — Mode tabs (underline style) */}
-      <div className="flex items-center border-b border-gray-100">
-        {(["BULK", "RETAIL"] as const).map((mode) => (
-          <button
-            key={mode}
-            onClick={() => updateParams({ mode: mode === "BULK" ? null : mode })}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-all ${
-              currentMode === mode
-                ? "border-green-600 text-green-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            {mode === "BULK" ? "Bulk" : "Retail"}
-          </button>
-        ))}
-
+      {/* Row 2 — Mode toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex bg-gray-100 rounded-lg p-0.5">
+          {(["BULK", "RETAIL"] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => updateParams({ mode: mode === "BULK" ? null : mode })}
+              className={`px-5 py-1.5 rounded-md text-sm font-semibold transition-all duration-150 ${
+                currentMode === mode
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {mode === "BULK" ? "Bulk" : "Retail"}
+            </button>
+          ))}
+        </div>
         {hasFilters && (
-          <button onClick={handleClear} className="ml-auto text-xs text-gray-400 hover:text-red-500 transition-colors pb-2.5">
+          <button onClick={handleClear} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
             Clear all
           </button>
         )}

@@ -133,48 +133,64 @@ export default function CategoryManager({ initialCategories }: { initialCategori
         </div>
       )}
 
-      {/* Compact card grid — more columns, smaller cards */}
-      {categories.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 bg-white rounded-2xl border border-gray-100">
-          <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No categories yet. Add one to get started.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {categories.map((cat) => (
-            <div key={cat.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-sm transition-shadow group">
-              {/* Image */}
-              <div className="aspect-square bg-gray-50 relative overflow-hidden">
-                {cat.imageUrl ? (
-                  <NextImage src={cat.imageUrl} alt={cat.name} fill className="object-cover" sizes="200px" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-200">
-                    <ImagePlus className="w-6 h-6" />
-                  </div>
-                )}
-                {/* Actions overlay */}
-                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEdit(cat)}
-                    className="bg-white/90 backdrop-blur-sm rounded-md p-1 text-gray-600 hover:text-blue-600 shadow-sm transition-colors">
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                  <button onClick={() => handleDelete(cat.id)}
-                    disabled={deletingId === cat.id || cat._count.items > 0}
-                    title={cat._count.items > 0 ? "Cannot delete: has items" : "Delete"}
-                    className="bg-white/90 backdrop-blur-sm rounded-md p-1 text-gray-600 hover:text-red-600 disabled:opacity-30 shadow-sm transition-colors">
-                    {deletingId === cat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  </button>
-                </div>
-              </div>
-              {/* Info */}
-              <div className="p-2.5">
-                <p className="font-semibold text-gray-900 text-xs truncate">{cat.name}</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">{cat._count.items} items</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Clean table — standard admin pattern */}
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        {categories.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No categories yet. Add one to get started.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-left">
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400 w-12"></th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400">Name</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400 hidden sm:table-cell">Slug</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400 text-center">Items</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-400 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {categories.map((cat) => (
+                <tr key={cat.id} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 relative shrink-0">
+                      {cat.imageUrl
+                        ? <NextImage src={cat.imageUrl} alt={cat.name} fill className="object-cover" sizes="36px" />
+                        : <div className="w-full h-full flex items-center justify-center"><ImagePlus className="w-4 h-4 text-gray-300" /></div>
+                      }
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">{cat.name}</td>
+                  <td className="px-4 py-3 hidden sm:table-cell">
+                    <span className="font-mono text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded">{cat.slug}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                      {cat._count.items}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => openEdit(cat)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDelete(cat.id)}
+                        disabled={deletingId === cat.id || cat._count.items > 0}
+                        title={cat._count.items > 0 ? "Has items — delete items first" : "Delete"}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        {deletingId === cat.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

@@ -224,23 +224,25 @@ export default function ItemDetailClient({
         </div>
       </div>
 
-      {/* Mode tabs — underline style, below header */}
+      {/* Mode toggle — below header */}
       {(hasRetail || hasBulk) && (
-        <div className="flex items-center border-b border-gray-100 mb-6">
-          {(["BULK", "RETAIL"] as const).filter((m) => m === "BULK" ? hasBulk : hasRetail).map((m) => (
-            <button
-              key={m}
-              onClick={() => setActiveMode(m)}
-              aria-pressed={activeMode === m}
-              className={`px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-all ${
-                activeMode === m
-                  ? "border-green-600 text-green-600"
-                  : "border-transparent text-gray-400 hover:text-gray-700"
-              }`}
-            >
-              {m === "BULK" ? "Bulk" : "Retail"}
-            </button>
-          ))}
+        <div className="mb-6">
+          <div className="inline-flex bg-gray-100 rounded-lg p-0.5">
+            {(["BULK", "RETAIL"] as const).filter((m) => (m === "BULK" ? hasBulk : hasRetail)).map((m) => (
+              <button
+                key={m}
+                onClick={() => setActiveMode(m)}
+                aria-pressed={activeMode === m}
+                className={`px-5 py-1.5 rounded-md text-sm font-semibold transition-all duration-150 ${
+                  activeMode === m
+                    ? "bg-green-600 text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {m === "BULK" ? "Bulk" : "Retail"}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
