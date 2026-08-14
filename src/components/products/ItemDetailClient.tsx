@@ -323,7 +323,13 @@ export default function ItemDetailClient({
                             return (
                               <button
                                 key={opt.id}
-                                onClick={() => setSelectedOpts((prev) => ({ ...prev, [listing.id]: opt.id }))}
+                                onClick={() => {
+                                  if (!session) {
+                                    router.push(`/login?callbackUrl=/products/items/${item.slug}`);
+                                    return;
+                                  }
+                                  setSelectedOpts((prev) => ({ ...prev, [listing.id]: opt.id }));
+                                }}
                                 disabled={opt.stock === 0 || (session?.user.role !== "BUYER" && !!session)}
                                 className={`relative text-left border-2 rounded-xl px-3 py-2.5 transition-all duration-200 ${
                                   isSelected && opt.stock > 0
@@ -346,22 +352,34 @@ export default function ItemDetailClient({
                           })}
                         </div>
 
-                        {/* Add to Cart — uses selected option */}
-                        {session?.user.role === "BUYER" && listing.priceOptions.some((o) => o.stock > 0) && (() => {
-                          const opt = getSelectedOpt(listing);
-                          const isAdded = addedOptId === opt.id;
-                          return (
+                        {/* CTA — varies by auth state */}
+                        {listing.priceOptions.some((o) => o.stock > 0) && (
+                          session?.user.role === "BUYER" ? (() => {
+                            const opt = getSelectedOpt(listing);
+                            const isAdded = addedOptId === opt.id;
+                            return (
+                              <Button
+                                size="sm"
+                                disabled={isAdded}
+                                className="bg-green-600 hover:bg-green-700 active:scale-[0.97] transition-all"
+                                onClick={() => handleAddToCart(listing, opt)}
+                              >
+                                {isAdded ? <Check className="w-4 h-4 mr-1.5" /> : <ShoppingCart className="w-4 h-4 mr-1.5" />}
+                                {isAdded ? "Added!" : `Add to Cart · ${opt.weight}`}
+                              </Button>
+                            );
+                          })() : !session ? (
                             <Button
                               size="sm"
-                              disabled={isAdded}
-                              className="bg-green-600 hover:bg-green-700 active:scale-[0.97] transition-all"
-                              onClick={() => handleAddToCart(listing, opt)}
+                              variant="outline"
+                              className="border-green-500 text-green-600 hover:bg-green-50"
+                              onClick={() => router.push(`/login?callbackUrl=/products/items/${item.slug}`)}
                             >
-                              {isAdded ? <Check className="w-4 h-4 mr-1.5" /> : <ShoppingCart className="w-4 h-4 mr-1.5" />}
-                              {isAdded ? "Added!" : `Add to Cart · ${opt.weight}`}
+                              <ShoppingCart className="w-4 h-4 mr-1.5" />
+                              Login to Buy
                             </Button>
-                          );
-                        })()}
+                          ) : null
+                        )}
                       </div>
 
                       {/* Contact section */}
