@@ -7,7 +7,7 @@ import { generateAndSaveOtp } from "@/lib/otp";
 import { sendOtpEmail } from "@/lib/email";
 import { sendOtpSms } from "@/lib/sms";
 
-const schema = z.object({
+const baseSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
@@ -21,6 +21,23 @@ const schema = z.object({
   upiId: z.string().optional(),
   accountNumber: z.string().optional(),
   ifscCode: z.string().optional(),
+  panNumber: z.string().optional(),
+  gstNumber: z.string().optional(),
+  declaration: z.boolean().optional(),
+});
+
+const schema = baseSchema.superRefine((data, ctx) => {
+  if (data.role === "SELLER") {
+    if (!data.panNumber || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(data.panNumber)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid PAN number is required for sellers", path: ["panNumber"] });
+    }
+    if (!data.accountNumber || data.accountNumber.trim().length < 9) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Bank account number is required for sellers", path: ["accountNumber"] });
+    }
+    if (!data.ifscCode || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(data.ifscCode)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid IFSC code is required for sellers", path: ["ifscCode"] });
+    }
+  }
 });
 
 export async function POST(req: Request) {
@@ -54,6 +71,9 @@ export async function POST(req: Request) {
         upiId: data.upiId,
         accountNumber: data.accountNumber,
         ifscCode: data.ifscCode,
+        panNumber: data.panNumber,
+        gstNumber: data.gstNumber,
+        declaration: data.declaration ?? false,
       },
     });
 
