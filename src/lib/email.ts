@@ -196,8 +196,9 @@ export async function sendBuyerOrderConfirmation(buyer: Buyer, order: Order, ite
                 : "Self Pickup — Please collect your order from the seller"}
             </span>
           </div>
-          ${contactSection(items)}
-          <p style="color:#6b7280;font-size:12px;margin-top:24px">Reply to this email for any support queries.</p>
+          <div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:8px;font-size:13px;color:#6b7280">
+            For any queries, contact us at <a href="mailto:${ADMIN_EMAIL}" style="color:#16a34a">${ADMIN_EMAIL}</a>${ADMIN_PHONE ? ` or call ${ADMIN_PHONE}` : ""}.
+          </div>
         </div>
       `,
     });
@@ -237,10 +238,10 @@ export async function sendSellerOrderNotification(
             <p style="margin:0 0 6px"><strong>Email:</strong> ${buyer.email}</p>
             <p style="margin:0 0 6px"><strong>Phone:</strong> ${buyer.phone || "—"}</p>
             ${order.secondaryPhone ? `<p style="margin:0 0 6px"><strong>Alt Phone:</strong> ${order.secondaryPhone}</p>` : ""}
-            ${order.shippingAddress ? `<p style="margin:0 0 6px"><strong>Address:</strong> ${order.shippingAddress}</p>` : ""}
+            ${order.deliveryOption === "DELIVERY" && order.shippingAddress ? `<p style="margin:0 0 6px"><strong>Delivery Address:</strong> ${order.shippingAddress}</p>` : ""}
             <p style="margin:0"><strong>Delivery:</strong> ${order.deliveryOption === "DELIVERY"
               ? `Delivery required${order.deliveryCharge != null ? ` (charge: ₹${order.deliveryCharge})` : " (charge to be set by admin)"}`
-              : "Self Pickup"}</p>
+              : "Self Pickup — buyer will collect from you"}</p>
           </div>
           <p style="color:#6b7280;font-size:12px;margin-top:24px">Contact us at ${ADMIN_EMAIL} for any platform queries.</p>
         </div>
@@ -271,9 +272,9 @@ export async function sendAdminOrderNotification(order: Order, buyer: Buyer, ite
             <p style="margin:0 0 4px">${buyer.name} · ${buyer.email} · ${buyer.phone || "—"}</p>
             ${order.shippingPhone ? `<p style="margin:0 0 4px">Shipping phone: ${order.shippingPhone}</p>` : ""}
             ${order.secondaryPhone ? `<p style="margin:0 0 4px">Alt phone: ${order.secondaryPhone}</p>` : ""}
-            ${order.shippingAddress ? `<p style="margin:0 0 4px">Address: ${order.shippingAddress}</p>` : ""}
+            ${order.deliveryOption === "DELIVERY" && order.shippingAddress ? `<p style="margin:0 0 4px">Delivery address: ${order.shippingAddress}</p>` : ""}
             <p style="margin:0"><strong>Delivery:</strong> ${order.deliveryOption === "DELIVERY"
-              ? `Delivery — charge to be set in admin panel`
+              ? `Delivery — set charge in admin panel`
               : "Self Pickup"}</p>
           </div>
           <h4 style="margin:0 0 8px">Items</h4>
@@ -332,7 +333,7 @@ export async function sendListingApprovedEmail(
           <p style="color:#374151">Great news! Your listing <strong>"${listingName}"</strong> has been reviewed and <span style="color:#16a34a;font-weight:bold">approved</span> by the GrossTech team.</p>
           <p style="color:#374151">Your product is now live and visible to all buyers on the marketplace.</p>
           <div style="margin-top:20px;padding:16px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
-            <p style="margin:0;color:#166534;font-weight:600">What&apos;s next?</p>
+            <p style="margin:0;color:#166534;font-weight:600">What's next?</p>
             <ul style="margin:8px 0 0;padding-left:20px;color:#374151">
               <li>Buyers can now view and purchase your product</li>
               <li>You will be notified when orders come in</li>
@@ -391,8 +392,8 @@ export async function sendPaymentFailedEmail(buyer: Buyer, amount: number) {
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff">
           <h2 style="color:#16a34a;margin:0 0 8px">GrossTech</h2>
-          <p style="color:#374151">Hi ${buyer.name}, your payment of <strong>${formatCurrency(amount)}</strong> could not be processed.</p>
-          <p style="color:#374151">Your cart is saved — please try again or contact support at ${ADMIN_EMAIL}.</p>
+          <p style="color:#374151">Hi ${buyer.name}, your recent payment${amount > 0 ? ` of <strong>${formatCurrency(amount)}</strong>` : ""} could not be processed.</p>
+          <p style="color:#374151">Your cart is saved — please try again or contact support at <a href="mailto:${ADMIN_EMAIL}" style="color:#16a34a">${ADMIN_EMAIL}</a>.</p>
         </div>
       `,
     });
