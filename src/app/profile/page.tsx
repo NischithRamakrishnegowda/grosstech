@@ -58,6 +58,7 @@ export default function ProfilePage() {
 
   // Profile fields
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -199,8 +200,8 @@ export default function ProfilePage() {
                 <User className="w-7 h-7 text-gray-300" />
               </div>
             )}
-            <label className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-green-600 rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-green-700 transition-colors">
-              <Camera className="w-3 h-3 text-white" />
+            <label className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-green-600 rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-green-700 transition-colors ${uploadingPhoto ? "opacity-70 cursor-not-allowed" : ""}`}>
+              {uploadingPhoto ? <Loader2 className="w-3 h-3 text-white animate-spin" /> : <Camera className="w-3 h-3 text-white" />}
               <input
                 type="file"
                 accept="image/*"
@@ -208,10 +209,22 @@ export default function ProfilePage() {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  const formData = new FormData();
-                  formData.append("file", file);
-                  const res = await fetch("/api/upload", { method: "POST", body: formData });
-                  if (res.ok) { const { url } = await res.json(); setProfileImageUrl(url); }
+                  if (file.size > 10 * 1024 * 1024) { toast.error("Image must be under 10 MB"); return; }
+                  setUploadingPhoto(true);
+                  try {
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    const res = await fetch("/api/upload", { method: "POST", body: formData });
+                    const json = await res.json();
+                    if (!res.ok) throw new Error(json.error || "Upload failed");
+                    setProfileImageUrl(json.url);
+                    toast.success("Photo updated");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Upload failed");
+                  } finally {
+                    setUploadingPhoto(false);
+                    e.target.value = "";
+                  }
                 }}
               />
             </label>
