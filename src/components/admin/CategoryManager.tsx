@@ -26,7 +26,10 @@ export default function CategoryManager({ initialCategories }: { initialCategori
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (showForm) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (showForm && formRef.current) {
+      const top = formRef.current.getBoundingClientRect().top + window.scrollY - 80;
+      setTimeout(() => window.scrollTo({ top, behavior: "smooth" }), 50);
+    }
   }, [showForm]);
 
   function resetForm() {
