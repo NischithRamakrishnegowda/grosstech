@@ -18,11 +18,13 @@ function Bar() {
       if (!a) return;
       const href = a.getAttribute("href") ?? "";
       if (!href || href.startsWith("#") || href.startsWith("http") || href.startsWith("mailto") || href.startsWith("tel")) return;
-      // Don't show bar if already on the same page
+      // Skip anchor-only links (e.g. /#about, /#contact) — they just scroll, no navigation
+      const [hrefPath, hrefHash] = href.split("#");
+      const resolvedPath = hrefPath || window.location.pathname;
+      if (hrefHash && resolvedPath === window.location.pathname) return;
+      // Skip if already on the exact same route
       const currentRoute = `${window.location.pathname}${window.location.search}`;
-      const targetPath = href.split("?")[0];
-      const currentPath = window.location.pathname;
-      if (targetPath === currentPath && href === currentRoute) return;
+      if (href === currentRoute || (hrefPath === window.location.pathname && !hrefHash)) return;
       clearTimeout(hideTimer.current);
       clearTimeout(safetyTimer.current);
       setDone(false);
