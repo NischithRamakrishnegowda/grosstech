@@ -20,6 +20,7 @@ export default function CheckoutClient() {
   const { data: session } = useSession();
   const router = useRouter();
   const [paying, setPaying] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [deliveryOption, setDeliveryOption] = useState<"SELF_PICKUP" | "DELIVERY">("SELF_PICKUP");
 
   // Shipping fields (prefilled from session)
@@ -114,6 +115,7 @@ export default function CheckoutClient() {
           });
           if (verifyRes.ok) {
             const { orderId } = await verifyRes.json();
+            setRedirecting(true);
             clearCart();
             router.push(`/checkout/success?orderId=${orderId}`);
           } else {
@@ -166,7 +168,7 @@ export default function CheckoutClient() {
     );
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !redirecting) {
     return (
       <div className="text-center py-20 animate-fade-up">
         <ShoppingCart className="w-16 h-16 text-gray-200 mx-auto mb-4" />
