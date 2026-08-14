@@ -10,6 +10,7 @@ function Bar() {
   const [done, setDone] = useState(false);
   const prevRoute = useRef(`${pathname}${searchParams}`);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const safetyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -17,9 +18,17 @@ function Bar() {
       if (!a) return;
       const href = a.getAttribute("href") ?? "";
       if (!href || href.startsWith("#") || href.startsWith("http") || href.startsWith("mailto") || href.startsWith("tel")) return;
+      // Don't show bar if already on the same page
+      const currentRoute = `${window.location.pathname}${window.location.search}`;
+      const targetPath = href.split("?")[0];
+      const currentPath = window.location.pathname;
+      if (targetPath === currentPath && href === currentRoute) return;
       clearTimeout(hideTimer.current);
+      clearTimeout(safetyTimer.current);
       setDone(false);
       setActive(true);
+      // Safety: auto-clear after 5s in case navigation never completes
+      safetyTimer.current = setTimeout(() => { setActive(false); setDone(false); }, 5000);
     }
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
