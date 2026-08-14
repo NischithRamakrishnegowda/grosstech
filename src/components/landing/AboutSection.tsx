@@ -1,75 +1,80 @@
 import Link from "next/link";
-import { ShieldCheck, Users, TrendingUp, BadgeCheck, ArrowRight } from "lucide-react";
+import { ShieldCheck, Users, IndianRupee, BadgeCheck, ArrowRight } from "lucide-react";
 
-const values = [
+const VALUES = [
   {
     icon: ShieldCheck,
-    title: "Secure & Transparent",
-    description: "Funds held in escrow for 3 days post-delivery. Every transaction is protected.",
+    title: "Escrow Protection",
+    description: "Your payment is held safely until you confirm delivery. Zero risk.",
+    color: "text-blue-600 bg-blue-50",
   },
   {
     icon: Users,
     title: "Community First",
-    description: "We connect local sellers with buyers, supporting small businesses across India.",
+    description: "We support local sellers across India — no big corporate middlemen.",
+    color: "text-purple-600 bg-purple-50",
   },
   {
-    icon: TrendingUp,
-    title: "Best Prices",
-    description: "Direct seller-to-buyer model. Only ₹20 flat platform fee per order.",
+    icon: IndianRupee,
+    title: "₹20 Flat Fee",
+    description: "One small fee per order. No hidden charges, no subscription.",
+    color: "text-green-600 bg-green-50",
   },
   {
     icon: BadgeCheck,
     title: "Verified Sellers",
-    description: "All sellers are manually verified. Products are exactly as described.",
+    description: "Every seller is manually reviewed and approved before going live.",
+    color: "text-amber-600 bg-amber-50",
   },
 ];
 
 export default function AboutSection() {
   return (
-    <section id="about" className="py-16 bg-slate-50">
+    <section id="about" className="py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-          {/* Left copy */}
-          <div className="animate-fade-up">
-            <p className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-3">About Us</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
-              A Trusted B2B Marketplace<br />for Daily Essentials
+          {/* Left */}
+          <div>
+            <p className="text-xs font-bold text-green-600 uppercase tracking-widest mb-3">Why Us</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight mb-4">
+              Built for India&apos;s
+              <br />
+              Wholesale Businesses
             </h2>
-            <p className="mt-4 text-slate-500 leading-relaxed">
-              Gross Tech was built to simplify how businesses buy daily essentials like rice, sugar,
-              and oil in bulk. We eliminate middlemen, connect buyers directly with verified local sellers,
-              and ensure every transaction is safe and transparent.
+            <p className="text-gray-500 leading-relaxed mb-3">
+              Gross Tech eliminates the middleman between businesses and their daily essential suppliers.
+              Whether you&apos;re a kirana store owner, caterer, or wholesaler — we have the supply you need.
             </p>
-            <p className="mt-3 text-slate-500 leading-relaxed text-sm">
-              Whether you&apos;re stocking up your kirana store or buying wholesale for your business,
-              Gross Tech gives you access to the best prices with the security of our escrow payment system.
+            <p className="text-gray-500 text-sm leading-relaxed mb-8">
+              Our escrow-based payment system means sellers only get paid when you&apos;re satisfied.
+              Every rupee is protected.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
               <Link
                 href="/products"
-                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors"
               >
-                Browse Products <ArrowRight className="w-4 h-4" />
+                Browse Products <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link
                 href="/signup?role=SELLER"
-                className="inline-flex items-center gap-2 border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
+                className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 hover:border-green-300 hover:text-green-700 font-semibold px-5 py-2.5 rounded-xl text-sm transition-all"
               >
                 Become a Seller
               </Link>
             </div>
           </div>
 
-          {/* Right values grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-up [animation-delay:150ms]">
-            {values.map((val) => (
-              <div key={val.title} className="bg-white border border-slate-100 rounded-2xl p-5 hover:border-slate-200 hover:shadow-sm transition-all duration-200">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-3">
-                  <val.icon className="w-5 h-5 text-green-600" />
+          {/* Right */}
+          <div className="grid grid-cols-2 gap-3">
+            {VALUES.map((val) => (
+              <div key={val.title} className="bg-gray-50 border border-gray-100 rounded-2xl p-5 hover:border-gray-200 hover:bg-white transition-all duration-200">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${val.color}`}>
+                  <val.icon className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-slate-900 text-sm">{val.title}</h3>
-                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{val.description}</p>
+                <h3 className="font-bold text-gray-900 text-sm mb-1.5">{val.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{val.description}</p>
               </div>
             ))}
           </div>

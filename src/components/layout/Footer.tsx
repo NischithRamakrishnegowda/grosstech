@@ -6,51 +6,69 @@ export default function Footer() {
   const adminPhone = process.env.ADMIN_PHONE || "";
 
   return (
-    <footer className="bg-slate-100 border-t border-slate-200 text-slate-500">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="bg-gray-950 text-gray-400">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-gray-800">
+
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-                <Leaf className="w-3.5 h-3.5 text-white" />
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                <Leaf className="w-4 h-4 text-white" />
               </div>
-              <span className="font-black text-lg text-slate-900 tracking-tight">
-                Gross<span className="text-green-600">Tech</span>
+              <span className="font-black text-lg text-white tracking-tight">
+                Gross<span className="text-green-500">Tech</span>
               </span>
             </div>
-            <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
-              Your trusted marketplace for daily essential goods — rice, sugar, oil and more.
-              Connecting buyers and sellers across India.
+            <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
+              India&apos;s trusted B2B marketplace for daily essential goods.
+              Connecting buyers and verified sellers across the country.
             </p>
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-xs bg-green-900/40 text-green-400 border border-green-800/40 px-3 py-1 rounded-full font-medium">
+                Secure Escrow Payments
+              </span>
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-slate-700 font-semibold mb-3 text-xs uppercase tracking-widest">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/#about" className="hover:text-green-600 transition-colors">About Us</Link></li>
-              <li><Link href="/products" className="hover:text-green-600 transition-colors">Products</Link></li>
-              <li><Link href="/#contact" className="hover:text-green-600 transition-colors">Contact</Link></li>
-              <li><Link href="/login" className="hover:text-green-600 transition-colors">Login</Link></li>
+            <h3 className="text-white font-semibold text-xs uppercase tracking-widest mb-4">Platform</h3>
+            <ul className="space-y-2.5 text-sm">
+              {[
+                { href: "/products", label: "Browse Products" },
+                { href: "/signup?role=BUYER", label: "Register as Buyer" },
+                { href: "/signup?role=SELLER", label: "Become a Seller" },
+                { href: "/login", label: "Sign In" },
+              ].map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="hover:text-green-400 transition-colors">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Contact */}
           <div id="contact">
-            <h3 className="text-slate-700 font-semibold mb-3 text-xs uppercase tracking-widest">Contact</h3>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-green-600 shrink-0" />
-                <span>{adminEmail}</span>
+            <h3 className="text-white font-semibold text-xs uppercase tracking-widest mb-4">Contact</h3>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a href={`mailto:${adminEmail}`} className="flex items-start gap-2.5 hover:text-green-400 transition-colors">
+                  <Mail className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                  <span className="break-all">{adminEmail}</span>
+                </a>
               </li>
               {adminPhone && (
-                <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-green-600 shrink-0" />
-                  <span>{adminPhone}</span>
+                <li>
+                  <a href={`tel:${adminPhone}`} className="flex items-center gap-2.5 hover:text-green-400 transition-colors">
+                    <Phone className="w-4 h-4 text-green-600 shrink-0" />
+                    <span>{adminPhone}</span>
+                  </a>
                 </li>
               )}
-              <li className="flex items-start gap-2">
+              <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                 <span>Bangalore, Karnataka, India</span>
               </li>
@@ -58,8 +76,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-slate-200/70 mt-8 pt-6 text-center text-xs text-slate-400">
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
           <p>&copy; {new Date().getFullYear()} Gross Tech. All rights reserved.</p>
+          <p>Made with care for India&apos;s wholesale businesses</p>
         </div>
       </div>
     </footer>
