@@ -1,17 +1,17 @@
 # GrossTech — AI Agent Context
 
 This file is read automatically by Claude Code at the start of every session.
-It gives AI agents the full context needed to work on this project without asking repeated questions.
+Read this fully before making any changes. Do not ask questions already answered here.
 
 ---
 
 ## What This Project Is
 
-**GrossTech** is a B2B wholesale marketplace where businesses buy daily essentials (rice, sugar, oil, dal, spices) in bulk from verified sellers. Think Indiamart but with direct escrow payments and an admin approval layer.
+**GrossTech** is a production B2B wholesale marketplace for daily essentials (rice, sugar, oil, dal, spices). Think Indiamart but with direct escrow payments, an admin approval layer, and a full seller/buyer/admin dashboard.
 
 **Owner:** Nischith Ramakrishnegowda (nischithramakrishnegowda@gmail.com)
-**Status:** Production app, live on Vercel, real users, real payments via Razorpay
-**Stack:** Next.js 16 App Router + TypeScript + Tailwind + Prisma + PostgreSQL (Neon) + NextAuth
+**Status:** Live on Vercel, real users, real Razorpay payments
+**Stack:** Next.js 16 App Router + TypeScript + Tailwind CSS v4 + Prisma + PostgreSQL (Neon) + NextAuth
 
 ---
 
@@ -19,136 +19,228 @@ It gives AI agents the full context needed to work on this project without askin
 
 | Role | What they do |
 |---|---|
-| **BUYER** | Browses products (bulk/retail), adds to cart, pays via Razorpay, can pay ₹10 to unlock seller contact |
-| **SELLER** | Creates listings (requires admin approval), receives orders, gets paid after 3-day hold |
-| **ADMIN** | Approves/rejects listings, releases payouts, manages product catalog, views analytics |
+| **BUYER** | Browses products (bulk/retail), adds to cart, pays via Razorpay, unlocks seller contact (free if already purchased, ₹10 otherwise), posts buy requests, views orders |
+| **SELLER** | Registers with PAN+bank, creates listings (admin must approve), receives orders, sees expected payout, gets paid after 3-day hold |
+| **ADMIN** | Approves/rejects listings, manages catalog (categories+items), sets delivery charges, releases payouts, removes seller listings, sees all analytics and buy requests with contact details |
 
 ---
 
-## Most Important Files to Know
+## ⚠️ Testing Flags — Must Change Before Go-Live
+
+```ts
+// src/lib/constants.ts
+PLATFORM_FEE = 1          // TODO: change back to 20
+CONTACT_UNLOCK_FEE = 1    // TODO: change back to 10
+PAYMENT_HOLD_DAYS = 3     // keep as is
+```
+
+---
+
+## Critical Business Rules — Never Break These
+
+1. **Listing approval**: Seller creates → `PENDING_APPROVAL` → Admin approves/rejects. Only admin can set `isActive: true`
+2. **Re-review on edit**: Seller editing an `APPROVED` or `REJECTED` listing → auto-sets back to `PENDING_APPROVAL`
+3. **Sellers cannot bypass approval**: `isActive` field in PUT /api/listings/[id] is admin-only — sellers' `isActive` updates are ignored
+4. **Stock check server-side**: Validate `stock >= quantity` and `quantity >= minQty` before creating order
+5. **Split orders**: One Razorpay payment creates one DB `Order` per seller — all share `razorpayOrderId` and `checkoutId`
+6. **Webhook uses updateMany**: Multiple seller orders share one razorpayOrderId — webhook must update ALL of them
+7. **OTP brute force**: 5 wrong attempts locks the OTP token (`failedAttempts` field) — forces resend
+8. **Contact unlock idempotency**: Check `isPaid` before creating new Razorpay order — prevent double payment
+9. **Contact free after purchase**: If buyer has `PAYMENT_HELD` or `RELEASED_TO_SELLER` order with seller → show contact free (reason: "purchased")
+10. **Cache invalidation**: Every mutation route must call `invalidateTag(CACHE_TAGS.items)` or `CACHE_TAGS.categories` — never skip this
+11. **Email spam avoidance**: Never use words "OTP", "rejected", "not approved" in email subjects or red text. Use neutral language ("Action needed", "verification code", "requires changes")
+12. **Platform fee**: ₹20 (currently ₹1 for testing) — stored on each order record
+13. **Bulk default**: New listings default to BULK mode (not RETAIL). Products page defaults to BULK
+
+---
+
+## Most Important Files
 
 | File | Why it matters |
 |---|---|
-| `prisma/schema.prisma` | Single source of truth for all DB models. Check here before any DB work |
-| `src/lib/cache.ts` | All cached DB queries live here. Add `invalidateTag()` to any mutation route |
-| `src/lib/constants.ts` | PLATFORM_FEE=20, CONTACT_UNLOCK_FEE=10, PAYMENT_HOLD_DAYS=3 |
-| `src/lib/brand.ts` | Brand name, tagline, contact. Change here to rebrand the whole app |
-| `src/middleware.ts` | Route protection — /admin, /seller, /checkout, /orders all guarded here |
-| `src/lib/auth.ts` | NextAuth config — JWT stores id, role, phone |
-| `src/app/globals.css` | Brand color tokens defined in `@theme` block — `primary-*` classes use these |
+| `prisma/schema.prisma` | Single source of truth for all DB models |
+| `src/lib/constants.ts` | **PLATFORM_FEE=1, CONTACT_UNLOCK_FEE=1** — change before go-live |
+| `src/lib/cache.ts` | All cached queries + `invalidateTag()` + `CACHE_TAGS` — always call after mutations |
+| `src/lib/brand.ts` | Brand name, tagline, contact — change here to rebrand the whole app |
+| `src/lib/email.ts` | All transactional emails — keep subjects spam-safe |
+| `src/middleware.ts` | Route protection — /admin, /seller, /checkout, /orders |
+| `src/lib/auth.ts` | NextAuth JWT — stores id, role, phone in token |
+| `src/app/globals.css` | Brand colors in `@theme` block — change `primary-*` values to rebrand |
 
 ---
 
-## Critical Business Rules (Don't Break These)
+## Database Models (Quick Reference)
 
-1. **Seller edits an APPROVED listing → it goes back to PENDING_APPROVAL** (re-review required)
-2. **Sellers cannot set `isActive: true` themselves** — only admin can via the approval flow
-3. **Stock is checked server-side** before order creation — never trust client quantity
-4. **minQty is enforced server-side** — `quantity >= priceOption.minQty` required
-5. **Webhook uses `updateMany`** not `findFirst` — multiple seller orders share one Razorpay order ID
-6. **OTP brute force** — 5 wrong attempts locks the OTP token (failedAttempts field on OtpToken)
-7. **Contact unlock is idempotent** — check `isPaid` before creating new Razorpay order
-8. **Platform fee (₹20)** is charged to buyer but tracked on the order record in DB
+```
+User           — id, name, email, phone, role, profileImageUrl, businessName,
+                 street, city, state, pincode, upiId, accountNumber, ifscCode,
+                 panNumber, gstNumber, declaration, emailVerified, phoneVerified
+
+Category       — id, name, slug, imageUrl (unused — icons in code instead)
+
+Item           — id, name, slug, imageUrl (admin uploads via panel → Vercel Blob)
+                 categoryId
+
+Listing        — id, name, brand, description, imageUrl (seller brand photo),
+                 source (ADMIN|SELLER), isActive, status, rejectionReason,
+                 categoryId, sellerId, itemId
+
+PriceOption    — id, weight, price, stock, mode (RETAIL|BULK), minQty, listingId
+                 (onDelete: Cascade)
+
+Order          — id, checkoutId, razorpayOrderId, razorpayPaymentId,
+                 razorpaySignature, buyerId, subtotal, platformFee, total,
+                 status, paymentCapturedAt, releaseScheduledAt, releasedAt,
+                 shippingAddress, shippingPhone, secondaryPhone,
+                 deliveryOption (SELF_PICKUP|DELIVERY), deliveryCharge
+
+OrderItem      — id, quantity, priceAtOrder, orderId, listingId, priceOptionId
+
+OtpToken       — id, userId, code, verifiedToken, type, channel, expiresAt,
+                 usedAt, failedAttempts (brute force: lock after 5)
+
+ContactUnlock  — id, razorpayOrderId, razorpayPaymentId, fee, isPaid,
+                 buyerId, sellerId, unlockedAt
+                 Unique: (buyerId, sellerId)
+
+BuyerRequest   — id, description, quantity, isResolved, resolvedAt, buyerId, itemId
+```
 
 ---
 
 ## Caching Pattern
 
-All public pages use `unstable_cache` from `src/lib/cache.ts`. When you add a mutation route:
+All public pages use `unstable_cache` from `src/lib/cache.ts`.
+
+**After any mutation that affects public data, you MUST call:**
 ```ts
 import { CACHE_TAGS, invalidateTag } from "@/lib/cache";
-// after successful DB write:
-invalidateTag(CACHE_TAGS.items);      // for listing/item changes
-invalidateTag(CACHE_TAGS.categories); // for category changes
+invalidateTag(CACHE_TAGS.items);      // listings, items changed
+invalidateTag(CACHE_TAGS.categories); // categories changed
 ```
-The `invalidateTag` wrapper handles the Next.js 16 two-argument requirement.
+
+The `invalidateTag` wrapper handles Next.js 16's required second argument.
+
+**Cache TTLs:**
+- Home page: 60s
+- Products page: 30s
+- Item detail: 60s (also pre-rendered with generateStaticParams)
 
 ---
 
 ## Image Upload Pattern
 
-All images go through `/api/upload` → Vercel Blob → short CDN URL stored in DB.
-Use the `<ImageUpload>` component from `src/components/ui/ImageUpload.tsx`.
-Never store base64 in the DB — old records may have it but new uploads must use Blob.
-Requires `BLOB_READ_WRITE_TOKEN` env var from Vercel Dashboard → Storage → Blob.
+```
+User selects image → client compresses to 800px JPEG → POST /api/upload → Vercel Blob → URL in DB
+```
+
+Use `<ImageUpload>` from `src/components/ui/ImageUpload.tsx`.
+
+**Three places images are stored:**
+- `Item.imageUrl` — admin uploads via Admin → Items
+- `Listing.imageUrl` — seller uploads when creating listing (shown on item detail per seller)
+- `User.profileImageUrl` — user uploads via Edit Profile page
+- `Category.imageUrl` — DB field exists but NOT used (Lucide icons used instead)
+
+Requires `BLOB_READ_WRITE_TOKEN` env var.
+
+---
+
+## Auto-Refresh Pattern
+
+Admin/seller pages silently poll using `router.refresh()` (no visible reload):
+```tsx
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
+<AutoRefresh intervalMs={20000} />  // 20s for operational pages
+```
+
+**Do NOT add to public pages** (landing, products) — those get too many visitors and polling wastes serverless budget. They rely on cache invalidation instead.
+
+---
+
+## Authentication Notes
+
+- NextAuth JWT stores: `id`, `role`, `phone`
+- Server: `getServerSession(authOptions)` — check this in every API route
+- Client: `useSession()` — role check for conditional rendering
+- Session type augmented in `src/types/index.ts`
+- Unverified users (emailVerified=false OR phoneVerified=false) cannot log in
+- Admin cannot self-register — must be set directly in DB
+- OTP login flow: send-otp → verify-otp → get verifiedToken → signIn with otpToken
+
+---
+
+## Email Rules (Important)
+
+All emails must follow spam-safe patterns:
+- ❌ Never use: "OTP", "rejected", "not approved", red HTML text (#dc2626)
+- ✅ Use instead: "verification code", "requires changes", "Action needed", neutral gray text
+- Subjects must be professional: `GrossTech — [action]` format
+- Test carefully — Gmail SMTP reputation affects ALL emails from that sender
+
+---
+
+## Contact Unlock Logic
+
+```
+/api/seller/contact/[sellerId]:
+1. Check ContactUnlock.isPaid → if yes, return contact (reason: "unlocked")
+2. Check if buyer has PAYMENT_HELD/RELEASED_TO_SELLER order with seller
+   → if yes, return contact for free (reason: "purchased")
+3. Otherwise → return { locked: true }
+```
+
+UI shows:
+- "Previous Purchase" label when reason === "purchased"
+- "Contact Unlocked" label when reason === "unlocked"
+- Blurred contact + Unlock button when locked
 
 ---
 
 ## Design System
 
-- Brand colors: `primary-*` Tailwind classes (e.g. `bg-primary-600`, `text-primary-700`)
-- To rebrand: change the 11 oklch values in the `@theme` block in `src/app/globals.css`
-- Cards: `bg-white rounded-2xl border border-gray-100`
-- Inputs: `h-11 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500`
-- Current design: clean white backgrounds, green accent only on CTAs — modeled after Zepto/Blinkit style
+- **Primary colors**: `primary-*` Tailwind classes (e.g. `bg-primary-600`, `text-primary-700`)
+- To rebrand: change the 11 oklch values in `@theme` block in `globals.css`
+- **Cards**: `bg-white rounded-2xl border border-gray-100`
+- **Inputs**: `h-10 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500`
+- **Toggles**: Green pill style — `bg-gray-100 rounded-lg p-0.5` container, `bg-green-600 text-white` active
+- **Empty states**: Use `<EmptyState>` component — never raw text
+- **Modals**: Use `<Modal>` component for edit/create forms in admin
 - No emojis anywhere — use Lucide icons
-
----
-
-## Auth Notes
-
-- NextAuth JWT stores: `id`, `role`, `phone`
-- Access in server components: `getServerSession(authOptions)`
-- Access in client components: `useSession()`
-- Session type is augmented in `src/types/index.ts` to add role and phone
-- Unverified users (emailVerified=false OR phoneVerified=false) cannot log in
-
----
-
-## Dev Commands
-
-```bash
-npm run dev                                           # start dev server
-npx tsc --noEmit                                      # type check (run before committing)
-export $(grep -v '^#' .env | xargs) && npx prisma db push  # push schema changes to Neon
-npx prisma generate                                   # regenerate client after schema change
-npx prisma studio                                     # GUI to inspect DB
-```
-
----
-
-## Environment Variables Required
-
-```
-DATABASE_URL          Neon PostgreSQL connection string
-NEXTAUTH_SECRET       Random secret for JWT signing
-NEXTAUTH_URL          http://localhost:3000 (local) or production URL (Vercel)
-RAZORPAY_KEY_ID       Razorpay public key
-RAZORPAY_KEY_SECRET   Razorpay secret key
-RAZORPAY_WEBHOOK_SECRET  Webhook signature verification
-SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM  Gmail SMTP
-TWOFACTOR_API_KEY     2Factor.in API key for SMS OTP
-BLOB_READ_WRITE_TOKEN Vercel Blob storage token
-ADMIN_EMAIL           Admin email shown in transactional emails
-ADMIN_PHONE           Admin phone shown in emails
-```
-
----
-
-## What's Planned (Not Yet Built)
-
-- Mobile app: React Native + Expo, same API backend
-- AWS migration: Amplify + RDS PostgreSQL + SES (replaces Vercel/Neon/Gmail)
-- B2C expansion: farmer sellers + individual buyers (same codebase, new role types)
-- Comprehensive agricultural product catalog with crop varieties
-- Seller profile edit page (currently fields only collected at signup)
 
 ---
 
 ## Common Tasks
 
 **Add a new DB field:**
-1. Edit `prisma/schema.prisma`
-2. `export $(grep -v '^#' .env | xargs) && npx prisma db push`
-3. `npx prisma generate`
-4. Update relevant API routes and forms
-
-**Add a new page:**
-- Server page with DB access: fetch directly via prisma in the page component, wrap in `unstable_cache` if public
-- Client page: fetch from API route, handle loading/error states
+```bash
+# 1. Edit prisma/schema.prisma
+export $(grep -v '^#' .env | xargs) && npx prisma db push
+npx prisma generate
+# 3. Update relevant API routes and forms
+```
 
 **Add a new API route:**
-- Always check `getServerSession(authOptions)` first
+- Check `getServerSession(authOptions)` first
 - Validate input with `zod`
-- Call `invalidateTag()` after any write that affects cached public pages
-- Return proper HTTP status codes (401 unauthorized, 403 forbidden, 400 bad input, 404 not found)
+- Call `invalidateTag()` after any write affecting public pages
+- Return proper HTTP status codes
+
+**Add a new public page:**
+- Fetch data via `getCached*` from `src/lib/cache.ts`
+- Add `generateStaticParams` if dynamic route
+- Do NOT add `AutoRefresh` (public = too many visitors)
+
+**Add a new admin/seller operational page:**
+- Fetch directly from Prisma (no cache)
+- Add `<AutoRefresh intervalMs={20000} />` at top of return
+
+---
+
+## What's Planned (Not Yet Built)
+
+- Mobile app (React Native + Expo) — same API backend
+- AWS migration: Amplify + RDS PostgreSQL + SES + S3 (replaces Vercel/Neon/Gmail/Blob)
+- Real-time updates via WebSockets (currently polling)
+- New brand name — domain to be registered via Route 53 after decision
+- B2C expansion: farmer sellers + individual consumer buyers
