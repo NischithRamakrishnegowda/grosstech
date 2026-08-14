@@ -324,13 +324,13 @@ export default function ItemDetailClient({
                               <button
                                 key={opt.id}
                                 onClick={() => {
-                                  if (!session) {
+                                  if (!session || session.user.role !== "BUYER") {
                                     router.push(`/login?callbackUrl=/products/items/${item.slug}`);
                                     return;
                                   }
                                   setSelectedOpts((prev) => ({ ...prev, [listing.id]: opt.id }));
                                 }}
-                                disabled={opt.stock === 0 || (session?.user.role !== "BUYER" && !!session)}
+                                disabled={opt.stock === 0}
                                 className={`relative text-left border-2 rounded-xl px-3 py-2.5 transition-all duration-200 ${
                                   isSelected && opt.stock > 0
                                     ? "border-green-500 bg-green-50 text-green-700"
@@ -353,8 +353,8 @@ export default function ItemDetailClient({
                         </div>
 
                         {/* CTA — varies by auth state */}
-                        {listing.priceOptions.some((o) => o.stock > 0) && (
-                          session?.user.role === "BUYER" ? (() => {
+                        {listing.priceOptions.some((o) => o.stock > 0) && (() => {
+                          if (session?.user.role === "BUYER") {
                             const opt = getSelectedOpt(listing);
                             const isAdded = addedOptId === opt.id;
                             return (
@@ -368,18 +368,17 @@ export default function ItemDetailClient({
                                 {isAdded ? "Added!" : `Add to Cart · ${opt.weight}`}
                               </Button>
                             );
-                          })() : !session ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-green-500 text-green-600 hover:bg-green-50"
-                              onClick={() => router.push(`/login?callbackUrl=/products/items/${item.slug}`)}
-                            >
-                              <ShoppingCart className="w-4 h-4 mr-1.5" />
-                              Login to Buy
-                            </Button>
-                          ) : null
-                        )}
+                          }
+                          if (!session) {
+                            return null;
+                          }
+                          // Seller or Admin
+                          return (
+                            <p className="text-xs text-gray-400 bg-gray-50 px-3 py-2 rounded-lg">
+                              Only buyer accounts can purchase. <Link href="/signup?role=BUYER" className="text-green-600 hover:underline font-medium">Register as buyer</Link>
+                            </p>
+                          );
+                        })()}
                       </div>
 
                       {/* Contact section */}
